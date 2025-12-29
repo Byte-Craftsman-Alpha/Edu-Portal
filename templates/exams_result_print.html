@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Semester Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+        @page { size: A4; margin: 12mm; }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div class="no-print max-w-4xl mx-auto p-4">
+        <div class="flex items-center justify-between">
+            <a href="/exams" class="text-sm text-slate-600 underline">Back</a>
+            <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium">Print / Save as PDF</button>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-10">
+        {% if semester_result %}
+            <div class="text-center mb-5">
+                <div class="text-base font-semibold text-slate-900">{{ semester_result.university }}</div>
+                <div class="text-sm text-slate-600">Grade Sheet of {{ semester_result.session_label }}</div>
+                <div class="text-sm text-slate-600">Semester : {{ semester_result.semester }}</div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Name / Student Type</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ semester_result.student_name }}</div>
+                    <div class="text-slate-700 mt-1">{{ semester_result.student_type }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Roll No / Enrollment No</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ semester_result.roll_no }}</div>
+                    <div class="text-slate-700 mt-1">{{ semester_result.enrollment_no }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Father's Name</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ semester_result.father_name }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Mother's Name</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ semester_result.mother_name }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200 md:col-span-2">
+                    <div class="text-xs text-slate-500">University / College Name</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ semester_result.college_label }}</div>
+                </div>
+            </div>
+
+            <div class="mt-6 overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="min-w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-xs text-slate-600">
+                            <th class="px-3 py-2 font-medium">Course Code</th>
+                            <th class="px-3 py-2 font-medium">Course Title</th>
+                            <th class="px-3 py-2 font-medium">Ext. Th</th>
+                            <th class="px-3 py-2 font-medium">Int. Th</th>
+                            <th class="px-3 py-2 font-medium">Int. Pr</th>
+                            <th class="px-3 py-2 font-medium">Ext. Pr</th>
+                            <th class="px-3 py-2 font-medium">Obt</th>
+                            <th class="px-3 py-2 font-medium">Cr</th>
+                            <th class="px-3 py-2 font-medium">Grade</th>
+                            <th class="px-3 py-2 font-medium">GP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set last_cat = None %}
+                        {% for c in semester_result_courses %}
+                            {% if last_cat != c.category %}
+                                <tr class="border-t border-slate-200">
+                                    <td class="px-3 py-2 text-sm font-semibold text-slate-900" colspan="10">{{ c.category }}</td>
+                                </tr>
+                                {% set last_cat = c.category %}
+                            {% endif %}
+                            <tr class="border-t border-slate-200 text-sm">
+                                <td class="px-3 py-2 text-slate-700">{{ c.course_code }}</td>
+                                <td class="px-3 py-2 text-slate-900 font-medium">{{ c.course_title }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.ext_theory if c.ext_theory is not none else '---' }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.int_theory if c.int_theory is not none else '---' }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.int_pract if c.int_pract is not none else '---' }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.ext_pract if c.ext_pract is not none else '---' }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.obt_marks if c.obt_marks is not none else '---' }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.total_credit }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.grade }}</td>
+                                <td class="px-3 py-2 text-slate-700">{{ c.grade_point }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 grid grid-cols-3 gap-3 text-sm">
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">SGPA</div>
+                    <div class="font-semibold text-slate-900 mt-1">{{ '%.2f'|format(semester_result.sgpa) }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Result</div>
+                    <div class="font-semibold text-slate-900 mt-1">{{ semester_result.result_status }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Declared On</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ semester_result.declared_on }}</div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-xs text-slate-700 border border-slate-200 rounded-xl p-4">
+                <div class="font-semibold text-slate-900 mb-2">NOTE</div>
+                <div>1) Any Discrepancies may be reported to the COE office.</div>
+                <div>2) Although utmost care has been exercised, errors if detected will be corrected as per official records.</div>
+                <div>3) This grade sheet is for display purpose; in case of dispute, university confidential record will be final.</div>
+                <div>4) Formula: SGPA * 10 = (% Marks).</div>
+            </div>
+        {% else %}
+            <div class="text-sm text-slate-600">No semester result available.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admit Card</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+        @page { size: A4; margin: 12mm; }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div class="no-print max-w-3xl mx-auto p-4">
+        <div class="flex items-center justify-between">
+            <a href="/exams" class="text-sm text-slate-600 underline">Back</a>
+            <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium">Print / Save as PDF</button>
+        </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-10">
+        {% if admit_card %}
+            <div class="text-center mb-5">
+                <div class="text-base font-semibold text-slate-900">{{ admit_card.university }}</div>
+                <div class="text-sm text-slate-600">Admit Card ({{ admit_card.session_label }})</div>
+                <div class="text-sm text-slate-600">{{ admit_card.program_label }}</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">College/University</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ admit_card.college_label }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Exam Center</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ admit_card.exam_center }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Student's Name</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ admit_card.student_name }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Roll Number</div>
+                    <div class="font-semibold text-slate-900 mt-1 tracking-wider">{{ admit_card.roll_number }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Father's Name</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ admit_card.father_name }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200">
+                    <div class="text-xs text-slate-500">Gender / Category</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ admit_card.gender }} / {{ admit_card.category }}</div>
+                </div>
+                <div class="p-3 rounded-xl border border-slate-200 col-span-2">
+                    <div class="text-xs text-slate-500">Address</div>
+                    <div class="font-medium text-slate-900 mt-1">{{ admit_card.address }}</div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <div class="text-sm font-semibold text-slate-900 mb-2">Student's Subject List</div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="min-w-full text-left">
+                        <thead class="bg-slate-50">
+                            <tr class="text-xs text-slate-600">
+                                <th class="px-3 py-2 font-medium">S.No.</th>
+                                <th class="px-3 py-2 font-medium">Paper Type</th>
+                                <th class="px-3 py-2 font-medium">Subject Code</th>
+                                <th class="px-3 py-2 font-medium">Subject Name</th>
+                                <th class="px-3 py-2 font-medium">Exam Date</th>
+                                <th class="px-3 py-2 font-medium">Exam Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in admit_subjects %}
+                                <tr class="border-t border-slate-200 text-sm">
+                                    <td class="px-3 py-2 text-slate-700">{{ loop.index }}</td>
+                                    <td class="px-3 py-2 text-slate-700">{{ s.paper_type or '' }}</td>
+                                    <td class="px-3 py-2 text-slate-700">{{ s.subject_code }}</td>
+                                    <td class="px-3 py-2 text-slate-900 font-medium">{{ s.subject_name }}</td>
+                                    <td class="px-3 py-2 text-slate-700">{{ s.exam_date or '' }}</td>
+                                    <td class="px-3 py-2 text-slate-700">{{ s.exam_time or '' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-6 text-xs text-slate-700 border border-slate-200 rounded-xl p-4">
+                <div class="font-semibold text-slate-900 mb-2">Note</div>
+                <div>The Examination form and candidature will be cancelled if any discrepancy or manipulation is found in given information which is compulsory under eligibility criteria.</div>
+            </div>
+        {% else %}
+            <div class="text-sm text-slate-600">No admit card available.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

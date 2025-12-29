@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPortal - Student Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .attendance-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .level-0 { background-color: #ebedf0; }
+        .level-1 { background-color: #9be9a8; }
+        .level-2 { background-color: #40c463; }
+        .level-3 { background-color: #30a14e; }
+        .level-4 { background-color: #216e39; }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .app-shell {
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.15), 0 2px 10px rgba(15, 23, 42, 0.06);
+        }
+
+        .attendance-ring {
+            background: conic-gradient(#0ea5e9 calc(var(--percentage) * 1%), #e2e8f0 0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tab-content {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Minimal.cc inspired styles */
+        .minimal-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .minimal-card:hover {
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            border-color: #cbd5e1;
+        }
+
+        .minimal-btn {
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .minimal-btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+        }
+
+        .minimal-btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .minimal-nav-item {
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+
+        .minimal-nav-item:hover {
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .minimal-nav-item.active {
+            background: #f1f5f9;
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        .minimal-badge {
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .minimal-input {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            padding: 10px 16px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .minimal-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .minimal-gradient {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .minimal-avatar {
+            border-radius: 14px;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        }
+    </style>
+</head>
+
+<body class="grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
+
+    <!-- Desktop Sidebar - Minimal.cc Style -->
+    <aside class="hidden md:flex flex-col gap-6 border-r border-slate-200 bg-white/90 backdrop-blur-sm p-6 sticky top-0 h-screen">
+        <div class="flex items-center gap-4 mb-2">
+            <div class="minimal-avatar w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-semibold">
+                E
+            </div>
+            <div class="leading-tight">
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">EduPortal</div>
+                <div class="text-sm font-semibold text-slate-900">Alex Johnson</div>
+                <div class="text-xs text-slate-400">Roll No: CS-2024-042</div>
+            </div>
+        </div>
+
+        <div class="minimal-card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-sm font-semibold text-slate-800">Attendance Status</p>
+                <span class="minimal-badge bg-indigo-50 text-indigo-700">SEM 4</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative w-16 h-16 rounded-full attendance-ring flex items-center justify-center" style="--percentage:82;">
+                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-sm font-semibold text-slate-800">82%</div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 text-sm text-emerald-700 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>On Track</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Next: Physics Lab @ 2PM</p>
+                    <button class="mt-3 px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-xs font-medium" onclick="switchTab('schedules')">View Schedule</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="space-y-1">
+            <button onclick="switchTab('dashboard')" class="minimal-nav-item w-full flex items-center justify-between active" data-tab="dashboard">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">🏠</span> Dashboard</span>
+                <span class="text-xs text-slate-400">Home</span>
+            </button>
+            <button onclick="switchTab('news')" class="minimal-nav-item w-full flex items-center justify-between" data-tab="news">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📰</span> News & Feed</span>
+                <span class="text-xs text-slate-400">Updates</span>
+            </button>
+            <button onclick="switchTab('schedules')" class="minimal-nav-item w-full flex items-center justify-between" data-tab="schedules">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📅</span> Schedules</span>
+                <span class="text-xs text-slate-400">Calendar</span>
+            </button>
+            <button onclick="switchTab('library')" class="minimal-nav-item w-full flex items-center justify-between" data-tab="library">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📚</span> Library</span>
+                <span class="text-xs text-slate-400">Resources</span>
+            </button>
+            <button onclick="switchTab('exams')" class="minimal-nav-item w-full flex items-center justify-between" data-tab="exams">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📝</span> Exams</span>
+                <span class="text-xs text-slate-400">Results</span>
+            </button>
+            <button onclick="switchTab('profile')" class="minimal-nav-item w-full flex items-center justify-between" data-tab="profile">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">👤</span> Profile</span>
+                <span class="text-xs text-slate-400">Account</span>
+            </button>
+        </nav>
+
+        <div class="mt-auto minimal-card bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5">
+            <p class="text-sm font-semibold">Support Portal</p>
+            <p class="text-xs text-slate-300 mt-1">Reach out for fee queries or technical help.</p>
+            <button class="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-sm font-medium transition-all">Contact Admin</button>
+        </div>
+    </aside>
+
+    <main class="flex flex-col min-w-0 min-h-screen">
+        <!-- Top Bar - Minimal.cc Style -->
+        <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 md:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all">☰</button>
+                <div>
+                    <h1 id="headerTitle" class="text-xl font-semibold text-slate-900">Dashboard</h1>
+                    <p id="headerSubtitle" class="text-xs text-slate-500">Welcome back, Alex</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="hidden lg:flex items-center minimal-input px-4 py-2">
+                    <span class="text-slate-400 mr-2">🔍</span>
+                    <input type="text" placeholder="Search resources, assignments..." class="bg-transparent outline-none text-sm w-64 placeholder:text-slate-400">
+                </div>
+                <button class="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                    <span class="text-lg">🔔</span>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+                <div class="minimal-avatar w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-slate-700 text-sm font-medium cursor-pointer border border-slate-200" onclick="switchTab('profile')">AJ</div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 p-6 md:p-8 overflow-y-auto hide-scrollbar">
+            
+            <!-- DASHBOARD TAB -->
+            <section id="tab-dashboard" class="tab-content space-y-8">
+                <!-- Top Row: Welcome & Status -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 minimal-card p-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <div>
+                                <h2 class="text-xl font-semibold text-slate-900">Attendance Overview</h2>
+                                <p class="text-sm text-slate-500 mt-1">Visualizing your presence over the semester</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" onclick="switchTab('news')">News Feed</button>
+                                <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium" onclick="alert('View full timetable')">Timetable</button>
+                            </div>
+                        </div>
+
+                        <!-- Git Style Grid -->
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-medium text-slate-500">Attendance Heatmap</span>
+                                <div class="flex items-center gap-2 text-xs text-slate-500">
+                                    <span>Less</span>
+                                    <div class="attendance-cell level-0"></div>
+                                    <div class="attendance-cell level-1"></div>
+                                    <div class="attendance-cell level-2"></div>
+                                    <div class="attendance-cell level-3"></div>
+                                    <div class="attendance-cell level-4"></div>
+                                    <span>More</span>
+                                </div>
+                            </div>
+                            <div id="attendanceGrid" class="flex flex-wrap gap-[3px] p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Summary Tile -->
+                    <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-semibold">Immediate Attention</span>
+                            <span class="minimal-badge bg-white/20 text-white">2 NEW</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex gap-3 p-3 bg-white/10 rounded-xl">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-lg">📄</div>
+                                <div>
+                                    <p class="text-sm font-medium">OS Lab Assignment</p>
+                                    <p class="text-xs text-white/70 mt-0.5">Due in 4 hours</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3 p-3 bg-white/10 rounded-xl">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-lg">💳</div>
+                                <div>
+                                    <p class="text-sm font-medium">Library Fee Pending</p>
+                                    <p class="text-xs text-white/70 mt-0.5">₹250 due for overdue book</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="mt-6 w-full py-3 rounded-xl bg-white text-indigo-700 text-sm font-medium hover:bg-slate-100 transition-all" onclick="switchTab('news')">View All Notifications</button>
+                    </div>
+                </div>
+
+                <!-- Quick Access Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" onclick="switchTab('news')">
+                        <div class="text-2xl mb-3 group-hover:scale-110 transition-transform">📢</div>
+                        <p class="text-sm font-medium text-slate-700">Notifications</p>
+                        <p class="text-xs text-slate-400 mt-1">Latest updates</p>
+                    </div>
+                    <div class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" onclick="switchTab('schedules')">
+                        <div class="text-2xl mb-3 group-hover:scale-110 transition-transform">📅</div>
+                        <p class="text-sm font-medium text-slate-700">Calendar</p>
+                        <p class="text-xs text-slate-400 mt-1">Timetable</p>
+                    </div>
+                    <div class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" onclick="alert('Opening Assignments...')">
+                        <div class="text-2xl mb-3 group-hover:scale-110 transition-transform">📝</div>
+                        <p class="text-sm font-medium text-slate-700">Assignments</p>
+                        <p class="text-xs text-slate-400 mt-1">Pending tasks</p>
+                    </div>
+                    <div class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" onclick="switchTab('exams')">
+                        <div class="text-2xl mb-3 group-hover:scale-110 transition-transform">🏆</div>
+                        <p class="text-sm font-medium text-slate-700">Results</p>
+                        <p class="text-xs text-slate-400 mt-1">Performance</p>
+                    </div>
+                    <div class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" onclick="alert('Opening Resources...')">
+                        <div class="text-2xl mb-3 group-hover:scale-110 transition-transform">📂</div>
+                        <p class="text-sm font-medium text-slate-700">Study Material</p>
+                        <p class="text-xs text-slate-400 mt-1">Resources</p>
+                    </div>
+                </div>
+
+                <!-- Detailed Announcements Section -->
+                <div class="minimal-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900">Recent Announcements</h3>
+                            <p class="text-sm text-slate-500 mt-1">Official updates from faculty and admin</p>
+                        </div>
+                        <button class="text-sm font-medium text-indigo-600 hover:text-indigo-700" onclick="switchTab('news')">See All →</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- Announcement 1 -->
+                        <div class="p-4 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-white flex flex-col md:flex-row gap-4 items-start">
+                            <div class="minimal-badge bg-rose-100 text-rose-700 flex items-center gap-1.5">
+                                <span>🚨</span> URGENT
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
+                                    <h4 class="text-sm font-semibold text-slate-900">End-Term Lab Exam Rescheduled</h4>
+                                    <span class="text-xs text-slate-400">2 hours ago</span>
+                                </div>
+                                <p class="text-sm text-slate-600 leading-relaxed mb-3">The Operating Systems lab exam originally scheduled for Friday has been moved to Monday, June 10th due to maintenance in the server room.</p>
+                                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                    <span class="flex items-center gap-1">👤 Prof. S. Sharma</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                    <span class="minimal-badge bg-indigo-50 text-indigo-700">#CSE_Department</span>
+                                    <span class="minimal-badge bg-slate-100 text-slate-600">#Examination</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Announcement 2 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-white flex flex-col md:flex-row gap-4 items-start">
+                            <div class="minimal-badge bg-slate-100 text-slate-700 flex items-center gap-1.5">
+                                <span>ℹ️</span> GENERAL
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
+                                    <h4 class="text-sm font-semibold text-slate-900">Annual Library Stock Audit</h4>
+                                    <span class="text-xs text-slate-400">Yesterday</span>
+                                </div>
+                                <p class="text-sm text-slate-600 leading-relaxed mb-3">Library will remain closed for students from May 25-27 for the annual audit. E-resources will remain accessible via the student portal.</p>
+                                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                    <span class="flex items-center gap-1">👤 Library Admin</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                    <span class="minimal-badge bg-indigo-50 text-indigo-700">#All_Students</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Announcement 3 -->
+                        <div class="p-4 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white flex flex-col md:flex-row gap-4 items-start">
+                            <div class="minimal-badge bg-amber-100 text-amber-700 flex items-center gap-1.5">
+                                <span>🎉</span> EVENT
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
+                                    <h4 class="text-sm font-semibold text-slate-900">Hackathon 2024: Registration Open</h4>
+                                    <span class="text-xs text-slate-400">2 days ago</span>
+                                </div>
+                                <p class="text-sm text-slate-600 leading-relaxed mb-3">Calling all innovators! Registrations for the 24-hour campus hackathon are now open. Team up and win exciting prizes up to ₹50,000.</p>
+                                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                    <span class="flex items-center gap-1">👤 Tech Club</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                    <span class="minimal-badge bg-indigo-50 text-indigo-700">#Hackathon</span>
+                                    <span class="minimal-badge bg-slate-100 text-slate-600">#Innovation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Placeholder for other tabs -->
+            <section id="tab-news" class="tab-content hidden space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Institute News Feed</h2>
+                        <p class="text-sm text-slate-500 mt-1">Latest updates from campus activities and blogs</p>
+                    </div>
+                    <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Post Update</button>
+                </div>
+                <div class="minimal-card p-12 text-center">
+                    <div class="text-5xl mb-6 text-slate-300">📰</div>
+                    <p class="text-slate-500">The central feed for all institute activities, blogs, and news will appear here.</p>
+                    <p class="text-sm text-slate-400 mt-2">Coming soon with real-time updates</p>
+                </div>
+            </section>
+
+            <section id="tab-schedules" class="tab-content hidden space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Class Schedules</h2>
+                        <p class="text-sm text-slate-500 mt-1">Interactive calendar and examination timetable</p>
+                    </div>
+                    <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Add Event</button>
+                </div>
+                <div class="minimal-card p-12 text-center">
+                    <div class="text-5xl mb-6 text-slate-300">🗓️</div>
+                    <p class="text-slate-500">Your interactive class calendar and examination timetable.</p>
+                    <p class="text-sm text-slate-400 mt-2">Sync with Google Calendar coming soon</p>
+                </div>
+            </section>
+
+            <section id="tab-library" class="tab-content hidden space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Digital Library</h2>
+                        <p class="text-sm text-slate-500 mt-1">Access E-books, Journals, and check your issued book status</p>
+                    </div>
+                    <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Browse Catalog</button>
+                </div>
+                <div class="minimal-card p-12 text-center">
+                    <div class="text-5xl mb-6 text-slate-300">📚</div>
+                    <p class="text-slate-500">Access E-books, Journals, and check your issued book status.</p>
+                    <p class="text-sm text-slate-400 mt-2">10,000+ digital resources available</p>
+                </div>
+            </section>
+
+            <section id="tab-exams" class="tab-content hidden space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Examination Portal</h2>
+                        <p class="text-sm text-slate-500 mt-1">Track your performance and manage exam details</p>
+                    </div>
+                    <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">View Results</button>
+                </div>
+                <div class="minimal-card p-12 text-center">
+                    <div class="text-5xl mb-6 text-slate-300">📝</div>
+                    <p class="text-slate-500">View exam results, download admit cards, and apply for re-evaluations.</p>
+                    <p class="text-sm text-slate-400 mt-2">Mid-term results available from May 25</p>
+                </div>
+            </section>
+
+            <section id="tab-profile" class="tab-content hidden space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Student Profile</h2>
+                        <p class="text-sm text-slate-500 mt-1">Manage your personal information and academic details</p>
+                    </div>
+                    <button class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Edit Profile</button>
+                </div>
+                <div class="minimal-card p-6">
+                    <div class="flex items-center gap-6 mb-8">
+                        <div class="minimal-avatar w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-4xl text-slate-700">👨‍🎓</div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-slate-900">Alex Johnson</h3>
+                            <p class="text-sm text-slate-500">B.Tech in Computer Science and Engineering</p>
+                            <div class="flex gap-2 mt-3">
+                                <span class="minimal-badge bg-emerald-50 text-emerald-700">VERIFIED</span>
+                                <span class="minimal-badge bg-slate-100 text-slate-700">YEAR 2</span>
+                                <span class="minimal-badge bg-indigo-50 text-indigo-700">SEM 4</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Contact Email</p>
+                            <p class="text-sm font-medium text-slate-800 mt-1">alex.johnson@institute.edu</p>
+                        </div>
+                        <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Phone Number</p>
+                            <p class="text-sm font-medium text-slate-800 mt-1">+91 98765 43210</p>
+                        </div>
+                        <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Guardian</p>
+                            <p class="text-sm font-medium text-slate-800 mt-1">Robert Johnson (Father)</p>
+                        </div>
+                        <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Residential Status</p>
+                            <p class="text-sm font-medium text-slate-800 mt-1">Hosteler (Block B, Rm 302)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Mobile Nav Bar (Bottom) - Minimal.cc Style -->
+        <nav class="md:hidden sticky bottom-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-3 flex items-center justify-between z-30">
+            <button onclick="switchTab('dashboard')" class="flex flex-col items-center gap-1 group">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600">
+                    <span class="text-xl">🏠</span>
+                </div>
+                <span class="text-xs font-medium text-indigo-600">Home</span>
+            </button>
+            <button onclick="switchTab('news')" class="flex flex-col items-center gap-1 group">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-50 text-slate-600">
+                    <span class="text-xl">📰</span>
+                </div>
+                <span class="text-xs font-medium text-slate-500">News</span>
+            </button>
+            <button onclick="switchTab('schedules')" class="flex flex-col items-center gap-1 group">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-50 text-slate-600">
+                    <span class="text-xl">📅</span>
+                </div>
+                <span class="text-xs font-medium text-slate-500">Schedule</span>
+            </button>
+            <button onclick="switchTab('exams')" class="flex flex-col items-center gap-1 group">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-50 text-slate-600">
+                    <span class="text-xl">📝</span>
+                </div>
+                <span class="text-xs font-medium text-slate-500">Exams</span>
+            </button>
+            <button onclick="switchTab('profile')" class="flex flex-col items-center gap-1 group">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-50 text-slate-600">
+                    <span class="text-xl">👤</span>
+                </div>
+                <span class="text-xs font-medium text-slate-500">Profile</span>
+            </button>
+        </nav>
+    </main>
+
+    <script>
+        // Tab switching logic
+        function switchTab(tabName) {
+            // Update Title and Subtitle
+            const titles = {
+                dashboard: ['Dashboard', 'Welcome back, Alex'],
+                news: ['News & Feed', 'Latest from Institute'],
+                schedules: ['Schedules', 'Class & Exam Timetable'],
+                library: ['Digital Library', 'Books & Journals'],
+                exams: ['Exams Portal', 'Track your performance'],
+                profile: ['My Profile', 'Manage personal information']
+            };
+
+            document.getElementById('headerTitle').textContent = titles[tabName][0];
+            document.getElementById('headerSubtitle').textContent = titles[tabName][1];
+
+            // Toggle sections
+            document.querySelectorAll('.tab-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            // Update Sidebar Navigation Items
+            document.querySelectorAll('.minimal-nav-item').forEach(item => {
+                const itemTab = item.getAttribute('data-tab');
+                if(itemTab === tabName) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update Mobile Navigation
+            document.querySelectorAll('.md\\:hidden button').forEach(btn => {
+                const btnText = btn.querySelector('span:last-child');
+                if(btn.onclick && btn.onclick.toString().includes(`'${tabName}'`)) {
+                    btn.querySelector('div').classList.remove('bg-slate-50', 'text-slate-600');
+                    btn.querySelector('div').classList.add('bg-indigo-50', 'text-indigo-600');
+                    btnText.classList.remove('text-slate-500');
+                    btnText.classList.add('text-indigo-600');
+                } else {
+                    btn.querySelector('div').classList.remove('bg-indigo-50', 'text-indigo-600');
+                    btn.querySelector('div').classList.add('bg-slate-50', 'text-slate-600');
+                    btnText.classList.remove('text-indigo-600');
+                    btnText.classList.add('text-slate-500');
+                }
+            });
+
+            // Smooth scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Attendance Grid Generator (Git-style)
+        function generateAttendance() {
+            const grid = document.getElementById('attendanceGrid');
+            // Generating 7 rows (days) and 26 columns (weeks) approx
+            const days = 7;
+            const weeks = 28; // Covers half a year roughly
+            
+            for (let i = 0; i < days * weeks; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'attendance-cell';
+                
+                // Randomly assign presence levels (for demo)
+                const level = Math.floor(Math.random() * 5);
+                cell.classList.add(`level-${level}`);
+                
+                // Add tooltip-like info
+                const dayStr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i % 7];
+                cell.title = `${dayStr} Attendance Level: ${level}/4`;
+                
+                grid.appendChild(cell);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            generateAttendance();
+            
+            // Add today's date to header
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('headerSubtitle').textContent = today.toLocaleDateString('en-US', options);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="tab-content space-y-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-900">Digital Library</h2>
+            <p class="text-sm text-slate-500 mt-1">Access E-books, Journals, and check your issued book status</p>
+        </div>
+        <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Browse Catalog</button>
+    </div>
+
+    <div class="minimal-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Resources</h3>
+                <p class="text-sm text-slate-500 mt-1">Notes, PDFs and study materials uploaded by faculty</p>
+            </div>
+            <span class="minimal-badge bg-slate-100 text-slate-700">PDF</span>
+        </div>
+
+        <details class="p-4 rounded-xl border border-slate-200 bg-white" open>
+            <summary class="cursor-pointer select-none list-none flex items-center justify-between">
+                <span class="text-sm font-semibold text-slate-900">Upload Resource</span>
+                <span class="text-xs text-slate-500">Toggle</span>
+            </summary>
+            <form method="post" action="{{ url_for('library_resource_upload') }}" enctype="multipart/form-data" class="mt-4">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Heading</label>
+                        <input name="heading" class="w-full minimal-input" placeholder="e.g. DBMS Unit-2 Notes" required>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
+                        <input name="uploader" class="w-full minimal-input" placeholder="e.g. Prof. Sharma" required>
+                    </div>
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                        <input name="description" class="w-full minimal-input" placeholder="Short description" required>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Tags (comma separated)</label>
+                        <input name="tags" class="w-full minimal-input" placeholder="e.g. DBMS,SQL,Semester-4">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">External PDF URL (optional)</label>
+                        <input name="pdf_url" class="w-full minimal-input" placeholder="https://...pdf">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Or Upload PDF (optional)</label>
+                        <input type="file" name="pdf_file" accept="application/pdf" class="w-full minimal-input">
+                        <p class="text-xs text-slate-400 mt-1">Provide either External URL or Upload a PDF file.</p>
+                    </div>
+                    <div class="md:col-span-2 flex items-end">
+                        <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium w-full">Upload</button>
+                    </div>
+                </div>
+            </form>
+        </details>
+
+        <details class="p-4 rounded-xl border border-slate-200 bg-white"{% if filters and (filters.q or filters.tag or filters.uploader) %} open{% endif %}>
+            <summary class="cursor-pointer select-none list-none flex items-center justify-between">
+                <span class="text-sm font-semibold text-slate-900">Search & Filters</span>
+                <span class="text-xs text-slate-500">Toggle</span>
+            </summary>
+            <form method="get" class="mt-4">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Search</label>
+                        <input name="q" value="{{ filters.q if filters else '' }}" class="w-full minimal-input" placeholder="Heading, description, tags, uploader">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Tag</label>
+                        <input name="tag" value="{{ filters.tag if filters else '' }}" class="w-full minimal-input" placeholder="e.g. DSA">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
+                        <select name="uploader" class="w-full minimal-input">
+                            <option value="">All</option>
+                            {% for u in uploaders or [] %}
+                                <option value="{{ u }}"{% if filters and filters.uploader == u %} selected{% endif %}>{{ u }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="md:col-span-2 flex items-end gap-2">
+                        <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium w-full">Apply</button>
+                        <a href="{{ url_for('library') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all w-full text-center">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </details>
+
+        <div class="mt-4 space-y-3">
+            {% if resources %}
+                {% for r in resources %}
+                    {% set tag_list = (r.tags.split(',') if r.tags else []) %}
+                    {% set href = (url_for('static', filename=r.pdf_url) if r.pdf_url and not (r.pdf_url.startswith('http://') or r.pdf_url.startswith('https://')) else r.pdf_url) %}
+                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-slate-900 break-words">{{ r.heading }}</p>
+                                    <p class="text-xs text-slate-500 mt-1">{{ r.description }}</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-3">
+                                <span class="flex items-center gap-1">👤 {{ r.uploader }}</span>
+                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span class="flex items-center gap-1">🕒 {{ r.uploaded_at|fmt_dt }}</span>
+                                {% if tag_list and tag_list[0].strip() %}
+                                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                    <span class="minimal-badge bg-indigo-50 text-indigo-700">#{{ tag_list[0].strip() }}</span>
+                                {% endif %}
+                                {% if (tag_list|length) > 1 and tag_list[1].strip() %}
+                                    <span class="minimal-badge bg-slate-100 text-slate-600">#{{ tag_list[1].strip() }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a href="{{ href }}" target="_blank" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-all">Open PDF</a>
+                            <a href="{{ href }}" target="_blank" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Download</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-6 rounded-xl border border-slate-200 bg-white text-sm text-slate-500">No resources found for the selected filters.</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

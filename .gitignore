@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# This project uses a local venv folder
+edu_portal/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite DB (do not commit local dev DB)
+*.db
+
+# Uploads (user-generated)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Logs
+*.log

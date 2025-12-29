@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="tab-content space-y-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-900">Class Schedules</h2>
+            <p class="text-sm text-slate-500 mt-1">Interactive calendar and examination timetable</p>
+        </div>
+        <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Add Event</button>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div class="minimal-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Weekly Timetable</h3>
+                    <p class="text-sm text-slate-500 mt-1">Classes grouped by day and time</p>
+                </div>
+                <span class="minimal-badge bg-indigo-50 text-indigo-700">WEEK</span>
+            </div>
+
+            {% set day_names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+            <div data-weekly-timetable data-initial-day="{{ today_dow if today_dow is not none else 0 }}">
+                <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2">
+                    {% for d in range(0, 7) %}
+                        <button type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all whitespace-nowrap" data-week-tab="{{ d }}">
+                            {{ day_names[d] }}
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 overflow-x-auto hide-scrollbar scroll-smooth" data-week-panels style="scroll-snap-type:x mandatory;">
+                    <div class="flex" style="scroll-snap-type:inherit;">
+                        {% for d in range(0, 7) %}
+                            <div class="w-full shrink-0" data-week-panel="{{ d }}" style="scroll-snap-align:start;">
+                                <div class="p-4 rounded-xl border border-slate-200 bg-white">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <p class="text-sm font-semibold text-slate-900">{{ day_names[d] }}</p>
+                                        <span class="text-xs text-slate-400">{{ timetable_by_day[d]|length }} classes</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        {% if timetable_by_day[d] %}
+                                            {% for c in timetable_by_day[d] %}
+                                                <div class="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <p class="text-sm font-semibold text-slate-900">{{ c.subject }}</p>
+                                                            <p class="text-xs text-slate-500 mt-1">{{ c.room }} · {{ c.instructor }}</p>
+                                                        </div>
+                                                        <span class="minimal-badge bg-slate-100 text-slate-700">{{ c.start_time }}–{{ c.end_time }}</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <p class="text-xs text-slate-400">No classes</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="minimal-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Monthly Events & Holidays</h3>
+                    <p class="text-sm text-slate-500 mt-1">{{ month_label }}</p>
+                </div>
+                <span class="minimal-badge bg-emerald-50 text-emerald-700">MONTH</span>
+            </div>
+
+            <div class="space-y-4">
+                {% if month_items %}
+                    {% for m in month_items %}
+                        {% set is_holiday = (m.item_type == 'HOLIDAY') %}
+                        <div class="p-4 rounded-xl border {% if is_holiday %}border-rose-200 bg-gradient-to-r from-rose-50 to-white{% else %}border-amber-200 bg-gradient-to-r from-amber-50 to-white{% endif %} flex flex-col md:flex-row gap-4 items-start">
+                            <div class="minimal-badge {% if is_holiday %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %} flex items-center gap-1.5">
+                                {% if is_holiday %}<span>🏖️</span>{% else %}<span>🎉</span>{% endif %} {{ m.item_type }}
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
+                                    <h4 class="text-sm font-semibold text-slate-900">{{ m.title }}</h4>
+                                    <span class="text-xs text-slate-400">{{ m.item_date }}</span>
+                                </div>
+                                <p class="text-sm text-slate-600 leading-relaxed">{{ m.description }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-6 rounded-xl border border-slate-200 bg-white text-sm text-slate-500">No events or holidays for this month.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="minimal-card p-6" data-schedule-calendar data-today-date="{{ today_date }}">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Calendar</h3>
+                <p class="text-sm text-slate-500 mt-1">{{ month_label }}</p>
+            </div>
+            <span class="minimal-badge bg-slate-100 text-slate-700">MONTH VIEW</span>
+        </div>
+
+        <div class="grid grid-cols-7 gap-2 text-xs text-slate-500 mb-2">
+            <div class="text-center font-medium">Mon</div>
+            <div class="text-center font-medium">Tue</div>
+            <div class="text-center font-medium">Wed</div>
+            <div class="text-center font-medium">Thu</div>
+            <div class="text-center font-medium">Fri</div>
+            <div class="text-center font-medium">Sat</div>
+            <div class="text-center font-medium">Sun</div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-2">
+            {% for week in calendar_weeks %}
+                {% for cell in week %}
+                    {% set date_key = cell.date %}
+                    {% set has_items = (month_items_by_date.get(date_key) or schedule_by_date.get(date_key)) %}
+                    <button type="button"
+                            class="aspect-square rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all flex flex-col items-center justify-center relative {% if not cell.in_month %}opacity-40{% endif %}"
+                            data-cal-date="{{ date_key }}"
+                            data-in-month="{{ 1 if cell.in_month else 0 }}"
+                            data-items="{{ month_items_by_date.get(date_key, []) | tojson | forceescape }}"
+                            data-events="{{ schedule_by_date.get(date_key, []) | tojson | forceescape }}">
+                        <span class="text-sm font-semibold text-slate-900{% if date_key == today_date %} text-indigo-600{% endif %}">{{ cell.day }}</span>
+                        {% if has_items %}
+                            <span class="absolute bottom-2 w-2 h-2 rounded-full bg-indigo-500"></span>
+                        {% endif %}
+                    </button>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+</section>
+
+<script type="application/json" id="timetableData">{{ timetable_for_popup | tojson }}</script>
+
+<div class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40" data-bottom-sheet-backdrop></div>
+<div class="fixed left-0 right-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-[transform,opacity] duration-200 z-50" data-bottom-sheet>
+    <div class="mx-auto max-w-2xl bg-white rounded-t-3xl border border-slate-200 shadow-2xl transition-all duration-300 ease-in-out">
+        <div class="px-6 pt-4 pb-2" data-sheet-handle>
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto"></div>
+            <div class="flex items-center justify-between mt-3">
+                <div>
+                    <p class="text-xs text-slate-500" data-sheet-date-label>Date</p>
+                    <p class="text-base font-semibold text-slate-900" data-sheet-title>Schedule</p>
+                </div>
+                <button type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" data-sheet-close>Close</button>
+            </div>
+        </div>
+        <div class="px-6 pb-6 max-h-[70vh] overflow-y-auto hide-scrollbar" data-sheet-body>
+            <div class="space-y-4" data-sheet-sections></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
