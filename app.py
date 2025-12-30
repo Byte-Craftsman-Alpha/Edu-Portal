@@ -2153,6 +2153,79 @@ def admin_student_update(student_id: int):
     return redirect(url_for("admin_students"))
 
 
+@app.post("/admin/students/<int:student_id>/delete")
+@admin_login_required
+def admin_student_delete(student_id: int):
+    db = get_db()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (int(student_id),)).fetchone()
+    if not student:
+        return redirect(url_for("admin_students"))
+
+    # Remove vault files from disk first
+    vault_files = db.execute(
+        "SELECT stored_path FROM vault_files WHERE student_id = ?",
+        (int(student_id),),
+    ).fetchall()
+    for f in vault_files:
+        stored = (f["stored_path"] or "").strip()
+        if stored.startswith("vault/"):
+            abs_path = Path(__file__).with_name("uploads") / stored
+            try:
+                if abs_path.exists() and abs_path.is_file():
+                    abs_path.unlink()
+            except Exception:
+                pass
+
+    # Attempt to clean the whole vault directory for this student
+    try:
+        student_vault_dir = VAULT_UPLOAD_DIR / str(int(student_id))
+        if student_vault_dir.exists() and student_vault_dir.is_dir():
+            for root, dirs, files in os.walk(str(student_vault_dir), topdown=False):
+                for name in files:
+                    try:
+                        Path(root, name).unlink()
+                    except Exception:
+                        pass
+                for name in dirs:
+                    try:
+                        Path(root, name).rmdir()
+                    except Exception:
+                        pass
+            try:
+                student_vault_dir.rmdir()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    # Delete dependent rows (order matters due to foreign keys)
+    db.execute(
+        "DELETE FROM admit_card_subjects WHERE admit_card_id IN (SELECT id FROM admit_cards WHERE student_id = ?)",
+        (int(student_id),),
+    )
+    db.execute("DELETE FROM admit_cards WHERE student_id = ?", (int(student_id),))
+
+    db.execute(
+        "DELETE FROM semester_result_courses WHERE result_id IN (SELECT id FROM semester_results WHERE student_id = ?)",
+        (int(student_id),),
+    )
+    db.execute("DELETE FROM semester_results WHERE student_id = ?", (int(student_id),))
+
+    db.execute("DELETE FROM student_subject_enrollments WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM student_programs WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM exam_form_submissions WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM attendance_heatmap WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM vault_files WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM vault_folders WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM student_dues WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM student_profile WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM student_details WHERE student_id = ?", (int(student_id),))
+    db.execute("DELETE FROM students WHERE id = ?", (int(student_id),))
+
+    db.commit()
+    return redirect(url_for("admin_students"))
+
+
 @app.post("/admin/teachers/new")
 @admin_login_required
 def admin_teachers_create():

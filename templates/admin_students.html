@@ -239,6 +239,9 @@
                                     data-emergency_contact_phone="{{ (p.emergency_contact_phone if p else '')|e }}"
                                     data-pending_amount="{{ (du.pending_amount if du else 0) }}"
                                 >Edit</button>
+                                <form method="post" action="{{ url_for('admin_student_delete', student_id=s.id) }}" onsubmit="return confirm('Delete this student record? This will delete related data (vault files, attendance, results, submissions).');">
+                                    <button type="submit" class="admin-btn admin-btn-danger w-full">Delete</button>
+                                </form>
                             </div>
                         </div>
                     </div>
