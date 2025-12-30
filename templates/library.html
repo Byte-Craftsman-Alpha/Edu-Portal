@@ -15,86 +15,57 @@
                 <h3 class="text-lg font-semibold text-slate-900">Resources</h3>
                 <p class="text-sm text-slate-500 mt-1">Notes, PDFs and study materials uploaded by faculty</p>
             </div>
-            <span class="minimal-badge bg-slate-100 text-slate-700">PDF</span>
+            <div class="flex items-center gap-2">
+                <span class="minimal-badge bg-slate-100 text-slate-700">PDF</span>
+                <button type="button" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2" data-upload-open><span class="iconify text-base" data-icon="solar:add-square-bold"></span> Upload Resource</button>
+            </div>
         </div>
 
-        <details class="p-4 rounded-xl border border-slate-200 bg-white" open>
-            <summary class="cursor-pointer select-none list-none flex items-center justify-between">
-                <span class="text-sm font-semibold text-slate-900">Upload Resource</span>
-                <span class="text-xs text-slate-500">Toggle</span>
-            </summary>
-            <form method="post" action="{{ url_for('library_resource_upload') }}" enctype="multipart/form-data" class="mt-4">
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
-                    <div class="md:col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Heading</label>
-                        <input name="heading" class="w-full minimal-input" placeholder="e.g. DBMS Unit-2 Notes" required>
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
-                        <input name="uploader" class="w-full minimal-input" placeholder="e.g. Prof. Sharma" required>
-                    </div>
-                    <div class="md:col-span-6">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Description</label>
-                        <input name="description" class="w-full minimal-input" placeholder="Short description" required>
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Tags (comma separated)</label>
-                        <input name="tags" class="w-full minimal-input" placeholder="e.g. DBMS,SQL,Semester-4">
-                    </div>
-                    <div class="md:col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">External PDF URL (optional)</label>
-                        <input name="pdf_url" class="w-full minimal-input" placeholder="https://...pdf">
-                    </div>
-                    <div class="md:col-span-4">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Or Upload PDF (optional)</label>
-                        <input type="file" name="pdf_file" accept="application/pdf" class="w-full minimal-input">
-                        <p class="text-xs text-slate-400 mt-1">Provide either External URL or Upload a PDF file.</p>
-                    </div>
-                    <div class="md:col-span-2 flex items-end">
-                        <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium w-full">Upload</button>
-                    </div>
+        <form method="get" class="mt-4">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Search</label>
+                    <input id="librarySearch" name="q" value="{{ filters.q if filters else '' }}" class="w-full minimal-input" placeholder="Search resources...">
+                    <p class="text-xs text-slate-400 mt-2">Showing <span id="librarySearchVisible">0</span> of <span id="librarySearchTotal">0</span></p>
                 </div>
-            </form>
-        </details>
 
-        <details class="mt-4 p-4 rounded-xl border border-slate-200 bg-white mt-4"{% if filters and (filters.q or filters.tag or filters.uploader) %} open{% endif %}>
-            <summary class="cursor-pointer select-none list-none flex items-center justify-between">
-                <span class="text-sm font-semibold text-slate-900">Search & Filters</span>
-                <span class="text-xs text-slate-500">Toggle</span>
-            </summary>
-            <form method="get" class="mt-4">
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
-                    <div class="md:col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Search</label>
-                        <input name="q" value="{{ filters.q if filters else '' }}" class="w-full minimal-input" placeholder="Heading, description, tags, uploader">
+                <details class="relative"{% if filters and (filters.tag or filters.uploader) %} open{% endif %}>
+                    <summary class="list-none cursor-pointer select-none px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2" aria-label="Advanced filters">
+                        <span class="iconify text-base text-slate-600" data-icon="solar:settings-outline"></span> Filters
+                    </summary>
+                    <div class="absolute right-0 top-full mt-2 w-[min(560px,92vw)] z-30">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-medium text-slate-500 mb-1">Tag</label>
+                                    <input name="tag" value="{{ filters.tag if filters else '' }}" class="w-full minimal-input" placeholder="e.g. DSA">
+                                </div>
+                                <div class="md:col-span-4">
+                                    <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
+                                    <select name="uploader" class="w-full minimal-input">
+                                        <option value="">All</option>
+                                        {% for u in uploaders or [] %}
+                                            <option value="{{ u }}"{% if filters and filters.uploader == u %} selected{% endif %}>{{ u }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="md:col-span-6 flex flex-col md:flex-row items-stretch md:items-center justify-end gap-2 pt-1">
+                                    <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
+                                    <a href="{{ url_for('library') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-amber-600" data-icon="solar:restart-outline"></span> Reset</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="md:col-span-1">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Tag</label>
-                        <input name="tag" value="{{ filters.tag if filters else '' }}" class="w-full minimal-input" placeholder="e.g. DSA">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
-                        <select name="uploader" class="w-full minimal-input">
-                            <option value="">All</option>
-                            {% for u in uploaders or [] %}
-                                <option value="{{ u }}"{% if filters and filters.uploader == u %} selected{% endif %}>{{ u }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="md:col-span-2 flex items-end gap-2">
-                        <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                        <a href="{{ url_for('library') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all w-full text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-amber-600" data-icon="solar:restart-outline"></span> Reset</a>
-                    </div>
-                </div>
-            </form>
-        </details>
+                </details>
+            </div>
+        </form>
 
-        <div class="mt-4 space-y-3">
+        <div class="mt-4 space-y-3" id="libraryResourceList">
             {% if resources %}
                 {% for r in resources %}
                     {% set tag_list = (r.tags.split(',') if r.tags else []) %}
                     {% set href = (url_for('static', filename=r.pdf_url) if r.pdf_url and not (r.pdf_url.startswith('http://') or r.pdf_url.startswith('https://')) else r.pdf_url) %}
-                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="p-4 rounded-xl border border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4" data-library-resource data-search-text="{{ (r.heading ~ ' ' ~ r.description ~ ' ' ~ (r.tags or '') ~ ' ' ~ r.uploader)|lower|e }}">
                         <div class="min-w-0">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
@@ -126,5 +97,173 @@
             {% endif %}
         </div>
     </div>
+
+    <div data-upload-backdrop class="fixed inset-0 bg-slate-900/70 backdrop-blur-[2px] opacity-0 pointer-events-none transition-opacity z-50"></div>
+    <div data-upload-sheet class="fixed left-0 right-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-[transform,opacity] duration-200 z-[60]">
+        <div class="mx-auto max-w-2xl bg-white rounded-t-3xl border border-slate-300 shadow-[0_30px_80px_rgba(15,23,42,0.35),0_8px_20px_rgba(15,23,42,0.18)] transition-all duration-300 ease-in-out">
+            <div class="px-6 pt-4 pb-2" data-upload-handle>
+                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto"></div>
+                <div class="flex items-center justify-between mt-3">
+                    <div>
+                        <p class="text-xs text-slate-500">Upload</p>
+                        <p class="text-base font-semibold text-slate-900">Upload Resource</p>
+                    </div>
+                    <button type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2" data-upload-close><span class="iconify text-base text-slate-600" data-icon="solar:close-square-outline"></span> Close</button>
+                </div>
+            </div>
+            <div class="px-6 pb-6 max-h-[70vh] overflow-y-auto hide-scrollbar">
+                <form method="post" action="{{ url_for('library_resource_upload') }}" enctype="multipart/form-data" class="mt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Heading</label>
+                            <input name="heading" class="w-full minimal-input" placeholder="e.g. DBMS Unit-2 Notes" required>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
+                            <input name="uploader" class="w-full minimal-input" placeholder="e.g. Prof. Sharma" required>
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                            <input name="description" class="w-full minimal-input" placeholder="Short description" required>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Tags (comma separated)</label>
+                            <input name="tags" class="w-full minimal-input" placeholder="e.g. DBMS,SQL,Semester-4">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">External PDF URL (optional)</label>
+                            <input name="pdf_url" class="w-full minimal-input" placeholder="https://...pdf">
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Or Upload PDF (optional)</label>
+                            <input type="file" name="pdf_file" accept="application/pdf" class="w-full minimal-input">
+                            <p class="text-xs text-slate-400 mt-1">Provide either External URL or Upload a PDF file.</p>
+                        </div>
+                        <div class="md:col-span-6 flex items-end justify-end gap-2 pt-1">
+                            <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const openBtn = document.querySelector('[data-upload-open]');
+            const closeBtn = document.querySelector('[data-upload-close]');
+            const backdrop = document.querySelector('[data-upload-backdrop]');
+            const sheet = document.querySelector('[data-upload-sheet]');
+            const handleEl = document.querySelector('[data-upload-handle]');
+            if (!openBtn || !closeBtn || !backdrop || !sheet) {
+                return;
+            }
+
+            if (backdrop.parentElement !== document.body) {
+                document.body.appendChild(backdrop);
+            }
+            if (sheet.parentElement !== document.body) {
+                document.body.appendChild(sheet);
+            }
+
+            let scrollLockY = 0;
+            function lockScroll() {
+                scrollLockY = window.scrollY || 0;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollLockY}px`;
+                document.body.style.left = '0';
+                document.body.style.right = '0';
+                document.body.style.width = '100%';
+                document.body.style.overflow = 'hidden';
+            }
+
+            function unlockScroll() {
+                document.body.style.position = '';
+                const top = document.body.style.top;
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
+                document.body.style.width = '';
+                document.body.style.overflow = '';
+                const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+                window.scrollTo(0, Number.isFinite(y) ? y : 0);
+            }
+
+            function open() {
+                lockScroll();
+                backdrop.classList.remove('opacity-0', 'pointer-events-none');
+                backdrop.classList.add('opacity-100');
+                sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+                sheet.classList.add('opacity-100');
+            }
+
+            function close() {
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
+                backdrop.classList.remove('opacity-100');
+                sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+                sheet.classList.remove('opacity-100');
+                unlockScroll();
+            }
+
+            openBtn.addEventListener('click', open);
+            closeBtn.addEventListener('click', close);
+            backdrop.addEventListener('click', close);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    close();
+                }
+            });
+
+            let startY = 0;
+            let dragging = false;
+            (handleEl || sheet).addEventListener('touchstart', (e) => {
+                dragging = true;
+                startY = e.touches[0].clientY;
+            });
+            window.addEventListener('touchmove', (e) => {
+                if (!dragging) {
+                    return;
+                }
+                const dy = e.touches[0].clientY - startY;
+                if (dy > 60) {
+                    dragging = false;
+                    close();
+                }
+            }, { passive: true });
+            window.addEventListener('touchend', () => {
+                dragging = false;
+            });
+        })();
+
+        (function () {
+            const input = document.getElementById('librarySearch');
+            const list = document.getElementById('libraryResourceList');
+            const totalEl = document.getElementById('librarySearchTotal');
+            const visibleEl = document.getElementById('librarySearchVisible');
+            if (!input || !list || !totalEl || !visibleEl) {
+                return;
+            }
+
+            const cards = Array.from(list.querySelectorAll('[data-library-resource]'));
+            totalEl.textContent = String(cards.length);
+
+            function apply() {
+                const q = (input.value || '').trim().toLowerCase();
+                let visible = 0;
+                cards.forEach((card) => {
+                    const hay = String(card.dataset.searchText || '');
+                    const ok = !q || hay.includes(q);
+                    card.style.display = ok ? '' : 'none';
+                    if (ok) {
+                        visible += 1;
+                    }
+                });
+                visibleEl.textContent = String(visible);
+            }
+
+            input.addEventListener('input', apply);
+            apply();
+        })();
+    </script>
 </section>
 {% endblock %}
