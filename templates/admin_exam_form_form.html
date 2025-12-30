@@ -17,36 +17,44 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester Label</label>
-                        <input name="semester_label" type="text" placeholder="e.g. SEM-4 (2025-26)" class="admin-input w-full" />
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Apply Link (URL)</label>
+                        <input name="apply_url" type="url" placeholder="https://..." class="admin-input w-full" />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status</label>
-                        <select name="status" class="admin-input w-full">
-                            <option value="CLOSED" selected>CLOSED</option>
-                            <option value="OPEN">OPEN</option>
-                        </select>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Placeholder Marker</label>
+                        <input name="apply_roll_placeholder" type="text" value="{exam_roll_number}" class="admin-input w-full" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open From (optional)</label>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester Label</label>
+                        <input name="semester_label" type="text" placeholder="e.g. SEM-4 (2025-26)" class="admin-input w-full" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Program (optional)</label>
+                        <input name="program" type="text" placeholder="e.g. B.Tech" class="admin-input w-full" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open From</label>
                         <input name="open_from" type="date" class="admin-input w-full" />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open To (optional)</label>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open To</label>
                         <input name="open_to" type="date" class="admin-input w-full" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Fee (optional)</label>
-                        <input name="fee" type="number" min="0" step="1" placeholder="e.g. 500" class="admin-input w-full" />
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department (optional)</label>
+                        <input name="department" type="text" placeholder="e.g. Computer Science" class="admin-input w-full" />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Note (optional)</label>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Additional Note (optional)</label>
                         <input name="note" type="text" placeholder="Optional message for students" class="admin-input w-full" />
                     </div>
                 </div>

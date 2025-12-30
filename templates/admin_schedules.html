@@ -7,88 +7,124 @@
 </div>
 {% endif %}
 
-<div class="admin-card p-6 mb-6">
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div class="flex-1">
-            <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Schedule Group</p>
-            <form method="get" action="{{ url_for('admin_schedules') }}" class="mt-2 flex flex-col sm:flex-row gap-2">
-                <select name="schedule_id" class="admin-input flex-1">
-                    {% for g in schedule_groups or [] %}
-                        <option value="{{ g.id }}" {% if selected_schedule_id is defined and g.id == selected_schedule_id %}selected{% endif %}>
-                            {{ g.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="admin-btn admin-btn-primary">Load</button>
-            </form>
-        </div>
-        <div class="flex-1">
-            <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Create New Schedule Group</p>
-            <form method="post" action="{{ url_for('admin_schedule_group_create') }}" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                <input name="name" type="text" placeholder="Group name" class="admin-input" />
-                <input name="program" type="text" placeholder="Program (optional)" class="admin-input" />
-                <input name="department" type="text" placeholder="Department (optional)" class="admin-input" />
-                <div class="flex gap-2">
-                    <input name="semester" type="number" min="1" max="12" placeholder="Sem" class="admin-input w-28" />
-                    <button type="submit" class="admin-btn admin-btn-soft flex-1">Create</button>
-                </div>
-            </form>
-        </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="admin-card p-6">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Schedule Group</p>
+        <form method="get" action="{{ url_for('admin_schedules') }}" class="mt-3 flex flex-col sm:flex-row gap-2">
+            <select name="schedule_id" class="admin-input flex-1">
+                {% for g in schedule_groups or [] %}
+                    <option value="{{ g.id }}" {% if selected_schedule_id is defined and g.id == selected_schedule_id %}selected{% endif %}>
+                        {{ g.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="admin-btn admin-btn-primary">Load</button>
+        </form>
+    </div>
+
+    <div class="admin-card p-6">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Create New Schedule Group</p>
+        <form method="post" action="{{ url_for('admin_schedule_group_create') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input name="name" type="text" placeholder="Group name" class="admin-input" />
+            <input name="semester" type="number" min="1" max="12" placeholder="Semester (optional)" class="admin-input" />
+            <input name="program" type="text" placeholder="Program (optional)" class="admin-input" />
+            <input name="department" type="text" placeholder="Department (optional)" class="admin-input" />
+            <div class="sm:col-span-2 flex justify-end pt-1">
+                <button type="submit" class="admin-btn admin-btn-soft">Create</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     <div class="admin-card p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900">Schedule Events</h2>
-            <span class="text-xs text-slate-500">Add / Delete</span>
+            <h2 class="text-lg font-semibold text-slate-900">Monthly Events &amp; Holidays</h2>
+            <span class="text-xs text-slate-500">Global</span>
         </div>
 
-        <form method="post" action="{{ url_for('admin_schedules_event_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-            <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
+        <form method="post" action="{{ url_for('admin_calendar_item_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            <input name="item_date" type="date" class="admin-input" />
+            <select name="item_type" class="admin-input">
+                <option value="">Type</option>
+                <option value="HOLIDAY">Holiday</option>
+                <option value="EVENT">Event</option>
+                <option value="EXAM">Exam</option>
+                <option value="NOTICE">Notice</option>
+            </select>
             <input name="title" type="text" placeholder="Title" class="admin-input" />
-            <input name="location" type="text" placeholder="Location" class="admin-input" />
-            <input name="start_at" type="datetime-local" class="admin-input" />
-            <input name="end_at" type="datetime-local" class="admin-input" />
+            <input name="description" type="text" placeholder="Description (optional)" class="admin-input" />
             <div class="md:col-span-2 flex justify-end">
-                <button type="submit" class="admin-btn admin-btn-primary">Add Event</button>
+                <button type="submit" class="admin-btn admin-btn-primary">Add</button>
             </div>
         </form>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr class="text-xs text-slate-500">
-                        <th class="px-4 py-3 font-medium">Title</th>
-                        <th class="px-4 py-3 font-medium">Location</th>
-                        <th class="px-4 py-3 font-medium">Start</th>
-                        <th class="px-4 py-3 font-medium">End</th>
-                        <th class="px-4 py-3 font-medium">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    {% if events %}
-                        {% for e in events %}
-                        <tr class="border-t border-slate-100">
-                            <td class="px-4 py-3 font-medium text-slate-900">{{ e.title }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ e.location }}</td>
-                            <td class="px-4 py-3 text-slate-500">{{ e.start_at|fmt_dt }}</td>
-                            <td class="px-4 py-3 text-slate-500">{{ e.end_at|fmt_dt }}</td>
-                            <td class="px-4 py-3">
-                                <form method="post" action="{{ url_for('admin_schedules_event_delete', event_id=e.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this event?');">
-                                    <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td class="px-4 py-8 text-slate-500" colspan="5">No events added yet.</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+        <div class="mb-4">
+            <input id="monthlySearch" type="text" placeholder="Search monthly items..." class="admin-input w-full" />
         </div>
+
+        {% if calendar_items %}
+            <div id="monthlyItems" class="grid grid-cols-1 gap-4">
+                {% for it in calendar_items %}
+                    <details class="rounded-2xl border border-slate-200 bg-white" data-search="{{ it.item_date }} {{ it.item_type }} {{ it.title }} {{ it.description }}">
+                        <summary class="list-none cursor-pointer select-none p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">{{ it.item_date }}</div>
+                                    <div class="mt-1 flex items-center gap-2">
+                                        <span class="admin-pill bg-slate-100 text-slate-700 text-xs">{{ it.item_type }}</span>
+                                        <span class="text-sm font-semibold text-slate-900 truncate">{{ it.title }}</span>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-slate-400 mt-1">Expand</div>
+                            </div>
+                        </summary>
+
+                        <div class="px-4 pb-4">
+                            <div class="pt-3 border-t border-slate-100">
+                                {% if it.description %}
+                                    <div class="text-sm text-slate-600 break-words">{{ it.description }}</div>
+                                {% else %}
+                                    <div class="text-sm text-slate-400">No description</div>
+                                {% endif %}
+                            </div>
+
+                            <form method="post" action="{{ url_for('admin_calendar_item_update', item_id=it.id) }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                                <div>
+                                    <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1">Date</label>
+                                    <input name="item_date" type="date" value="{{ it.item_date }}" class="admin-input w-full" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1">Type</label>
+                                    <select name="item_type" class="admin-input w-full">
+                                        <option value="HOLIDAY" {% if it.item_type == 'HOLIDAY' %}selected{% endif %}>Holiday</option>
+                                        <option value="EVENT" {% if it.item_type == 'EVENT' %}selected{% endif %}>Event</option>
+                                        <option value="EXAM" {% if it.item_type == 'EXAM' %}selected{% endif %}>Exam</option>
+                                        <option value="NOTICE" {% if it.item_type == 'NOTICE' %}selected{% endif %}>Notice</option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1">Title</label>
+                                    <input name="title" type="text" value="{{ it.title }}" class="admin-input w-full" />
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1">Description</label>
+                                    <input name="description" type="text" value="{{ it.description }}" class="admin-input w-full" />
+                                </div>
+                                <div class="sm:col-span-2 flex items-center justify-end gap-2 pt-1">
+                                    <button type="submit" class="admin-btn admin-btn-soft text-xs">Update</button>
+                            </form>
+                                    <form method="post" action="{{ url_for('admin_calendar_item_delete', item_id=it.id) }}" onsubmit="return confirm('Delete this item?');">
+                                        <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
+                                    </form>
+                                </div>
+                        </div>
+                    </details>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">No monthly items yet.</div>
+        {% endif %}
     </div>
 
     <div class="admin-card p-6">
@@ -119,42 +155,71 @@
             </div>
         </form>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr class="text-xs text-slate-500">
-                        <th class="px-4 py-3 font-medium">Day</th>
-                        <th class="px-4 py-3 font-medium">Time</th>
-                        <th class="px-4 py-3 font-medium">Subject</th>
-                        <th class="px-4 py-3 font-medium">Room</th>
-                        <th class="px-4 py-3 font-medium">Instructor</th>
-                        <th class="px-4 py-3 font-medium">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    {% if timetable_rows %}
-                        {% for r in timetable_rows %}
-                        <tr class="border-t border-slate-100">
-                            <td class="px-4 py-3 text-slate-700">{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][r.day_of_week] if r.day_of_week is not none else '' }}</td>
-                            <td class="px-4 py-3 text-slate-500">{{ r.start_time }} - {{ r.end_time }}</td>
-                            <td class="px-4 py-3 font-medium text-slate-900">{{ r.subject }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ r.room }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ r.instructor }}</td>
-                            <td class="px-4 py-3">
+        <div class="mb-4">
+            <input id="weeklySearch" type="text" placeholder="Search weekly timetable..." class="admin-input w-full" />
+        </div>
+
+        {% if timetable_rows %}
+            <div id="weeklyItems" class="grid grid-cols-1 gap-4">
+                {% for r in timetable_rows %}
+                    {% set day_label = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][r.day_of_week] if r.day_of_week is not none else '' %}
+                    <details class="rounded-2xl border border-slate-200 bg-white" data-search="{{ day_label }} {{ r.start_time }} {{ r.end_time }} {{ r.subject }} {{ r.room }} {{ r.instructor }}">
+                        <summary class="list-none cursor-pointer select-none p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">{{ day_label }} • {{ r.start_time }} - {{ r.end_time }}</div>
+                                    <div class="mt-1 text-sm font-semibold text-slate-900 truncate">{{ r.subject }}</div>
+                                    <div class="text-sm text-slate-600 mt-1">Room: {{ r.room }} • Instructor: {{ r.instructor }}</div>
+                                </div>
+                                <div class="text-xs text-slate-400 mt-1">Expand</div>
+                            </div>
+                        </summary>
+
+                        <div class="px-4 pb-4">
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="text-sm text-slate-600">Day: <span class="text-slate-900 font-semibold">{{ day_label }}</span></div>
+                                <div class="text-sm text-slate-600 mt-1">Time: <span class="text-slate-900 font-semibold">{{ r.start_time }} - {{ r.end_time }}</span></div>
+                                <div class="text-sm text-slate-600 mt-1">Room: <span class="text-slate-900 font-semibold">{{ r.room }}</span></div>
+                                <div class="text-sm text-slate-600 mt-1">Instructor: <span class="text-slate-900 font-semibold">{{ r.instructor }}</span></div>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-2 mt-4">
                                 <form method="post" action="{{ url_for('admin_timetable_delete', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this timetable row?');">
                                     <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
                                 </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td class="px-4 py-8 text-slate-500" colspan="6">No timetable rows yet.</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                        </div>
+                    </details>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">No timetable rows yet.</div>
+        {% endif %}
     </div>
 </div>
+
+<script>
+    (function () {
+        function wireSearch(inputId, containerId) {
+            var input = document.getElementById(inputId);
+            var container = document.getElementById(containerId);
+            if (!input || !container) return;
+
+            function apply() {
+                var q = (input.value || "").toLowerCase().trim();
+                var items = container.querySelectorAll('[data-search]');
+                for (var i = 0; i < items.length; i++) {
+                    var hay = (items[i].getAttribute('data-search') || '').toLowerCase();
+                    items[i].style.display = !q || hay.indexOf(q) !== -1 ? '' : 'none';
+                }
+            }
+
+            input.addEventListener('input', apply);
+            apply();
+        }
+
+        wireSearch('monthlySearch', 'monthlyItems');
+        wireSearch('weeklySearch', 'weeklyItems');
+    })();
+</script>
 {% endblock %}

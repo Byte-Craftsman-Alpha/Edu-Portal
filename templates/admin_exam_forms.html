@@ -13,41 +13,102 @@
                     <th class="px-4 py-3 font-medium">Status</th>
                     <th class="px-4 py-3 font-medium">Semester</th>
                     <th class="px-4 py-3 font-medium">Title</th>
+                    <th class="px-4 py-3 font-medium">Program</th>
+                    <th class="px-4 py-3 font-medium">Department</th>
+                    <th class="px-4 py-3 font-medium">Links</th>
                     <th class="px-4 py-3 font-medium">Open Window</th>
-                    <th class="px-4 py-3 font-medium">Fee</th>
-                    <th class="px-4 py-3 font-medium">Submissions</th>
                     <th class="px-4 py-3 font-medium">Action</th>
                 </tr>
             </thead>
             <tbody class="text-sm">
                 {% if forms %}
                     {% for f in forms %}
-                        {% set is_open = (f.status == 'OPEN') %}
+                        {% set is_open = f.is_open %}
                         <tr class="border-t border-slate-100">
                             <td class="px-4 py-3">
                                 <span class="admin-pill {% if is_open %}bg-emerald-50 text-emerald-700{% else %}bg-slate-100 text-slate-700{% endif %}">
-                                    {{ f.status }}
+                                    {{ f.computed_status }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-slate-700">{{ f.semester_label }}</td>
                             <td class="px-4 py-3 font-medium text-slate-900">{{ f.title }}</td>
-                            <td class="px-4 py-3 text-slate-700">{% if f.open_from and f.open_to %}{{ f.open_from }} → {{ f.open_to }}{% else %}-{% endif %}</td>
-                            <td class="px-4 py-3 text-slate-700">{% if f.fee %}₹{{ f.fee }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if f.program %}{{ f.program }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if f.department %}{{ f.department }}{% else %}-{% endif %}</td>
                             <td class="px-4 py-3">
-                                <a href="{{ url_for('admin_exam_form_submissions', form_id=f.id) }}" class="admin-btn admin-btn-soft text-xs">View</a>
+                                <div class="flex flex-wrap gap-2">
+                                    {% if f.apply_url %}
+                                        <span class="admin-pill bg-emerald-50 text-emerald-700">Apply</span>
+                                    {% else %}
+                                        <span class="admin-pill bg-slate-100 text-slate-700">No Apply</span>
+                                    {% endif %}
+                                </div>
                             </td>
+                            <td class="px-4 py-3 text-slate-700">{% if f.open_from and f.open_to %}{{ f.open_from }} → {{ f.open_to }}{% else %}-{% endif %}</td>
                             <td class="px-4 py-3">
-                                <form method="post" action="{{ url_for('admin_exam_form_toggle', form_id=f.id) }}">
-                                    <button type="submit" class="admin-btn {% if is_open %}bg-amber-50 text-amber-700 hover:bg-amber-100{% else %}bg-emerald-600 text-white hover:bg-emerald-700{% endif %} text-xs">
-                                        {% if is_open %}Close{% else %}Open{% endif %}
-                                    </button>
+                                <form method="post" action="{{ url_for('admin_exam_form_delete', form_id=f.id) }}" onsubmit="return confirm('Delete this exam form?');">
+                                    <button type="submit" class="admin-btn bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs">Delete</button>
                                 </form>
                             </td>
                         </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td class="px-4 py-8 text-slate-500" colspan="7">No exam forms found.</td>
+                        <td class="px-4 py-8 text-slate-500" colspan="8">No exam forms found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card overflow-hidden mt-6">
+    <div class="px-4 py-4 border-b border-slate-200">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h3 class="text-base font-semibold text-slate-900">Admit Card Openings</h3>
+                <p class="text-sm text-slate-500 mt-1">Windows when students can access the admit card link</p>
+            </div>
+            <a href="{{ url_for('admin_admit_card_opening_new') }}" class="admin-btn admin-btn-primary">New Admit Card Opening</a>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="admin-table w-full text-left">
+            <thead class="border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                    <th class="px-4 py-3 font-medium">Semester</th>
+                    <th class="px-4 py-3 font-medium">Title</th>
+                    <th class="px-4 py-3 font-medium">Program</th>
+                    <th class="px-4 py-3 font-medium">Department</th>
+                    <th class="px-4 py-3 font-medium">Open Window</th>
+                    <th class="px-4 py-3 font-medium">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% if admit_openings %}
+                    {% for o in admit_openings %}
+                        {% set is_open = o.is_open %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3">
+                                <span class="admin-pill {% if is_open %}bg-emerald-50 text-emerald-700{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ o.computed_status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-700">{{ o.semester_label }}</td>
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ o.title }}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if o.program %}{{ o.program }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if o.department %}{{ o.department }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if o.open_from and o.open_to %}{{ o.open_from }} → {{ o.open_to }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="{{ url_for('admin_admit_card_opening_delete', opening_id=o.id) }}" onsubmit="return confirm('Delete this admit card opening?');">
+                                    <button type="submit" class="admin-btn bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="px-4 py-8 text-slate-500" colspan="7">No admit card openings found.</td>
                     </tr>
                 {% endif %}
             </tbody>

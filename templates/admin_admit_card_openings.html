@@ -1,0 +1,53 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-end mb-4">
+    <a href="{{ url_for('admin_admit_card_opening_new') }}" class="admin-btn admin-btn-primary">New Admit Card Opening</a>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="admin-table w-full text-left">
+            <thead class="border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                    <th class="px-4 py-3 font-medium">Semester</th>
+                    <th class="px-4 py-3 font-medium">Title</th>
+                    <th class="px-4 py-3 font-medium">Program</th>
+                    <th class="px-4 py-3 font-medium">Department</th>
+                    <th class="px-4 py-3 font-medium">Open Window</th>
+                    <th class="px-4 py-3 font-medium">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% if openings %}
+                    {% for o in openings %}
+                        {% set is_open = o.is_open %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3">
+                                <span class="admin-pill {% if is_open %}bg-emerald-50 text-emerald-700{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ o.computed_status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-700">{{ o.semester_label }}</td>
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ o.title }}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if o.program %}{{ o.program }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if o.department %}{{ o.department }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if o.open_from and o.open_to %}{{ o.open_from }} → {{ o.open_to }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="{{ url_for('admin_admit_card_opening_delete', opening_id=o.id) }}" onsubmit="return confirm('Delete this admit card opening?');">
+                                    <button type="submit" class="admin-btn bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="px-4 py-8 text-slate-500" colspan="7">No admit card openings found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
