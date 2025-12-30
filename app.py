@@ -586,6 +586,20 @@ def init_db() -> None:
         if "password_hash" not in student_cols:
             db.execute("ALTER TABLE students ADD COLUMN password_hash TEXT")
 
+        subj_cols = {row[1] for row in db.execute("PRAGMA table_info(subjects)").fetchall()}
+        if "code" not in subj_cols:
+            db.execute("ALTER TABLE subjects ADD COLUMN code TEXT")
+        if "name" not in subj_cols:
+            db.execute("ALTER TABLE subjects ADD COLUMN name TEXT")
+        subj_cols = {row[1] for row in db.execute("PRAGMA table_info(subjects)").fetchall()}
+        if {"course_code", "course_name", "code", "name"}.issubset(subj_cols):
+            db.execute(
+                "UPDATE subjects SET code = course_code WHERE code IS NULL OR TRIM(code) = ''"
+            )
+            db.execute(
+                "UPDATE subjects SET name = course_name WHERE name IS NULL OR TRIM(name) = ''"
+            )
+
         ensure_schedule_schema(db)
         ensure_exam_forms_link_schema(db)
         ensure_admit_card_openings_schema(db)
@@ -751,6 +765,13 @@ def init_db() -> None:
                 rows,
             )
 
+        program_count = db.execute("SELECT COUNT(*) FROM programs").fetchone()[0]
+        if program_count == 0:
+            db.execute(
+                "INSERT INTO programs (id, name, branch) VALUES (?, ?, ?)",
+                (1, "B.Tech", "IT"),
+            )
+
         semres_count = db.execute("SELECT COUNT(*) FROM semester_results").fetchone()[0]
         if semres_count == 0:
             declared_on = "2025-03-04"
@@ -868,13 +889,6 @@ def init_db() -> None:
                     (int(sid), int(dues_seed[int(sid)])),
                 )
 
-        program_count = db.execute("SELECT COUNT(*) FROM programs").fetchone()[0]
-        if program_count == 0:
-            db.execute(
-                "INSERT INTO programs (id, name, branch) VALUES (?, ?, ?)",
-                (1, "B.Tech", "IT"),
-            )
-
         for sid in student_ids:
             exists = db.execute(
                 "SELECT 1 FROM student_programs WHERE student_id = ?",
@@ -888,26 +902,45 @@ def init_db() -> None:
 
         subj_count = db.execute("SELECT COUNT(*) FROM subjects").fetchone()[0]
         if subj_count == 0:
-            db.executemany(
-                """
-                INSERT INTO subjects (program_id, semester, code, name)
-                VALUES (?, ?, ?, ?)
-                """,
-                [
-                    (1, 4, "AE3ENG1", "Basics of English Grammar"),
-                    (1, 4, "ECE202", "Digital Electronics & Logic Design"),
-                    (1, 4, "ECE252", "Digital Electronics & Logic Design Lab"),
-                    (1, 4, "ENV201", "Environment & Ecology"),
-                    (1, 4, "IT201", "Mathematics for Machine Learning"),
-                    (1, 4, "IT202", "Data Structure"),
-                    (1, 4, "IT203", "Python with Linux"),
-                    (1, 4, "IT204", "Discrete Mathematics"),
-                    (1, 4, "IT251", "Mathematics for Machine Learning Lab"),
-                    (1, 4, "IT252", "Data Structure Lab"),
-                    (1, 4, "IT253", "Python with Linux Lab"),
-                    (1, 4, "SE3MAT1", "Basics of Reasoning and Logic"),
-                ],
-            )
+            subj_cols = {row[1] for row in db.execute("PRAGMA table_info(subjects)").fetchall()}
+            seed_rows = [
+                (1, 4, "AE3ENG1", "Basics of English Grammar"),
+                (1, 4, "ECE202", "Digital Electronics & Logic Design"),
+                (1, 4, "ECE252", "Digital Electronics & Logic Design Lab"),
+                (1, 4, "ENV201", "Environment & Ecology"),
+                (1, 4, "IT201", "Mathematics for Machine Learning"),
+                (1, 4, "IT202", "Data Structure"),
+                (1, 4, "IT203", "Python with Linux"),
+                (1, 4, "IT204", "Discrete Mathematics"),
+                (1, 4, "IT251", "Mathematics for Machine Learning Lab"),
+                (1, 4, "IT252", "Data Structure Lab"),
+                (1, 4, "IT253", "Python with Linux Lab"),
+                (1, 4, "SE3MAT1", "Basics of Reasoning and Logic"),
+            ]
+            if {"course_code", "course_name"}.issubset(subj_cols) and {"code", "name"}.issubset(subj_cols):
+                db.executemany(
+                    """
+                    INSERT INTO subjects (program_id, semester, course_code, course_name, code, name)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    [(p, s, c, n, c, n) for (p, s, c, n) in seed_rows],
+                )
+            elif {"course_code", "course_name"}.issubset(subj_cols):
+                db.executemany(
+                    """
+                    INSERT INTO subjects (program_id, semester, course_code, course_name)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    seed_rows,
+                )
+            else:
+                db.executemany(
+                    """
+                    INSERT INTO subjects (program_id, semester, code, name)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    seed_rows,
+                )
 
         session_label = "Odd Semester (2025-26)"
         student_sem = 4
