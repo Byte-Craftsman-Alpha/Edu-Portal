@@ -48,6 +48,10 @@
                 <span class="flex items-center gap-3 text-sm"><span class="text-lg">🛡️</span> Dashboard</span>
                 <span class="text-xs {% if active_page == 'admin' %}text-slate-200{% else %}text-slate-400{% endif %}">Home</span>
             </a>
+            <a href="{{ url_for('admin_students') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_students' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">🎓</span> Students</span>
+                <span class="text-xs {% if active_page == 'admin_students' %}text-slate-200{% else %}text-slate-400{% endif %}">Users</span>
+            </a>
             <a href="{{ url_for('admin_news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="text-lg">📰</span> News</span>
                 <span class="text-xs {% if active_page == 'admin_news' %}text-slate-200{% else %}text-slate-400{% endif %}">Posts</span>
@@ -89,6 +93,10 @@
             <a href="{{ url_for('admin_dashboard') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="text-lg">🛡️</span> Dashboard</span>
                 <span class="text-xs {% if active_page == 'admin' %}text-slate-200{% else %}text-slate-400{% endif %}">Home</span>
+            </a>
+            <a href="{{ url_for('admin_students') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_students' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">🎓</span> Students</span>
+                <span class="text-xs {% if active_page == 'admin_students' %}text-slate-200{% else %}text-slate-400{% endif %}">Users</span>
             </a>
             <a href="{{ url_for('admin_news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="text-lg">📰</span> News</span>
@@ -138,6 +146,8 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 
 </html>

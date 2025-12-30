@@ -2,7 +2,161 @@
 
 {% block content %}
 <div class="flex items-center justify-end mb-4">
-    <a href="{{ url_for('admin_exam_form_new') }}" class="admin-btn admin-btn-primary">New Exam Form</a>
+    <button type="button" class="admin-btn admin-btn-primary" data-admin-exam-form-new-open>New Exam Form</button>
+</div>
+
+<div data-admin-exam-form-new-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+<div data-admin-exam-form-new-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-3xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Create</p>
+                    <p class="text-lg font-semibold text-slate-900">New Exam Form</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-exam-form-new-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-exam-form-new-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[75vh] overflow-y-auto">
+                <form method="post" action="{{ url_for('admin_exam_form_create') }}" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
+                        <input name="title" type="text" placeholder="e.g. Semester Examination Form" class="admin-input w-full" required />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Apply Link (URL)</label>
+                            <input name="apply_url" type="url" placeholder="https://..." class="admin-input w-full" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Placeholder Marker</label>
+                            <input name="apply_roll_placeholder" type="text" value="{exam_roll_number}" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester Label</label>
+                            <input name="semester_label" type="text" placeholder="e.g. SEM-4 (2025-26)" class="admin-input w-full" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Program (optional)</label>
+                            <input name="program" type="text" placeholder="e.g. B.Tech" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open From</label>
+                            <input name="open_from" type="date" class="admin-input w-full" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open To</label>
+                            <input name="open_to" type="date" class="admin-input w-full" required />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department (optional)</label>
+                            <input name="department" type="text" placeholder="e.g. Computer Science" class="admin-input w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Additional Note (optional)</label>
+                            <input name="note" type="text" placeholder="Optional message for students" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div data-admin-exams-admit-opening-new-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+<div data-admin-exams-admit-opening-new-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-3xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Create</p>
+                    <p class="text-lg font-semibold text-slate-900">New Admit Card Opening</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-exams-admit-opening-new-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-exams-admit-opening-new-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[75vh] overflow-y-auto">
+                <form method="post" action="{{ url_for('admin_admit_card_opening_create') }}" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
+                        <input name="title" type="text" placeholder="e.g. Admit Card Download" class="admin-input w-full" required />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Admit Card Link (URL)</label>
+                            <input name="admit_card_url" type="url" placeholder="https://..." class="admin-input w-full" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Placeholder Marker</label>
+                            <input name="roll_placeholder" type="text" value="{exam_roll_number}" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester Label</label>
+                            <input name="semester_label" type="text" placeholder="e.g. SEM-4 (2025-26)" class="admin-input w-full" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Program (optional)</label>
+                            <input name="program" type="text" placeholder="e.g. B.Tech" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open From</label>
+                            <input name="open_from" type="date" class="admin-input w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open To</label>
+                            <input name="open_to" type="date" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department (optional)</label>
+                            <input name="department" type="text" placeholder="e.g. Computer Science" class="admin-input w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Additional Note (optional)</label>
+                            <input name="note" type="text" placeholder="Optional message for students" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="admin-card overflow-hidden">
@@ -68,7 +222,7 @@
                 <h3 class="text-base font-semibold text-slate-900">Admit Card Openings</h3>
                 <p class="text-sm text-slate-500 mt-1">Windows when students can access the admit card link</p>
             </div>
-            <a href="{{ url_for('admin_admit_card_opening_new') }}" class="admin-btn admin-btn-primary">New Admit Card Opening</a>
+            <button type="button" class="admin-btn admin-btn-primary" data-admin-exams-admit-opening-new-open>New Admit Card Opening</button>
         </div>
     </div>
     <div class="overflow-x-auto">
@@ -115,4 +269,244 @@
         </table>
     </div>
 </div>
+
+<script>
+    (function () {
+        const openBtn = document.querySelector('[data-admin-exam-form-new-open]');
+        const closeBtn = document.querySelector('[data-admin-exam-form-new-close]');
+        const backdrop = document.querySelector('[data-admin-exam-form-new-backdrop]');
+        const sheet = document.querySelector('[data-admin-exam-form-new-sheet]');
+        const handleEl = document.querySelector('[data-admin-exam-form-new-handle]');
+        if (!openBtn || !closeBtn || !backdrop || !sheet) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            sheet.style.transform = '';
+            unlockScroll();
+        }
+
+        openBtn.addEventListener('click', open);
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let currentY = 0;
+            let dragging = false;
+            let dragRaf = 0;
+            let pendingDelta = 0;
+
+            function onStart(e) {
+                dragging = true;
+                startY = (e.touches ? e.touches[0].clientY : e.clientY);
+                currentY = startY;
+                sheet.style.transition = 'none';
+                sheet.style.willChange = 'transform';
+            }
+
+            function onMove(e) {
+                if (!dragging) {
+                    return;
+                }
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+                pendingDelta = Math.max(0, currentY - startY);
+                if (dragRaf) {
+                    return;
+                }
+                dragRaf = window.requestAnimationFrame(() => {
+                    dragRaf = 0;
+                    sheet.style.transform = `translateY(${pendingDelta}px)`;
+                });
+            }
+
+            function onEnd() {
+                if (!dragging) {
+                    return;
+                }
+                dragging = false;
+                if (dragRaf) {
+                    window.cancelAnimationFrame(dragRaf);
+                    dragRaf = 0;
+                }
+                const delta = Math.max(0, currentY - startY);
+                sheet.style.transition = '';
+                sheet.style.transform = '';
+                sheet.style.willChange = '';
+                if (delta > 120) {
+                    close();
+                }
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: false });
+            handleEl.addEventListener('touchend', onEnd);
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+
+    (function () {
+        const openBtn = document.querySelector('[data-admin-exams-admit-opening-new-open]');
+        const closeBtn = document.querySelector('[data-admin-exams-admit-opening-new-close]');
+        const backdrop = document.querySelector('[data-admin-exams-admit-opening-new-backdrop]');
+        const sheet = document.querySelector('[data-admin-exams-admit-opening-new-sheet]');
+        const handleEl = document.querySelector('[data-admin-exams-admit-opening-new-handle]');
+        if (!openBtn || !closeBtn || !backdrop || !sheet) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            sheet.style.transform = '';
+            unlockScroll();
+        }
+
+        openBtn.addEventListener('click', open);
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let currentY = 0;
+            let dragging = false;
+            let dragRaf = 0;
+            let pendingDelta = 0;
+
+            function onStart(e) {
+                dragging = true;
+                startY = (e.touches ? e.touches[0].clientY : e.clientY);
+                currentY = startY;
+                sheet.style.transition = 'none';
+                sheet.style.willChange = 'transform';
+            }
+
+            function onMove(e) {
+                if (!dragging) {
+                    return;
+                }
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+                pendingDelta = Math.max(0, currentY - startY);
+                if (dragRaf) {
+                    return;
+                }
+                dragRaf = window.requestAnimationFrame(() => {
+                    dragRaf = 0;
+                    sheet.style.transform = `translateY(${pendingDelta}px)`;
+                });
+            }
+
+            function onEnd() {
+                if (!dragging) {
+                    return;
+                }
+                dragging = false;
+                if (dragRaf) {
+                    window.cancelAnimationFrame(dragRaf);
+                    dragRaf = 0;
+                }
+                const delta = Math.max(0, currentY - startY);
+                sheet.style.transition = '';
+                sheet.style.transform = '';
+                sheet.style.willChange = '';
+                if (delta > 120) {
+                    close();
+                }
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: false });
+            handleEl.addEventListener('touchend', onEnd);
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+</script>
 {% endblock %}

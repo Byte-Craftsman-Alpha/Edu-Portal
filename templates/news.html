@@ -7,67 +7,81 @@
             <h2 class="text-xl font-semibold text-slate-900">Institute News Feed</h2>
             <p class="text-sm text-slate-500 mt-1">Latest updates from campus activities and blogs</p>
         </div>
-        <button class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Post Update</button>
     </div>
 
     {% set filters_active = filters.priority or filters.news_type or filters.sender or filters.tag or filters.q or filters.from_dt or filters.to_dt %}
-    <details class="minimal-card p-4"{% if filters_active %} open{% endif %}>
-        <summary class="cursor-pointer select-none list-none flex items-center justify-between">
-            <span class="text-sm font-semibold text-slate-900">Search & Filters</span>
-            <span class="text-xs text-slate-500">Toggle</span>
-        </summary>
-        <form method="get" class="mt-4">
-            <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Priority</label>
-                    <select name="priority" class="w-full minimal-input">
-                        <option value="">All</option>
-                        {% for p in priorities %}
-                            <option value="{{ p }}"{% if filters.priority == p %} selected{% endif %}>{{ p }}</option>
-                        {% endfor %}
-                    </select>
+    <div class="minimal-card p-4">
+        <div class="flex flex-col md:flex-row md:items-center gap-3">
+            <form method="get" class="flex-1">
+                <div class="relative">
+                    <input name="q" value="{{ filters.q }}" class="w-full minimal-input pr-12" placeholder="Search news...">
+                    {% if filters.priority %}<input type="hidden" name="priority" value="{{ filters.priority }}">{% endif %}
+                    {% if filters.news_type %}<input type="hidden" name="news_type" value="{{ filters.news_type }}">{% endif %}
+                    {% if filters.sender %}<input type="hidden" name="sender" value="{{ filters.sender }}">{% endif %}
+                    {% if filters.tag %}<input type="hidden" name="tag" value="{{ filters.tag }}">{% endif %}
+                    {% if filters.from_dt %}<input type="hidden" name="from" value="{{ filters.from_dt }}">{% endif %}
+                    {% if filters.to_dt %}<input type="hidden" name="to" value="{{ filters.to_dt }}">{% endif %}
+
+                    <details class="absolute inset-y-0 right-0 flex items-center pr-2"{% if filters_active and (filters.priority or filters.news_type or filters.sender or filters.tag or filters.from_dt or filters.to_dt) %} open{% endif %}>
+                        <summary class="list-none cursor-pointer select-none p-2 rounded-xl hover:bg-slate-100 text-slate-600" aria-label="Advanced filters">⚙️</summary>
+                        <div class="absolute right-0 top-full mt-2 w-[min(520px,90vw)] z-20">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+                                <form method="get">
+                                    <input type="hidden" name="q" value="{{ filters.q }}">
+                                    <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Priority</label>
+                                            <select name="priority" class="w-full minimal-input">
+                                                <option value="">All</option>
+                                                {% for p in priorities %}
+                                                    <option value="{{ p }}"{% if filters.priority == p %} selected{% endif %}>{{ p }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Type</label>
+                                            <select name="news_type" class="w-full minimal-input">
+                                                <option value="">All</option>
+                                                {% for t in news_types %}
+                                                    <option value="{{ t }}"{% if filters.news_type == t %} selected{% endif %}>{{ t }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Sender</label>
+                                            <select name="sender" class="w-full minimal-input">
+                                                <option value="">All</option>
+                                                {% for s in senders %}
+                                                    <option value="{{ s }}"{% if filters.sender == s %} selected{% endif %}>{{ s }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Tag</label>
+                                            <input name="tag" value="{{ filters.tag }}" class="w-full minimal-input" placeholder="e.g. Campus">
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">From</label>
+                                            <input type="datetime-local" name="from" value="{{ filters.from_dt }}" class="w-full minimal-input">
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">To</label>
+                                            <input type="datetime-local" name="to" value="{{ filters.to_dt }}" class="w-full minimal-input">
+                                        </div>
+                                        <div class="md:col-span-6 flex flex-col md:flex-row items-stretch md:items-center justify-end gap-2 pt-1">
+                                            <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium">Apply</button>
+                                            <a href="{{ url_for('news') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center">Reset</a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </details>
                 </div>
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Type</label>
-                    <select name="news_type" class="w-full minimal-input">
-                        <option value="">All</option>
-                        {% for t in news_types %}
-                            <option value="{{ t }}"{% if filters.news_type == t %} selected{% endif %}>{{ t }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Sender</label>
-                    <select name="sender" class="w-full minimal-input">
-                        <option value="">All</option>
-                        {% for s in senders %}
-                            <option value="{{ s }}"{% if filters.sender == s %} selected{% endif %}>{{ s }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Tag</label>
-                    <input name="tag" value="{{ filters.tag }}" class="w-full minimal-input" placeholder="e.g. Campus">
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Search</label>
-                    <input name="q" value="{{ filters.q }}" class="w-full minimal-input" placeholder="Heading/body">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">From</label>
-                    <input type="datetime-local" name="from" value="{{ filters.from_dt }}" class="w-full minimal-input">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-medium text-slate-500 mb-1">To</label>
-                    <input type="datetime-local" name="to" value="{{ filters.to_dt }}" class="w-full minimal-input">
-                </div>
-                <div class="md:col-span-2 flex items-end gap-2">
-                    <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium w-full">Apply Filters</button>
-                    <a href="{{ url_for('news') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all w-full text-center">Reset</a>
-                </div>
-            </div>
-        </form>
-    </details>
+            </form>
+            <a href="{{ url_for('news') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center">Clear</a>
+        </div>
+    </div>
 
     <div class="rounded-3xl bg-white border border-slate-200 p-4">
         <div id="newsList" class="space-y-3">

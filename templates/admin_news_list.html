@@ -1,53 +1,499 @@
 {% extends "admin_base.html" %}
 
 {% block content %}
-<div class="flex items-center justify-end mb-4">
-    <a href="{{ url_for('admin_news_new') }}" class="admin-btn admin-btn-primary">New Post</a>
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+    <div class="flex-1">
+        <input id="adminNewsSearch" type="text" class="admin-input w-full" placeholder="Search news by heading, body, sender, tags...">
+        <p class="text-xs text-slate-500 mt-2">Showing <span id="adminNewsVisibleCount">0</span> of <span id="adminNewsTotalCount">0</span></p>
+    </div>
+    <div class="flex items-center justify-end">
+        <button type="button" class="admin-btn admin-btn-primary" data-admin-news-new-open>New Post</button>
+    </div>
 </div>
 
-<div class="admin-card overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="admin-table w-full text-left">
-            <thead class="border-b border-slate-200">
-                <tr>
-                    <th class="px-4 py-3 font-medium">Date</th>
-                    <th class="px-4 py-3 font-medium">Priority</th>
-                    <th class="px-4 py-3 font-medium">Heading</th>
-                    <th class="px-4 py-3 font-medium">Sender</th>
-                    <th class="px-4 py-3 font-medium">Type</th>
-                    <th class="px-4 py-3 font-medium">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="text-sm">
-                {% if posts %}
-                    {% for p in posts %}
-                        <tr class="border-t border-slate-100">
-                            <td class="px-4 py-3 text-slate-500">{{ p.date_time|fmt_dt }}</td>
-                            <td class="px-4 py-3">
+<div data-admin-news-new-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+<div data-admin-news-new-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-3xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Create</p>
+                    <p class="text-lg font-semibold text-slate-900">New News Post</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-news-new-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-news-new-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[75vh] overflow-y-auto">
+                <form method="post" action="{{ url_for('admin_news_create') }}" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Priority</label>
+                            <select name="priority" class="admin-input w-full">
+                                <option value="URGENT">URGENT</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="NORMAL" selected>NORMAL</option>
+                                <option value="LOW">LOW</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Type</label>
+                            <input name="news_type" type="text" placeholder="e.g. Notice" class="admin-input w-full" required />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Heading</label>
+                        <input name="heading" type="text" placeholder="Announcement title" class="admin-input w-full" required />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Body</label>
+                        <textarea name="body" rows="6" placeholder="Write announcement..." class="admin-input w-full" required></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Sender</label>
+                            <input name="sender" type="text" placeholder="e.g. Principal Office" class="admin-input w-full" required />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Tags</label>
+                            <input name="tags" type="text" placeholder="Comma-separated tags" class="admin-input w-full" />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div data-admin-news-edit-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+<div data-admin-news-edit-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-3xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Update</p>
+                    <p class="text-lg font-semibold text-slate-900">Edit News Post</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-news-edit-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-news-edit-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[75vh] overflow-y-auto">
+                <form method="post" action="" class="space-y-4" data-admin-news-edit-form>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Priority</label>
+                            <select name="priority" class="admin-input w-full" data-admin-news-edit-priority>
+                                <option value="URGENT">URGENT</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="NORMAL">NORMAL</option>
+                                <option value="LOW">LOW</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Type</label>
+                            <input name="news_type" type="text" placeholder="e.g. Notice" class="admin-input w-full" required data-admin-news-edit-type />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Heading</label>
+                        <input name="heading" type="text" placeholder="Announcement title" class="admin-input w-full" required data-admin-news-edit-heading />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Body</label>
+                        <textarea name="body" rows="6" placeholder="Write announcement..." class="admin-input w-full" required data-admin-news-edit-body></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Sender</label>
+                            <input name="sender" type="text" placeholder="e.g. Principal Office" class="admin-input w-full" required data-admin-news-edit-sender />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Tags</label>
+                            <input name="tags" type="text" placeholder="Comma-separated tags" class="admin-input w-full" data-admin-news-edit-tags />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="space-y-4" id="adminNewsList">
+    {% if posts %}
+        {% for p in posts %}
+            <div class="admin-card p-5" data-news-tile data-search-text="{{ (p.heading ~ ' ' ~ p.body ~ ' ' ~ p.sender ~ ' ' ~ p.news_type ~ ' ' ~ (p.tags or ''))|lower|e }}">
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-4">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
                                 <span class="admin-pill {% if p.priority in ['URGENT','HIGH'] %}bg-rose-50 text-rose-700{% elif p.priority == 'NORMAL' %}bg-slate-100 text-slate-700{% else %}bg-indigo-50 text-indigo-700{% endif %}">
                                     {{ p.priority }}
                                 </span>
-                            </td>
-                            <td class="px-4 py-3 font-medium text-slate-900">{{ p.heading }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ p.sender }}</td>
-                            <td class="px-4 py-3 text-slate-700">{{ p.news_type }}</td>
-                            <td class="px-4 py-3">
-                                <div class="flex items-center gap-2">
-                                    <a href="{{ url_for('admin_news_edit', post_id=p.id) }}" class="admin-btn admin-btn-soft text-xs">Edit</a>
-                                    <form method="post" action="{{ url_for('admin_news_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
-                                        <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td class="px-4 py-8 text-slate-500" colspan="6">No posts yet.</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
+                                <span class="admin-pill bg-slate-100 text-slate-700">{{ p.news_type }}</span>
+                                <span class="text-xs text-slate-500">{{ p.date_time|fmt_dt }}</span>
+                                <span class="text-xs text-slate-400">•</span>
+                                <span class="text-xs text-slate-600">{{ p.sender }}</span>
+                        </div>
+
+                        <p class="text-base font-semibold text-slate-900 mt-2 break-words">{{ p.heading }}</p>
+
+                        <div class="text-sm text-slate-700 leading-relaxed break-words mt-3">{{ p.body }}</div>
+
+                        {% if p.tags %}
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                {% for t in p.tags.split(',') %}
+                                    {% set tag = t.strip() %}
+                                    {% if tag %}
+                                        <span class="admin-pill bg-indigo-50 text-indigo-700">{{ tag }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="lg:border-l lg:border-slate-200 lg:pl-4">
+                        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                            <p class="text-xs font-semibold tracking-wide text-slate-600 uppercase">Actions</p>
+                            <div class="mt-3 flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    class="admin-btn admin-btn-soft w-full"
+                                    data-admin-news-edit-open
+                                    data-post-id="{{ p.id }}"
+                                    data-priority="{{ p.priority|e }}"
+                                    data-news-type="{{ p.news_type|e }}"
+                                    data-heading="{{ p.heading|e }}"
+                                    data-body="{{ p.body|e }}"
+                                    data-sender="{{ p.sender|e }}"
+                                    data-tags="{{ (p.tags or '')|e }}"
+                                >Edit</button>
+                                <form method="post" action="{{ url_for('admin_news_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
+                                    <button type="submit" class="admin-btn admin-btn-danger w-full">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="admin-card p-6 text-slate-600">No posts yet.</div>
+    {% endif %}
 </div>
+
+<script>
+    (function () {
+        const input = document.getElementById('adminNewsSearch');
+        const list = document.getElementById('adminNewsList');
+        const totalEl = document.getElementById('adminNewsTotalCount');
+        const visibleEl = document.getElementById('adminNewsVisibleCount');
+        if (!input || !list || !totalEl || !visibleEl) {
+            return;
+        }
+
+        const tiles = Array.from(list.querySelectorAll('[data-news-tile]'));
+        totalEl.textContent = String(tiles.length);
+
+        function apply() {
+            const q = (input.value || '').trim().toLowerCase();
+            let visible = 0;
+
+            tiles.forEach((tile) => {
+                const hay = String(tile.dataset.searchText || '');
+                const ok = !q || hay.includes(q);
+                tile.style.display = ok ? '' : 'none';
+                if (ok) {
+                    visible += 1;
+                }
+            });
+
+            visibleEl.textContent = String(visible);
+        }
+
+        input.addEventListener('input', apply);
+        apply();
+    })();
+
+    (function () {
+        const openBtn = document.querySelector('[data-admin-news-new-open]');
+        const closeBtn = document.querySelector('[data-admin-news-new-close]');
+        const backdrop = document.querySelector('[data-admin-news-new-backdrop]');
+        const sheet = document.querySelector('[data-admin-news-new-sheet]');
+        const handleEl = document.querySelector('[data-admin-news-new-handle]');
+        if (!openBtn || !closeBtn || !backdrop || !sheet) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            unlockScroll();
+        }
+
+        openBtn.addEventListener('click', open);
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let currentY = 0;
+            let dragging = false;
+            let dragRaf = 0;
+            let pendingDelta = 0;
+
+            function onStart(e) {
+                dragging = true;
+                startY = (e.touches ? e.touches[0].clientY : e.clientY);
+                currentY = startY;
+                sheet.style.transition = 'none';
+                sheet.style.willChange = 'transform';
+            }
+
+            function onMove(e) {
+                if (!dragging) {
+                    return;
+                }
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+                pendingDelta = Math.max(0, currentY - startY);
+                if (dragRaf) {
+                    return;
+                }
+                dragRaf = window.requestAnimationFrame(() => {
+                    dragRaf = 0;
+                    sheet.style.transform = `translateY(${pendingDelta}px)`;
+                });
+            }
+
+            function onEnd() {
+                if (!dragging) {
+                    return;
+                }
+                dragging = false;
+                if (dragRaf) {
+                    window.cancelAnimationFrame(dragRaf);
+                    dragRaf = 0;
+                }
+                const delta = Math.max(0, currentY - startY);
+                sheet.style.transition = '';
+                sheet.style.transform = '';
+                sheet.style.willChange = '';
+                if (delta > 120) {
+                    close();
+                }
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: false });
+            handleEl.addEventListener('touchend', onEnd);
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+
+    (function () {
+        const openBtns = Array.from(document.querySelectorAll('[data-admin-news-edit-open]'));
+        const closeBtn = document.querySelector('[data-admin-news-edit-close]');
+        const backdrop = document.querySelector('[data-admin-news-edit-backdrop]');
+        const sheet = document.querySelector('[data-admin-news-edit-sheet]');
+        const handleEl = document.querySelector('[data-admin-news-edit-handle]');
+        const form = document.querySelector('[data-admin-news-edit-form]');
+        const priority = document.querySelector('[data-admin-news-edit-priority]');
+        const type = document.querySelector('[data-admin-news-edit-type]');
+        const heading = document.querySelector('[data-admin-news-edit-heading]');
+        const body = document.querySelector('[data-admin-news-edit-body]');
+        const sender = document.querySelector('[data-admin-news-edit-sender]');
+        const tags = document.querySelector('[data-admin-news-edit-tags]');
+
+        if (!openBtns.length || !closeBtn || !backdrop || !sheet || !form || !priority || !type || !heading || !body || !sender || !tags) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            unlockScroll();
+        }
+
+        openBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const postId = btn.dataset.postId;
+                if (!postId) {
+                    return;
+                }
+                form.action = `/admin/news/${postId}/edit`;
+                priority.value = (btn.dataset.priority || 'NORMAL').toUpperCase();
+                type.value = btn.dataset.newsType || '';
+                heading.value = btn.dataset.heading || '';
+                body.value = btn.dataset.body || '';
+                sender.value = btn.dataset.sender || '';
+                tags.value = btn.dataset.tags || '';
+                open();
+            });
+        });
+
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let currentY = 0;
+            let dragging = false;
+            let dragRaf = 0;
+            let pendingDelta = 0;
+
+            function onStart(e) {
+                dragging = true;
+                startY = (e.touches ? e.touches[0].clientY : e.clientY);
+                currentY = startY;
+                sheet.style.transition = 'none';
+                sheet.style.willChange = 'transform';
+            }
+
+            function onMove(e) {
+                if (!dragging) {
+                    return;
+                }
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+                pendingDelta = Math.max(0, currentY - startY);
+                if (dragRaf) {
+                    return;
+                }
+                dragRaf = window.requestAnimationFrame(() => {
+                    dragRaf = 0;
+                    sheet.style.transform = `translateY(${pendingDelta}px)`;
+                });
+            }
+
+            function onEnd() {
+                if (!dragging) {
+                    return;
+                }
+                dragging = false;
+                if (dragRaf) {
+                    window.cancelAnimationFrame(dragRaf);
+                    dragRaf = 0;
+                }
+                const delta = Math.max(0, currentY - startY);
+                sheet.style.transition = '';
+                sheet.style.transform = '';
+                sheet.style.willChange = '';
+                if (delta > 120) {
+                    close();
+                }
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: false });
+            handleEl.addEventListener('touchend', onEnd);
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+</script>
 {% endblock %}

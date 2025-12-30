@@ -1767,6 +1767,215 @@ def admin_teachers():
     )
 
 
+@app.get("/admin/students")
+@admin_login_required
+def admin_students():
+    db = get_db()
+
+    students = db.execute("SELECT * FROM students ORDER BY id DESC").fetchall()
+    details = {
+        int(r["student_id"]): r
+        for r in db.execute("SELECT * FROM student_details").fetchall()
+    }
+    profiles = {
+        int(r["student_id"]): r
+        for r in db.execute("SELECT * FROM student_profile").fetchall()
+    }
+    dues = {
+        int(r["student_id"]): r
+        for r in db.execute("SELECT * FROM student_dues").fetchall()
+    }
+    groups = db.execute("SELECT * FROM schedule_groups ORDER BY id ASC").fetchall()
+
+    return render_template(
+        "admin_students.html",
+        page_title="Students",
+        page_subtitle="View and update registered students",
+        active_page="admin_students",
+        students=students,
+        details_by_student_id=details,
+        profile_by_student_id=profiles,
+        dues_by_student_id=dues,
+        schedule_groups=groups,
+        error=None,
+    )
+
+
+@app.post("/admin/students/<int:student_id>/update")
+@admin_login_required
+def admin_student_update(student_id: int):
+    form = {k: (request.form.get(k) or "").strip() for k in request.form.keys()}
+    db = get_db()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (int(student_id),)).fetchone()
+    if not student:
+        return redirect(url_for("admin_students"))
+
+    def to_int(val: str, default: int = 0) -> int:
+        try:
+            return int(val)
+        except Exception:
+            return default
+
+    schedule_id = None
+    if "schedule_id" in student.keys():
+        raw = form.get("schedule_id") or ""
+        schedule_id = to_int(raw, default=0) or None
+
+    year = to_int(form.get("year") or str(student["year"]), default=int(student["year"]))
+    sem = to_int(form.get("sem") or str(student["sem"]), default=int(student["sem"]))
+    attendance_percent = to_int(
+        form.get("attendance_percent") or str(student["attendance_percent"]),
+        default=int(student["attendance_percent"]),
+    )
+    pending_amount = to_int(form.get("pending_amount") or "0", default=0)
+
+    # Update students
+    student_cols = {row[1] for row in db.execute("PRAGMA table_info(students)").fetchall()}
+    update_cols = [
+        "name",
+        "roll_no",
+        "email",
+        "phone",
+        "guardian",
+        "residential_status",
+        "program",
+        "year",
+        "sem",
+        "attendance_percent",
+        "next_class",
+    ]
+    if "schedule_id" in student_cols:
+        update_cols.append("schedule_id")
+
+    values = {
+        "name": form.get("name") or student["name"],
+        "roll_no": form.get("roll_no") or student["roll_no"],
+        "email": form.get("email") or student["email"],
+        "phone": form.get("phone") or student["phone"],
+        "guardian": form.get("guardian") or student["guardian"],
+        "residential_status": form.get("residential_status") or student["residential_status"],
+        "program": form.get("program") or student["program"],
+        "year": year,
+        "sem": sem,
+        "attendance_percent": attendance_percent,
+        "next_class": form.get("next_class") or student["next_class"],
+    }
+    if "schedule_id" in student_cols:
+        values["schedule_id"] = schedule_id
+
+    set_sql = ", ".join([f"{c} = ?" for c in update_cols])
+    db.execute(
+        f"UPDATE students SET {set_sql} WHERE id = ?",
+        [values[c] for c in update_cols] + [int(student_id)],
+    )
+
+    # Upsert student_details
+    details_cols = {row[1] for row in db.execute("PRAGMA table_info(student_details)").fetchall()}
+    if details_cols:
+        exists = db.execute(
+            "SELECT 1 FROM student_details WHERE student_id = ?",
+            (int(student_id),),
+        ).fetchone()
+        payload = {
+            "father_name": form.get("father_name"),
+            "gender": form.get("gender"),
+            "category": form.get("category"),
+            "address": form.get("details_address"),
+            "exam_roll_number": form.get("exam_roll_number"),
+        }
+        payload = {k: v for k, v in payload.items() if (k in details_cols and v)}
+        if exists is None:
+            if payload and {"father_name", "gender", "category", "address"}.issubset(set(payload.keys()) | {"father_name", "gender", "category", "address"}):
+                # Fill required fallbacks from current values when missing
+                father = payload.get("father_name") or "-"
+                gender = payload.get("gender") or "-"
+                category = payload.get("category") or "-"
+                addr = payload.get("address") or "-"
+                exam_roll = payload.get("exam_roll_number")
+                db.execute(
+                    """
+                    INSERT INTO student_details (student_id, father_name, gender, category, address, exam_roll_number)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (int(student_id), father, gender, category, addr, exam_roll),
+                )
+        else:
+            if payload:
+                set_sql = ", ".join([f"{k} = ?" for k in payload.keys()])
+                db.execute(
+                    f"UPDATE student_details SET {set_sql} WHERE student_id = ?",
+                    list(payload.values()) + [int(student_id)],
+                )
+
+    # Upsert student_profile
+    prof_cols = {row[1] for row in db.execute("PRAGMA table_info(student_profile)").fetchall()}
+    if prof_cols:
+        exists = db.execute(
+            "SELECT 1 FROM student_profile WHERE student_id = ?",
+            (int(student_id),),
+        ).fetchone()
+        payload = {
+            "status": form.get("status"),
+            "batch": form.get("batch"),
+            "department": form.get("department"),
+            "section": form.get("section"),
+            "address": form.get("profile_address"),
+            "emergency_contact_name": form.get("emergency_contact_name"),
+            "emergency_contact_relation": form.get("emergency_contact_relation"),
+            "emergency_contact_phone": form.get("emergency_contact_phone"),
+        }
+        payload = {k: v for k, v in payload.items() if (k in prof_cols and v)}
+        if exists is None:
+            if prof_cols:
+                db.execute(
+                    """
+                    INSERT INTO student_profile (
+                        student_id, status, batch, department, section, address,
+                        emergency_contact_name, emergency_contact_relation, emergency_contact_phone
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        int(student_id),
+                        payload.get("status") or "Active",
+                        payload.get("batch") or "-",
+                        payload.get("department") or "-",
+                        payload.get("section") or "-",
+                        payload.get("address") or "-",
+                        payload.get("emergency_contact_name") or "-",
+                        payload.get("emergency_contact_relation") or "-",
+                        payload.get("emergency_contact_phone") or "-",
+                    ),
+                )
+        else:
+            if payload:
+                set_sql = ", ".join([f"{k} = ?" for k in payload.keys()])
+                db.execute(
+                    f"UPDATE student_profile SET {set_sql} WHERE student_id = ?",
+                    list(payload.values()) + [int(student_id)],
+                )
+
+    # Upsert dues
+    dues_cols = {row[1] for row in db.execute("PRAGMA table_info(student_dues)").fetchall()}
+    if "pending_amount" in dues_cols:
+        exists = db.execute(
+            "SELECT 1 FROM student_dues WHERE student_id = ?",
+            (int(student_id),),
+        ).fetchone()
+        if exists is None:
+            db.execute(
+                "INSERT INTO student_dues (student_id, pending_amount) VALUES (?, ?)",
+                (int(student_id), int(pending_amount)),
+            )
+        else:
+            db.execute(
+                "UPDATE student_dues SET pending_amount = ? WHERE student_id = ?",
+                (int(pending_amount), int(student_id)),
+            )
+
+    db.commit()
+    return redirect(url_for("admin_students"))
+
+
 @app.post("/admin/teachers/new")
 @admin_login_required
 def admin_teachers_create():

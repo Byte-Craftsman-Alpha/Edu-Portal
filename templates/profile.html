@@ -4,7 +4,7 @@
 <section class="tab-content space-y-6">
 
     <div class="minimal-card p-6">
-        <div class="flex items-start justify-between gap-6">
+        <div class="flex flex-col items-start justify-between gap-6">
             <div class="flex items-center gap-5">
                 <div class="minimal-avatar w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-3xl text-slate-700">👨‍🎓</div>
                 <div>
@@ -17,9 +17,8 @@
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <a href="{{ url_for('logout') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Logout</a>
-                <button class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-all">Edit Profile</button>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <a href="{{ url_for('logout') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center">Logout</a>
             </div>
         </div>
     </div>
@@ -31,7 +30,6 @@
                     <h3 class="text-lg font-semibold text-slate-900">Academic Details</h3>
                     <p class="text-sm text-slate-500 mt-1">Program and semester information</p>
                 </div>
-                <button class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Edit</button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -64,7 +62,6 @@
                     <h3 class="text-lg font-semibold text-slate-900">Contact Information</h3>
                     <p class="text-sm text-slate-500 mt-1">Personal and emergency contact</p>
                 </div>
-                <button class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Edit</button>
             </div>
 
             <div class="space-y-4 text-sm">

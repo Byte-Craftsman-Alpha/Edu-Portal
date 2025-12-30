@@ -1,0 +1,454 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+    <div class="flex-1">
+        <input id="adminStudentsSearch" type="text" class="admin-input w-full" placeholder="Search students by name, roll no, email, phone, program, department...">
+        <p class="text-xs text-slate-500 mt-2">Showing <span id="adminStudentsVisibleCount">0</span> of <span id="adminStudentsTotalCount">0</span></p>
+    </div>
+</div>
+
+<div data-admin-student-edit-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+<div data-admin-student-edit-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-4xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Update</p>
+                    <p class="text-lg font-semibold text-slate-900">Edit Student</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-student-edit-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-student-edit-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[75vh] overflow-y-auto">
+                <form method="post" action="" class="space-y-5" data-admin-student-edit-form>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Name</label>
+                            <input name="name" type="text" class="admin-input w-full" required data-f-name />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Roll No</label>
+                            <input name="roll_no" type="text" class="admin-input w-full" required data-f-roll_no />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email</label>
+                            <input name="email" type="email" class="admin-input w-full" required data-f-email />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone</label>
+                            <input name="phone" type="text" class="admin-input w-full" required data-f-phone />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Guardian</label>
+                            <input name="guardian" type="text" class="admin-input w-full" required data-f-guardian />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Residential Status</label>
+                            <input name="residential_status" type="text" class="admin-input w-full" required data-f-residential_status />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Program</label>
+                            <input name="program" type="text" class="admin-input w-full" required data-f-program />
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Year</label>
+                                <input name="year" type="number" class="admin-input w-full" required data-f-year />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Sem</label>
+                                <input name="sem" type="number" class="admin-input w-full" required data-f-sem />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Attendance %</label>
+                                <input name="attendance_percent" type="number" class="admin-input w-full" required data-f-attendance_percent />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Pending Dues</label>
+                                <input name="pending_amount" type="number" class="admin-input w-full" data-f-pending_amount />
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Next Class</label>
+                            <input name="next_class" type="text" class="admin-input w-full" data-f-next_class />
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Weekly Schedule Group</label>
+                            <select name="schedule_id" class="admin-input w-full" data-f-schedule_id>
+                                <option value="">Default</option>
+                                {% for g in schedule_groups %}
+                                    <option value="{{ g.id }}">#{{ g.id }} - {{ g.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="text-xs text-slate-500 mt-2">This controls the student weekly timetable.</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-card p-4 bg-slate-50 border border-slate-200">
+                        <p class="text-sm font-semibold text-slate-900">Student Details</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Father Name</label>
+                                <input name="father_name" type="text" class="admin-input w-full" data-f-father_name />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Exam Roll Number</label>
+                                <input name="exam_roll_number" type="text" class="admin-input w-full" data-f-exam_roll_number />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Gender</label>
+                                <input name="gender" type="text" class="admin-input w-full" data-f-gender />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Category</label>
+                                <input name="category" type="text" class="admin-input w-full" data-f-category />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Address</label>
+                                <input name="details_address" type="text" class="admin-input w-full" data-f-details_address />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card p-4 bg-slate-50 border border-slate-200">
+                        <p class="text-sm font-semibold text-slate-900">Student Profile</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status</label>
+                                <input name="status" type="text" class="admin-input w-full" data-f-status />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Batch</label>
+                                <input name="batch" type="text" class="admin-input w-full" data-f-batch />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department</label>
+                                <input name="department" type="text" class="admin-input w-full" data-f-department />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Section</label>
+                                <input name="section" type="text" class="admin-input w-full" data-f-section />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Address</label>
+                                <input name="profile_address" type="text" class="admin-input w-full" data-f-profile_address />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Name</label>
+                                <input name="emergency_contact_name" type="text" class="admin-input w-full" data-f-emergency_contact_name />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Relation</label>
+                                <input name="emergency_contact_relation" type="text" class="admin-input w-full" data-f-emergency_contact_relation />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Phone</label>
+                                <input name="emergency_contact_phone" type="text" class="admin-input w-full" data-f-emergency_contact_phone />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="space-y-4" id="adminStudentsList">
+    {% if students %}
+        {% for s in students %}
+            {% set d = details_by_student_id.get(s.id) %}
+            {% set p = profile_by_student_id.get(s.id) %}
+            {% set du = dues_by_student_id.get(s.id) %}
+            <div class="admin-card p-5" data-student-tile data-search-text="{{ (s.name ~ ' ' ~ s.roll_no ~ ' ' ~ s.email ~ ' ' ~ s.phone ~ ' ' ~ s.program ~ ' ' ~ (p.department if p else '') ~ ' ' ~ (p.section if p else ''))|lower|e }}">
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-4">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="admin-pill bg-slate-100 text-slate-700">#{{ s.id }}</span>
+                            <span class="admin-pill bg-indigo-50 text-indigo-700">SEM {{ s.sem }}</span>
+                            <span class="text-xs text-slate-600">{{ s.roll_no }}</span>
+                            <span class="text-xs text-slate-400">•</span>
+                            <span class="text-xs text-slate-600">{{ s.email }}</span>
+                        </div>
+                        <p class="text-base font-semibold text-slate-900 mt-2 break-words">{{ s.name }}</p>
+                        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div class="p-3 rounded-xl bg-white border border-slate-200">
+                                <p class="text-xs text-slate-500">Phone</p>
+                                <p class="font-medium text-slate-900 mt-1">{{ s.phone }}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white border border-slate-200">
+                                <p class="text-xs text-slate-500">Program</p>
+                                <p class="font-medium text-slate-900 mt-1">{{ s.program }}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white border border-slate-200">
+                                <p class="text-xs text-slate-500">Department</p>
+                                <p class="font-medium text-slate-900 mt-1">{{ p.department if p else '-' }}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-white border border-slate-200">
+                                <p class="text-xs text-slate-500">Pending Dues</p>
+                                <p class="font-medium text-slate-900 mt-1">₹{{ du.pending_amount if du else 0 }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:border-l lg:border-slate-200 lg:pl-4">
+                        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                            <p class="text-xs font-semibold tracking-wide text-slate-600 uppercase">Actions</p>
+                            <div class="mt-3 flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    class="admin-btn admin-btn-soft w-full"
+                                    data-admin-student-edit-open
+                                    data-student-id="{{ s.id }}"
+                                    data-name="{{ s.name|e }}"
+                                    data-roll_no="{{ s.roll_no|e }}"
+                                    data-email="{{ s.email|e }}"
+                                    data-phone="{{ s.phone|e }}"
+                                    data-guardian="{{ s.guardian|e }}"
+                                    data-residential_status="{{ s.residential_status|e }}"
+                                    data-program="{{ s.program|e }}"
+                                    data-year="{{ s.year }}"
+                                    data-sem="{{ s.sem }}"
+                                    data-attendance_percent="{{ s.attendance_percent }}"
+                                    data-next_class="{{ s.next_class|e }}"
+                                    data-schedule_id="{{ (s.schedule_id if 'schedule_id' in s.keys() else '') }}"
+                                    data-father_name="{{ (d.father_name if d else '')|e }}"
+                                    data-gender="{{ (d.gender if d else '')|e }}"
+                                    data-category="{{ (d.category if d else '')|e }}"
+                                    data-details_address="{{ (d.address if d else '')|e }}"
+                                    data-exam_roll_number="{{ (d.exam_roll_number if d else '')|e }}"
+                                    data-status="{{ (p.status if p else '')|e }}"
+                                    data-batch="{{ (p.batch if p else '')|e }}"
+                                    data-department="{{ (p.department if p else '')|e }}"
+                                    data-section="{{ (p.section if p else '')|e }}"
+                                    data-profile_address="{{ (p.address if p else '')|e }}"
+                                    data-emergency_contact_name="{{ (p.emergency_contact_name if p else '')|e }}"
+                                    data-emergency_contact_relation="{{ (p.emergency_contact_relation if p else '')|e }}"
+                                    data-emergency_contact_phone="{{ (p.emergency_contact_phone if p else '')|e }}"
+                                    data-pending_amount="{{ (du.pending_amount if du else 0) }}"
+                                >Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="admin-card p-6 text-slate-600">No students found.</div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        const input = document.getElementById('adminStudentsSearch');
+        const list = document.getElementById('adminStudentsList');
+        const totalEl = document.getElementById('adminStudentsTotalCount');
+        const visibleEl = document.getElementById('adminStudentsVisibleCount');
+        if (!input || !list || !totalEl || !visibleEl) {
+            return;
+        }
+
+        const tiles = Array.from(list.querySelectorAll('[data-student-tile]'));
+        totalEl.textContent = String(tiles.length);
+
+        function apply() {
+            const q = (input.value || '').trim().toLowerCase();
+            let visible = 0;
+
+            tiles.forEach((tile) => {
+                const hay = String(tile.dataset.searchText || '');
+                const ok = !q || hay.includes(q);
+                tile.style.display = ok ? '' : 'none';
+                if (ok) {
+                    visible += 1;
+                }
+            });
+
+            visibleEl.textContent = String(visible);
+        }
+
+        input.addEventListener('input', apply);
+        apply();
+    })();
+
+    (function () {
+        const openBtns = Array.from(document.querySelectorAll('[data-admin-student-edit-open]'));
+        const closeBtn = document.querySelector('[data-admin-student-edit-close]');
+        const backdrop = document.querySelector('[data-admin-student-edit-backdrop]');
+        const sheet = document.querySelector('[data-admin-student-edit-sheet]');
+        const handleEl = document.querySelector('[data-admin-student-edit-handle]');
+        const form = document.querySelector('[data-admin-student-edit-form]');
+        if (!openBtns.length || !closeBtn || !backdrop || !sheet || !form) {
+            return;
+        }
+
+        function setVal(selector, val) {
+            const el = form.querySelector(selector);
+            if (!el) {
+                return;
+            }
+            el.value = (val === undefined || val === null) ? '' : String(val);
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            sheet.style.transform = '';
+            unlockScroll();
+        }
+
+        openBtns.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const sid = btn.dataset.studentId;
+                if (!sid) {
+                    return;
+                }
+                form.action = `/admin/students/${sid}/update`;
+
+                setVal('[data-f-name]', btn.dataset.name);
+                setVal('[data-f-roll_no]', btn.dataset.roll_no);
+                setVal('[data-f-email]', btn.dataset.email);
+                setVal('[data-f-phone]', btn.dataset.phone);
+                setVal('[data-f-guardian]', btn.dataset.guardian);
+                setVal('[data-f-residential_status]', btn.dataset.residential_status);
+                setVal('[data-f-program]', btn.dataset.program);
+                setVal('[data-f-year]', btn.dataset.year);
+                setVal('[data-f-sem]', btn.dataset.sem);
+                setVal('[data-f-attendance_percent]', btn.dataset.attendance_percent);
+                setVal('[data-f-next_class]', btn.dataset.next_class);
+                setVal('[data-f-schedule_id]', btn.dataset.schedule_id);
+                setVal('[data-f-pending_amount]', btn.dataset.pending_amount);
+
+                setVal('[data-f-father_name]', btn.dataset.father_name);
+                setVal('[data-f-gender]', btn.dataset.gender);
+                setVal('[data-f-category]', btn.dataset.category);
+                setVal('[data-f-details_address]', btn.dataset.details_address);
+                setVal('[data-f-exam_roll_number]', btn.dataset.exam_roll_number);
+
+                setVal('[data-f-status]', btn.dataset.status);
+                setVal('[data-f-batch]', btn.dataset.batch);
+                setVal('[data-f-department]', btn.dataset.department);
+                setVal('[data-f-section]', btn.dataset.section);
+                setVal('[data-f-profile_address]', btn.dataset.profile_address);
+                setVal('[data-f-emergency_contact_name]', btn.dataset.emergency_contact_name);
+                setVal('[data-f-emergency_contact_relation]', btn.dataset.emergency_contact_relation);
+                setVal('[data-f-emergency_contact_phone]', btn.dataset.emergency_contact_phone);
+
+                open();
+            });
+        });
+
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let currentY = 0;
+            let dragging = false;
+            let dragRaf = 0;
+            let pendingDelta = 0;
+
+            function onStart(e) {
+                dragging = true;
+                startY = (e.touches ? e.touches[0].clientY : e.clientY);
+                currentY = startY;
+                sheet.style.transition = 'none';
+                sheet.style.willChange = 'transform';
+            }
+
+            function onMove(e) {
+                if (!dragging) {
+                    return;
+                }
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                currentY = (e.touches ? e.touches[0].clientY : e.clientY);
+                pendingDelta = Math.max(0, currentY - startY);
+                if (dragRaf) {
+                    return;
+                }
+                dragRaf = window.requestAnimationFrame(() => {
+                    dragRaf = 0;
+                    sheet.style.transform = `translateY(${pendingDelta}px)`;
+                });
+            }
+
+            function onEnd() {
+                if (!dragging) {
+                    return;
+                }
+                dragging = false;
+                if (dragRaf) {
+                    window.cancelAnimationFrame(dragRaf);
+                    dragRaf = 0;
+                }
+                const delta = Math.max(0, currentY - startY);
+                sheet.style.transition = '';
+                sheet.style.transform = '';
+                sheet.style.willChange = '';
+                if (delta > 120) {
+                    close();
+                }
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: false });
+            handleEl.addEventListener('touchend', onEnd);
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+</script>
+{% endblock %}

@@ -124,6 +124,29 @@ function initScheduleCalendarSheet() {
         return;
     }
 
+    let scrollLockY = 0;
+    function lockScroll() {
+        scrollLockY = window.scrollY || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollLockY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function unlockScroll() {
+        document.body.style.position = '';
+        const top = document.body.style.top;
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+        window.scrollTo(0, Number.isFinite(y) ? y : 0);
+    }
+
     let timetableData = {};
     const timetableScript = document.getElementById('timetableData');
     if (timetableScript && timetableScript.textContent) {
@@ -135,6 +158,7 @@ function initScheduleCalendarSheet() {
     }
 
     function openSheet() {
+        lockScroll();
         backdrop.classList.remove('opacity-0', 'pointer-events-none');
         backdrop.classList.add('opacity-100');
         sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
@@ -148,6 +172,7 @@ function initScheduleCalendarSheet() {
         sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
         sheet.classList.remove('opacity-100');
         sheet.style.transform = '';
+        unlockScroll();
     }
 
     function esc(s) {
@@ -250,21 +275,33 @@ function initScheduleCalendarSheet() {
     let startY = 0;
     let currentY = 0;
     let dragging = false;
+    let dragRaf = 0;
+    let pendingDelta = 0;
 
     function onStart(e) {
         dragging = true;
         startY = (e.touches ? e.touches[0].clientY : e.clientY);
         currentY = startY;
         sheet.style.transition = 'none';
+        sheet.style.willChange = 'transform';
     }
 
     function onMove(e) {
         if (!dragging) {
             return;
         }
+        if (e.cancelable) {
+            e.preventDefault();
+        }
         currentY = (e.touches ? e.touches[0].clientY : e.clientY);
-        const delta = Math.max(0, currentY - startY);
-        sheet.style.transform = `translateY(${delta}px)`;
+        pendingDelta = Math.max(0, currentY - startY);
+        if (dragRaf) {
+            return;
+        }
+        dragRaf = window.requestAnimationFrame(() => {
+            dragRaf = 0;
+            sheet.style.transform = `translateY(${pendingDelta}px)`;
+        });
     }
 
     function onEnd() {
@@ -272,16 +309,21 @@ function initScheduleCalendarSheet() {
             return;
         }
         dragging = false;
+        if (dragRaf) {
+            window.cancelAnimationFrame(dragRaf);
+            dragRaf = 0;
+        }
         const delta = Math.max(0, currentY - startY);
         sheet.style.transition = '';
         sheet.style.transform = '';
+        sheet.style.willChange = '';
         if (delta > 120) {
             closeSheet();
         }
     }
 
     handleEl.addEventListener('touchstart', onStart, { passive: true });
-    handleEl.addEventListener('touchmove', onMove, { passive: true });
+    handleEl.addEventListener('touchmove', onMove, { passive: false });
     handleEl.addEventListener('touchend', onEnd);
 
     handleEl.addEventListener('mousedown', onStart);
