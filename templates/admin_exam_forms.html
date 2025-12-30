@@ -1,0 +1,57 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-end mb-4">
+    <a href="{{ url_for('admin_exam_form_new') }}" class="admin-btn admin-btn-primary">New Exam Form</a>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="admin-table w-full text-left">
+            <thead class="border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                    <th class="px-4 py-3 font-medium">Semester</th>
+                    <th class="px-4 py-3 font-medium">Title</th>
+                    <th class="px-4 py-3 font-medium">Open Window</th>
+                    <th class="px-4 py-3 font-medium">Fee</th>
+                    <th class="px-4 py-3 font-medium">Submissions</th>
+                    <th class="px-4 py-3 font-medium">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% if forms %}
+                    {% for f in forms %}
+                        {% set is_open = (f.status == 'OPEN') %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3">
+                                <span class="admin-pill {% if is_open %}bg-emerald-50 text-emerald-700{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ f.status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-700">{{ f.semester_label }}</td>
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ f.title }}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if f.open_from and f.open_to %}{{ f.open_from }} → {{ f.open_to }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3 text-slate-700">{% if f.fee %}₹{{ f.fee }}{% else %}-{% endif %}</td>
+                            <td class="px-4 py-3">
+                                <a href="{{ url_for('admin_exam_form_submissions', form_id=f.id) }}" class="admin-btn admin-btn-soft text-xs">View</a>
+                            </td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="{{ url_for('admin_exam_form_toggle', form_id=f.id) }}">
+                                    <button type="submit" class="admin-btn {% if is_open %}bg-amber-50 text-amber-700 hover:bg-amber-100{% else %}bg-emerald-600 text-white hover:bg-emerald-700{% endif %} text-xs">
+                                        {% if is_open %}Close{% else %}Open{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="px-4 py-8 text-slate-500" colspan="7">No exam forms found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

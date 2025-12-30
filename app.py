@@ -7,6 +7,7 @@ import calendar
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import re
 
 app = Flask(__name__)
 
@@ -25,6 +26,16 @@ def get_current_student_id() -> int | None:
         return None
 
 
+def get_current_admin_id() -> int | None:
+    aid = session.get("admin_user_id")
+    if aid is None:
+        return None
+    try:
+        return int(aid)
+    except Exception:
+        return None
+
+
 def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -35,10 +46,100 @@ def login_required(fn):
     return wrapper
 
 
+def admin_login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if get_current_admin_id() is None:
+            return redirect(url_for("admin_login"))
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def admin_role_required(*allowed_roles: str):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            aid = get_current_admin_id()
+            if aid is None:
+                return redirect(url_for("admin_login"))
+            db = get_db()
+            admin_user = db.execute(
+                "SELECT * FROM admin_users WHERE id = ?",
+                (aid,),
+            ).fetchone()
+            if not admin_user:
+                session.pop("admin_user_id", None)
+                return redirect(url_for("admin_login"))
+            role = (admin_user["role"] or "").strip().lower()
+            if allowed_roles and role not in {r.strip().lower() for r in allowed_roles}:
+                return render_template(
+                    "admin_dashboard.html",
+                    page_title="Admin Panel",
+                    page_subtitle="Restricted access",
+                    active_page="admin",
+                    admin_user=admin_user,
+                    error="You do not have permission to access this page.",
+                )
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 def ensure_students_password_column(db: sqlite3.Connection) -> None:
     cols = {row[1] for row in db.execute("PRAGMA table_info(students)").fetchall()}
     if "password_hash" not in cols:
         db.execute("ALTER TABLE students ADD COLUMN password_hash TEXT")
+
+
+def ensure_schedule_schema(db: sqlite3.Connection) -> None:
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schedule_groups (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            program TEXT,
+            department TEXT,
+            semester INTEGER,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+
+    student_cols = {row[1] for row in db.execute("PRAGMA table_info(students)").fetchall()}
+    if "schedule_id" not in student_cols:
+        db.execute("ALTER TABLE students ADD COLUMN schedule_id INTEGER")
+
+    schedule_cols = {row[1] for row in db.execute("PRAGMA table_info(schedules)").fetchall()}
+    if "schedule_id" not in schedule_cols:
+        db.execute("ALTER TABLE schedules ADD COLUMN schedule_id INTEGER")
+
+    tt_cols = {row[1] for row in db.execute("PRAGMA table_info(weekly_timetable)").fetchall()}
+    if "schedule_id" not in tt_cols:
+        db.execute("ALTER TABLE weekly_timetable ADD COLUMN schedule_id INTEGER")
+
+    groups_count = db.execute("SELECT COUNT(*) FROM schedule_groups").fetchone()[0]
+    if int(groups_count) == 0:
+        now = datetime.utcnow().isoformat(timespec="seconds")
+        db.execute(
+            """
+            INSERT INTO schedule_groups (id, name, program, department, semester, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (1, "Default Schedule", None, None, None, now),
+        )
+
+    db.execute(
+        "UPDATE students SET schedule_id = 1 WHERE schedule_id IS NULL OR schedule_id = 0"
+    )
+    db.execute(
+        "UPDATE schedules SET schedule_id = 1 WHERE schedule_id IS NULL OR schedule_id = 0"
+    )
+    db.execute(
+        "UPDATE weekly_timetable SET schedule_id = 1 WHERE schedule_id IS NULL OR schedule_id = 0"
+    )
 
 
 def seed_attendance_for_student(db: sqlite3.Connection, student_id: int) -> None:
@@ -133,12 +234,31 @@ def init_db() -> None:
                 tags TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS admin_users (
+                id INTEGER PRIMARY KEY,
+                username TEXT NOT NULL UNIQUE,
+                full_name TEXT NOT NULL,
+                role TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS schedules (
                 id INTEGER PRIMARY KEY,
                 title TEXT NOT NULL,
                 location TEXT NOT NULL,
                 start_at TEXT NOT NULL,
                 end_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS teachers (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                designation TEXT NOT NULL,
+                department TEXT NOT NULL,
+                email TEXT,
+                phone TEXT,
+                created_at TEXT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS weekly_timetable (
@@ -205,6 +325,28 @@ def init_db() -> None:
                 open_to TEXT,
                 fee INTEGER,
                 note TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS exam_form_submissions (
+                id INTEGER PRIMARY KEY,
+                form_id INTEGER NOT NULL,
+                student_id INTEGER NOT NULL,
+                submitted_at TEXT NOT NULL,
+                student_name TEXT NOT NULL,
+                roll_no TEXT NOT NULL,
+                program TEXT NOT NULL,
+                semester INTEGER NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT NOT NULL,
+                guardian TEXT NOT NULL,
+                address TEXT NOT NULL,
+                category TEXT NOT NULL,
+                gender TEXT NOT NULL,
+                status TEXT NOT NULL,
+                residential_status TEXT NOT NULL,
+                UNIQUE(form_id, student_id),
+                FOREIGN KEY(form_id) REFERENCES exam_forms(id),
+                FOREIGN KEY(student_id) REFERENCES students(id)
             );
 
             CREATE TABLE IF NOT EXISTS admit_cards (
@@ -372,6 +514,8 @@ def init_db() -> None:
         if "password_hash" not in student_cols:
             db.execute("ALTER TABLE students ADD COLUMN password_hash TEXT")
 
+        ensure_schedule_schema(db)
+
         default_password = "student123"
         dummy_students = [
             {
@@ -442,8 +586,8 @@ def init_db() -> None:
                     """
                     INSERT OR IGNORE INTO students (
                         id, name, roll_no, email, phone, guardian, residential_status,
-                        program, year, sem, attendance_percent, next_class, password_hash
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        program, year, sem, attendance_percent, next_class, password_hash, schedule_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         ds["id"],
@@ -459,6 +603,7 @@ def init_db() -> None:
                         ds["attendance_percent"],
                         ds["next_class"],
                         generate_password_hash(default_password),
+                        1,
                     ),
                 )
 
@@ -470,6 +615,23 @@ def init_db() -> None:
             db.execute(
                 "UPDATE students SET password_hash = ? WHERE id = ?",
                 (generate_password_hash(default_password), int(row[0])),
+            )
+
+        admin_count = db.execute("SELECT COUNT(*) FROM admin_users").fetchone()[0]
+        if int(admin_count) == 0:
+            now = datetime.utcnow().isoformat(timespec="seconds")
+            db.execute(
+                """
+                INSERT INTO admin_users (username, full_name, role, password_hash, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    "admin",
+                    "System Administrator",
+                    "admin",
+                    generate_password_hash("admin123"),
+                    now,
+                ),
             )
 
         tt_count = db.execute("SELECT COUNT(*) FROM weekly_timetable").fetchone()[0]
@@ -1147,7 +1309,11 @@ def inject_student():
     student = None
     if sid is not None:
         student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
-    return {"student": student}
+    aid = get_current_admin_id()
+    admin_user = None
+    if aid is not None:
+        admin_user = db.execute("SELECT * FROM admin_users WHERE id = ?", (aid,)).fetchone()
+    return {"student": student, "admin_user": admin_user}
 
 
 @app.get("/login")
@@ -1182,17 +1348,561 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.get("/admin/login")
+def admin_login():
+    if get_current_admin_id() is not None:
+        return redirect(url_for("admin_dashboard"))
+    return render_template("admin_login.html", error=None)
+
+
+@app.post("/admin/login")
+def admin_login_post():
+    username = (request.form.get("username") or "").strip()
+    password = request.form.get("password") or ""
+    if not username or not password:
+        return render_template("admin_login.html", error="Please enter username and password.")
+
+    db = get_db()
+    admin_user = db.execute(
+        "SELECT * FROM admin_users WHERE username = ?",
+        (username,),
+    ).fetchone()
+    if not admin_user or not admin_user["password_hash"] or not check_password_hash(
+        admin_user["password_hash"], password
+    ):
+        return render_template("admin_login.html", error="Invalid username or password.")
+
+    session["admin_user_id"] = int(admin_user["id"])
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.get("/admin/logout")
+def admin_logout():
+    session.pop("admin_user_id", None)
+    return redirect(url_for("admin_login"))
+
+
+@app.get("/admin")
+@admin_login_required
+def admin_dashboard():
+    db = get_db()
+    aid = get_current_admin_id()
+    admin_user = db.execute("SELECT * FROM admin_users WHERE id = ?", (aid,)).fetchone()
+    news_count = db.execute("SELECT COUNT(*) FROM news_posts").fetchone()[0]
+    open_forms = db.execute("SELECT COUNT(*) FROM exam_forms WHERE status = 'OPEN'").fetchone()[0]
+    return render_template(
+        "admin_dashboard.html",
+        page_title="Admin Panel",
+        page_subtitle="Manage restricted content",
+        active_page="admin",
+        admin_user=admin_user,
+        news_count=int(news_count),
+        open_forms=int(open_forms),
+        error=None,
+    )
+
+
+@app.get("/admin/schedules")
+@admin_login_required
+def admin_schedules():
+    db = get_db()
+
+    groups = db.execute("SELECT * FROM schedule_groups ORDER BY id ASC").fetchall()
+    selected_raw = (request.args.get("schedule_id") or "").strip()
+    selected_id = None
+    if selected_raw:
+        try:
+            selected_id = int(selected_raw)
+        except Exception:
+            selected_id = None
+    if selected_id is None:
+        selected_id = int(groups[0]["id"]) if groups else 1
+
+    events = db.execute(
+        "SELECT * FROM schedules WHERE schedule_id = ? ORDER BY datetime(start_at) ASC",
+        (int(selected_id),),
+    ).fetchall()
+    timetable_rows = db.execute(
+        """
+        SELECT * FROM weekly_timetable
+        WHERE schedule_id = ?
+        ORDER BY day_of_week ASC, time(start_time) ASC
+        """,
+        (int(selected_id),),
+    ).fetchall()
+    return render_template(
+        "admin_schedules.html",
+        page_title="Manage Schedules",
+        page_subtitle="Events & weekly timetable",
+        active_page="admin_schedules",
+        events=events,
+        timetable_rows=timetable_rows,
+        schedule_groups=groups,
+        selected_schedule_id=int(selected_id),
+        error=None,
+    )
+
+
+@app.post("/admin/schedules/groups/new")
+@admin_login_required
+def admin_schedule_group_create():
+    name = (request.form.get("name") or "").strip()
+    program = (request.form.get("program") or "").strip() or None
+    department = (request.form.get("department") or "").strip() or None
+    semester_raw = (request.form.get("semester") or "").strip()
+    semester = None
+    if semester_raw:
+        try:
+            semester = int(semester_raw)
+        except Exception:
+            semester = None
+    if not name:
+        return redirect(url_for("admin_schedules"))
+    db = get_db()
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    db.execute(
+        """
+        INSERT INTO schedule_groups (name, program, department, semester, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (name, program, department, semester, now),
+    )
+    db.commit()
+    new_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
+    return redirect(url_for("admin_schedules", schedule_id=new_id))
+
+
+@app.post("/admin/schedules/events/new")
+@admin_login_required
+def admin_schedules_event_create():
+    schedule_id_raw = (request.form.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+    title = (request.form.get("title") or "").strip()
+    location = (request.form.get("location") or "").strip()
+    start_at = (request.form.get("start_at") or "").strip()
+    end_at = (request.form.get("end_at") or "").strip()
+    if not title or not location or not start_at or not end_at:
+        db = get_db()
+        groups = db.execute("SELECT * FROM schedule_groups ORDER BY id ASC").fetchall()
+        events = db.execute(
+            "SELECT * FROM schedules WHERE schedule_id = ? ORDER BY datetime(start_at) ASC",
+            (int(schedule_id),),
+        ).fetchall()
+        timetable_rows = db.execute(
+            """
+            SELECT * FROM weekly_timetable
+            WHERE schedule_id = ?
+            ORDER BY day_of_week ASC, time(start_time) ASC
+            """,
+            (int(schedule_id),),
+        ).fetchall()
+        return render_template(
+            "admin_schedules.html",
+            page_title="Manage Schedules",
+            page_subtitle="Events & weekly timetable",
+            active_page="admin_schedules",
+            events=events,
+            timetable_rows=timetable_rows,
+            schedule_groups=groups,
+            selected_schedule_id=int(schedule_id),
+            error="Please fill all required event fields.",
+        )
+    db = get_db()
+    db.execute(
+        "INSERT INTO schedules (schedule_id, title, location, start_at, end_at) VALUES (?, ?, ?, ?, ?)",
+        (int(schedule_id), title, location, start_at, end_at),
+    )
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
+@app.post("/admin/schedules/events/<int:event_id>/delete")
+@admin_login_required
+def admin_schedules_event_delete(event_id: int):
+    schedule_id_raw = (request.args.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+    db = get_db()
+    db.execute("DELETE FROM schedules WHERE id = ?", (int(event_id),))
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
+@app.post("/admin/schedules/timetable/new")
+@admin_login_required
+def admin_timetable_create():
+    schedule_id_raw = (request.form.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+    day_of_week_raw = (request.form.get("day_of_week") or "").strip()
+    start_time = (request.form.get("start_time") or "").strip()
+    end_time = (request.form.get("end_time") or "").strip()
+    subject = (request.form.get("subject") or "").strip()
+    room = (request.form.get("room") or "").strip()
+    instructor = (request.form.get("instructor") or "").strip()
+    try:
+        day_of_week = int(day_of_week_raw)
+    except Exception:
+        day_of_week = -1
+    if day_of_week < 0 or day_of_week > 6 or not start_time or not end_time or not subject or not room or not instructor:
+        db = get_db()
+        groups = db.execute("SELECT * FROM schedule_groups ORDER BY id ASC").fetchall()
+        events = db.execute(
+            "SELECT * FROM schedules WHERE schedule_id = ? ORDER BY datetime(start_at) ASC",
+            (int(schedule_id),),
+        ).fetchall()
+        timetable_rows = db.execute(
+            """
+            SELECT * FROM weekly_timetable
+            WHERE schedule_id = ?
+            ORDER BY day_of_week ASC, time(start_time) ASC
+            """,
+            (int(schedule_id),),
+        ).fetchall()
+        return render_template(
+            "admin_schedules.html",
+            page_title="Manage Schedules",
+            page_subtitle="Events & weekly timetable",
+            active_page="admin_schedules",
+            events=events,
+            timetable_rows=timetable_rows,
+            schedule_groups=groups,
+            selected_schedule_id=int(schedule_id),
+            error="Please fill all required timetable fields.",
+        )
+    db = get_db()
+    db.execute(
+        """
+        INSERT INTO weekly_timetable (schedule_id, day_of_week, start_time, end_time, subject, room, instructor)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (int(schedule_id), day_of_week, start_time, end_time, subject, room, instructor),
+    )
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
+@app.post("/admin/schedules/timetable/<int:row_id>/delete")
+@admin_login_required
+def admin_timetable_delete(row_id: int):
+    schedule_id_raw = (request.args.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+    db = get_db()
+    db.execute("DELETE FROM weekly_timetable WHERE id = ?", (int(row_id),))
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
+@app.get("/admin/teachers")
+@admin_login_required
+def admin_teachers():
+    db = get_db()
+    teachers = db.execute("SELECT * FROM teachers ORDER BY name ASC").fetchall()
+    return render_template(
+        "admin_teachers.html",
+        page_title="Teachers",
+        page_subtitle="Manage faculty list",
+        active_page="admin_teachers",
+        teachers=teachers,
+        error=None,
+    )
+
+
+@app.post("/admin/teachers/new")
+@admin_login_required
+def admin_teachers_create():
+    name = (request.form.get("name") or "").strip()
+    designation = (request.form.get("designation") or "").strip()
+    department = (request.form.get("department") or "").strip()
+    email = (request.form.get("email") or "").strip() or None
+    phone = (request.form.get("phone") or "").strip() or None
+    if not name or not designation or not department:
+        db = get_db()
+        teachers = db.execute("SELECT * FROM teachers ORDER BY name ASC").fetchall()
+        return render_template(
+            "admin_teachers.html",
+            page_title="Teachers",
+            page_subtitle="Manage faculty list",
+            active_page="admin_teachers",
+            teachers=teachers,
+            error="Please fill all required teacher fields.",
+        )
+    db = get_db()
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    db.execute(
+        """
+        INSERT INTO teachers (name, designation, department, email, phone, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (name, designation, department, email, phone, now),
+    )
+    db.commit()
+    return redirect(url_for("admin_teachers"))
+
+
+@app.post("/admin/teachers/<int:teacher_id>/delete")
+@admin_login_required
+def admin_teachers_delete(teacher_id: int):
+    db = get_db()
+    db.execute("DELETE FROM teachers WHERE id = ?", (int(teacher_id),))
+    db.commit()
+    return redirect(url_for("admin_teachers"))
+
+
+@app.get("/admin/news")
+@admin_login_required
+def admin_news_list():
+    db = get_db()
+    posts = db.execute(
+        "SELECT * FROM news_posts ORDER BY datetime(date_time) DESC"
+    ).fetchall()
+    return render_template(
+        "admin_news_list.html",
+        page_title="Manage News",
+        page_subtitle="Create, edit or delete posts",
+        active_page="admin_news",
+        posts=posts,
+    )
+
+
+@app.get("/admin/news/new")
+@admin_login_required
+def admin_news_new():
+    return render_template(
+        "admin_news_form.html",
+        page_title="New News Post",
+        page_subtitle="Publish an announcement",
+        active_page="admin_news",
+        post=None,
+        error=None,
+    )
+
+
+@app.post("/admin/news/new")
+@admin_login_required
+def admin_news_create():
+    priority = (request.form.get("priority") or "").strip().upper() or "NORMAL"
+    heading = (request.form.get("heading") or "").strip()
+    body = (request.form.get("body") or "").strip()
+    sender = (request.form.get("sender") or "").strip()
+    news_type = (request.form.get("news_type") or "").strip()
+    tags = (request.form.get("tags") or "").strip()
+    if not heading or not body or not sender or not news_type:
+        return render_template(
+            "admin_news_form.html",
+            page_title="New News Post",
+            page_subtitle="Publish an announcement",
+            active_page="admin_news",
+            post=None,
+            error="Please fill all required fields.",
+        )
+    db = get_db()
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    db.execute(
+        """
+        INSERT INTO news_posts (priority, date_time, heading, body, sender, news_type, tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (priority, now, heading, body, sender, news_type, tags),
+    )
+    db.commit()
+    return redirect(url_for("admin_news_list"))
+
+
+@app.get("/admin/news/<int:post_id>/edit")
+@admin_login_required
+def admin_news_edit(post_id: int):
+    db = get_db()
+    post = db.execute("SELECT * FROM news_posts WHERE id = ?", (int(post_id),)).fetchone()
+    if not post:
+        return redirect(url_for("admin_news_list"))
+    return render_template(
+        "admin_news_form.html",
+        page_title="Edit News Post",
+        page_subtitle="Update announcement",
+        active_page="admin_news",
+        post=post,
+        error=None,
+    )
+
+
+@app.post("/admin/news/<int:post_id>/edit")
+@admin_login_required
+def admin_news_update(post_id: int):
+    priority = (request.form.get("priority") or "").strip().upper() or "NORMAL"
+    heading = (request.form.get("heading") or "").strip()
+    body = (request.form.get("body") or "").strip()
+    sender = (request.form.get("sender") or "").strip()
+    news_type = (request.form.get("news_type") or "").strip()
+    tags = (request.form.get("tags") or "").strip()
+    if not heading or not body or not sender or not news_type:
+        db = get_db()
+        post = db.execute("SELECT * FROM news_posts WHERE id = ?", (int(post_id),)).fetchone()
+        return render_template(
+            "admin_news_form.html",
+            page_title="Edit News Post",
+            page_subtitle="Update announcement",
+            active_page="admin_news",
+            post=post,
+            error="Please fill all required fields.",
+        )
+    db = get_db()
+    db.execute(
+        """
+        UPDATE news_posts
+        SET priority = ?, heading = ?, body = ?, sender = ?, news_type = ?, tags = ?
+        WHERE id = ?
+        """,
+        (priority, heading, body, sender, news_type, tags, int(post_id)),
+    )
+    db.commit()
+    return redirect(url_for("admin_news_list"))
+
+
+@app.post("/admin/news/<int:post_id>/delete")
+@admin_login_required
+def admin_news_delete(post_id: int):
+    db = get_db()
+    db.execute("DELETE FROM news_posts WHERE id = ?", (int(post_id),))
+    db.commit()
+    return redirect(url_for("admin_news_list"))
+
+
+@app.get("/admin/exam-forms")
+@admin_login_required
+def admin_exam_forms():
+    db = get_db()
+    forms = db.execute(
+        "SELECT * FROM exam_forms ORDER BY CASE status WHEN 'OPEN' THEN 0 ELSE 1 END, id DESC"
+    ).fetchall()
+    return render_template(
+        "admin_exam_forms.html",
+        page_title="Manage Exam Forms",
+        page_subtitle="Open/close exam forms",
+        active_page="admin_exam_forms",
+        forms=forms,
+    )
+
+
+@app.get("/admin/exam-forms/new")
+@admin_login_required
+def admin_exam_form_new():
+    return render_template(
+        "admin_exam_form_form.html",
+        page_title="New Exam Form",
+        page_subtitle="Create a new exam application form",
+        active_page="admin_exam_forms",
+        form=None,
+        error=None,
+    )
+
+
+@app.post("/admin/exam-forms/new")
+@admin_login_required
+def admin_exam_form_create():
+    title = (request.form.get("title") or "").strip()
+    semester_label = (request.form.get("semester_label") or "").strip()
+    status = ((request.form.get("status") or "").strip().upper() or "CLOSED")
+    open_from = (request.form.get("open_from") or "").strip() or None
+    open_to = (request.form.get("open_to") or "").strip() or None
+    fee_raw = (request.form.get("fee") or "").strip()
+    note = (request.form.get("note") or "").strip() or None
+    if not title or not semester_label:
+        return render_template(
+            "admin_exam_form_form.html",
+            page_title="New Exam Form",
+            page_subtitle="Create a new exam application form",
+            active_page="admin_exam_forms",
+            form=None,
+            error="Title and semester label are required.",
+        )
+    fee = None
+    if fee_raw:
+        try:
+            fee = int(fee_raw)
+        except Exception:
+            return render_template(
+                "admin_exam_form_form.html",
+                page_title="New Exam Form",
+                page_subtitle="Create a new exam application form",
+                active_page="admin_exam_forms",
+                form=None,
+                error="Fee must be a number.",
+            )
+
+    db = get_db()
+    db.execute(
+        """
+        INSERT INTO exam_forms (title, semester_label, status, open_from, open_to, fee, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (title, semester_label, status, open_from, open_to, fee, note),
+    )
+    db.commit()
+    return redirect(url_for("admin_exam_forms"))
+
+
+@app.get("/admin/exam-forms/<int:form_id>/submissions")
+@admin_login_required
+def admin_exam_form_submissions(form_id: int):
+    db = get_db()
+    form = db.execute("SELECT * FROM exam_forms WHERE id = ?", (int(form_id),)).fetchone()
+    if not form:
+        return redirect(url_for("admin_exam_forms"))
+    submissions = db.execute(
+        """
+        SELECT s.*
+        FROM exam_form_submissions s
+        WHERE s.form_id = ?
+        ORDER BY datetime(s.submitted_at) DESC
+        """,
+        (int(form_id),),
+    ).fetchall()
+    return render_template(
+        "admin_exam_form_submissions.html",
+        page_title="Exam Form Submissions",
+        page_subtitle=f"Responses for: {form['title']}",
+        active_page="admin_exam_forms",
+        form=form,
+        submissions=submissions,
+    )
+
+
+@app.post("/admin/exam-forms/<int:form_id>/toggle")
+@admin_login_required
+def admin_exam_form_toggle(form_id: int):
+    db = get_db()
+    form = db.execute("SELECT * FROM exam_forms WHERE id = ?", (int(form_id),)).fetchone()
+    if not form:
+        return redirect(url_for("admin_exam_forms"))
+    new_status = "CLOSED" if (form["status"] or "").upper() == "OPEN" else "OPEN"
+    db.execute("UPDATE exam_forms SET status = ? WHERE id = ?", (new_status, int(form_id)))
+    db.commit()
+    return redirect(url_for("admin_exam_forms"))
+
+
 @app.get("/register")
 def register():
     if get_current_student_id() is not None:
         return redirect(url_for("dashboard"))
-    return render_template("register.html", error=None)
+    db = get_db()
+    groups = db.execute("SELECT * FROM schedule_groups ORDER BY id ASC").fetchall()
+    return render_template("register.html", error=None, schedule_groups=groups)
 
 
 @app.post("/register")
 def register_post():
     form = {k: (request.form.get(k) or "").strip() for k in request.form.keys()}
-
     required = [
         "name",
         "roll_no",
@@ -1203,6 +1913,7 @@ def register_post():
         "program",
         "year",
         "sem",
+        "schedule_id",
         "password",
         "confirm_password",
         "father_name",
@@ -1220,6 +1931,23 @@ def register_post():
     if missing:
         return render_template("register.html", error="Please fill all required fields.")
 
+    phone_digits = re.sub(r"\D+", "", form.get("phone", ""))[-10:]
+    emergency_digits = re.sub(r"\D+", "", form.get("emergency_contact_phone", ""))[-10:]
+
+    if not re.fullmatch(r"[6-9]\d{9}", phone_digits):
+        return render_template(
+            "register.html",
+            error="Please enter a valid 10-digit mobile number (starting with 6-9).",
+        )
+    if not re.fullmatch(r"[6-9]\d{9}", emergency_digits):
+        return render_template(
+            "register.html",
+            error="Please enter a valid 10-digit emergency mobile number (starting with 6-9).",
+        )
+
+    form["phone"] = phone_digits
+    form["emergency_contact_phone"] = emergency_digits
+
     if form["password"] != form["confirm_password"]:
         return render_template("register.html", error="Passwords do not match.")
 
@@ -1229,7 +1957,11 @@ def register_post():
     except Exception:
         return render_template("register.html", error="Year and semester must be numbers.")
 
-    next_class = form.get("next_class") or ""
+    try:
+        schedule_id = int(form["schedule_id"])
+    except Exception:
+        return render_template("register.html", error="Please select a weekly schedule.")
+
     attendance_percent = form.get("attendance_percent") or ""
     try:
         attendance_percent_int = int(attendance_percent) if attendance_percent else 0
@@ -1251,8 +1983,8 @@ def register_post():
         """
         INSERT INTO students (
             name, roll_no, email, phone, guardian, residential_status,
-            program, year, sem, attendance_percent, next_class, password_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            program, year, sem, attendance_percent, next_class, password_hash, schedule_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             form["name"],
@@ -1265,8 +1997,9 @@ def register_post():
             year,
             sem,
             attendance_percent_int,
-            next_class,
+            "",
             password_hash,
+            int(schedule_id),
         ),
     )
     student_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
@@ -1441,15 +2174,23 @@ def news():
 @login_required
 def schedules():
     db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    schedule_id = int(student["schedule_id"] or 1) if student and ("schedule_id" in student.keys()) else 1
+
     events = db.execute(
-        "SELECT * FROM schedules ORDER BY datetime(start_at) ASC"
+        "SELECT * FROM schedules WHERE schedule_id = ? ORDER BY datetime(start_at) ASC",
+        (int(schedule_id),),
     ).fetchall()
 
     timetable_rows = db.execute(
         """
         SELECT * FROM weekly_timetable
+        WHERE schedule_id = ?
         ORDER BY day_of_week ASC, time(start_time) ASC
         """
+        ,
+        (int(schedule_id),)
     ).fetchall()
     timetable_by_day = {i: [] for i in range(7)}
     for row in timetable_rows:
@@ -1473,9 +2214,10 @@ def schedules():
         """
         SELECT * FROM schedules
         WHERE date(start_at) >= date(?) AND date(start_at) <= date(?)
+          AND schedule_id = ?
         ORDER BY datetime(start_at) ASC
         """,
-        (month_start, month_end),
+        (month_start, month_end, int(schedule_id)),
     ).fetchall()
 
     calendar_weeks = []
@@ -1720,18 +2462,81 @@ def exams():
     results = db.execute(
         "SELECT * FROM exam_results ORDER BY datetime(published_at) DESC"
     ).fetchall()
+
+    sid = get_current_student_id()
+    submitted_form_ids = set(
+        r[0]
+        for r in db.execute(
+            "SELECT form_id FROM exam_form_submissions WHERE student_id = ?",
+            (sid,),
+        ).fetchall()
+    )
     return render_template(
         "exams.html",
         page_title="Exams Portal",
         page_subtitle="Track your performance",
         active_page="exams",
         forms=forms,
+        submitted_form_ids=submitted_form_ids,
         admit_card=admit_card,
         admit_subjects=admit_subjects,
         semester_result=semester_result,
         semester_result_courses=semester_result_courses,
         results=results,
     )
+
+
+@app.post("/exams/forms/<int:form_id>/apply")
+@login_required
+def exams_form_apply(form_id: int):
+    db = get_db()
+    sid = get_current_student_id()
+
+    form = db.execute("SELECT * FROM exam_forms WHERE id = ?", (int(form_id),)).fetchone()
+    if not form or (form["status"] or "").upper() != "OPEN":
+        return redirect(url_for("exams"))
+
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    details = db.execute("SELECT * FROM student_details WHERE student_id = ?", (sid,)).fetchone()
+    profile = db.execute("SELECT * FROM student_profile WHERE student_id = ?", (sid,)).fetchone()
+    if not student or not details or not profile:
+        return redirect(url_for("exams"))
+
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    try:
+        db.execute(
+            """
+            INSERT INTO exam_form_submissions (
+                form_id, student_id, submitted_at,
+                student_name, roll_no, program, semester,
+                phone, email, guardian,
+                address, category, gender,
+                status, residential_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(form_id),
+                int(sid),
+                now,
+                student["name"],
+                student["roll_no"],
+                student["program"],
+                int(student["sem"]),
+                student["phone"],
+                student["email"],
+                student["guardian"],
+                details["address"],
+                details["category"],
+                details["gender"],
+                profile["status"],
+                student["residential_status"],
+            ),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        pass
+
+    return redirect(url_for("exams"))
 
 
 @app.get("/exams/admit-card/print")

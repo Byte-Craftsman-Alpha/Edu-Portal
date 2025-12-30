@@ -1,0 +1,60 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+{% if error %}
+<div class="mb-4 admin-card border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="max-w-3xl">
+    <div class="admin-card p-6">
+        <form method="post" action="{{ url_for('admin_exam_form_create') }}" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
+                    <input name="title" type="text" placeholder="e.g. Semester Examination Form" class="admin-input w-full" />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester Label</label>
+                        <input name="semester_label" type="text" placeholder="e.g. SEM-4 (2025-26)" class="admin-input w-full" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status</label>
+                        <select name="status" class="admin-input w-full">
+                            <option value="CLOSED" selected>CLOSED</option>
+                            <option value="OPEN">OPEN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open From (optional)</label>
+                        <input name="open_from" type="date" class="admin-input w-full" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Open To (optional)</label>
+                        <input name="open_to" type="date" class="admin-input w-full" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Fee (optional)</label>
+                        <input name="fee" type="number" min="0" step="1" placeholder="e.g. 500" class="admin-input w-full" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Note (optional)</label>
+                        <input name="note" type="text" placeholder="Optional message for students" class="admin-input w-full" />
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="submit" class="admin-btn admin-btn-primary">Create</button>
+                </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

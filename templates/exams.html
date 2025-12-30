@@ -24,6 +24,7 @@
                 {% if forms %}
                     {% for f in forms %}
                         {% set is_open = (f.status == 'OPEN') %}
+                        {% set is_applied = (submitted_form_ids is defined and f.id in submitted_form_ids) %}
                         <div class="p-4 rounded-xl border {% if is_open %}border-emerald-200 bg-gradient-to-r from-emerald-50 to-white{% else %}border-slate-200 bg-white{% endif %}">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="flex-1">
@@ -40,7 +41,15 @@
                                         <p class="text-xs text-slate-400 mt-2">{{ f.note }}</p>
                                     {% endif %}
                                 </div>
-                                <button type="button" class="px-4 py-2 rounded-xl {% if is_open %}bg-emerald-600 text-white hover:bg-emerald-700{% else %}bg-slate-100 text-slate-400 cursor-not-allowed{% endif %} text-sm font-medium transition-all">{% if is_open %}Apply{% else %}Closed{% endif %}</button>
+                                {% if is_applied %}
+                                    <div class="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-medium">Applied</div>
+                                {% elif is_open %}
+                                    <form method="post" action="{{ url_for('exams_form_apply', form_id=f.id) }}">
+                                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-medium transition-all">Apply</button>
+                                    </form>
+                                {% else %}
+                                    <button type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-400 cursor-not-allowed text-sm font-medium transition-all">Closed</button>
+                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}

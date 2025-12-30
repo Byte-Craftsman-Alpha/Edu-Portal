@@ -1,0 +1,66 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+{% if error %}
+<div class="mb-4 admin-card border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="admin-card p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900">Add Teacher</h2>
+        <span class="text-xs text-slate-500">Faculty list</span>
+    </div>
+
+    <form method="post" action="{{ url_for('admin_teachers_create') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input name="name" type="text" placeholder="Full name" class="admin-input" />
+        <input name="designation" type="text" placeholder="Designation (e.g. HOD)" class="admin-input" />
+        <input name="department" type="text" placeholder="Department" class="admin-input" />
+        <input name="email" type="email" placeholder="Email (optional)" class="admin-input" />
+        <input name="phone" type="text" placeholder="Phone (optional)" class="admin-input" />
+        <div class="flex justify-end md:justify-start">
+            <button type="submit" class="admin-btn admin-btn-primary">Add</button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="admin-table w-full text-left">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr class="text-xs text-slate-500">
+                    <th class="px-4 py-3 font-medium">Name</th>
+                    <th class="px-4 py-3 font-medium">Designation</th>
+                    <th class="px-4 py-3 font-medium">Department</th>
+                    <th class="px-4 py-3 font-medium">Email</th>
+                    <th class="px-4 py-3 font-medium">Phone</th>
+                    <th class="px-4 py-3 font-medium">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% if teachers %}
+                    {% for t in teachers %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ t.name }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ t.designation }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ t.department }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ t.email or '' }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ t.phone or '' }}</td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="{{ url_for('admin_teachers_delete', teacher_id=t.id) }}" onsubmit="return confirm('Delete this teacher?');">
+                                    <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="px-4 py-8 text-slate-500" colspan="6">No teachers added yet.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

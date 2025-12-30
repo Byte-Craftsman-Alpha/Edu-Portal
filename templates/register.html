@@ -67,7 +67,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone *</label>
-                            <input name="phone" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number" pattern="^[6-9][0-9]{9}$" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Password *</label>
@@ -100,6 +100,15 @@
                             <input name="department" type="text" placeholder="e.g. Computer Science" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Weekly Schedule *</label>
+                            <select name="schedule_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                                <option value="" selected>Select schedule</option>
+                                {% for g in schedule_groups or [] %}
+                                    <option value="{{ g.id }}">{{ g.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Batch *</label>
                             <input name="batch" type="text" placeholder="e.g. 2023-2027" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
@@ -113,7 +122,11 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Residential Status *</label>
-                            <input name="residential_status" type="text" placeholder="Hosteler / Day Scholar" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <select name="residential_status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                                <option value="" selected>Select status</option>
+                                <option value="Day Scholar">Day Scholar</option>
+                                <option value="Hosteler">Hosteler</option>
+                            </select>
                         </div>
                     </div>
 
@@ -124,11 +137,23 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Gender *</label>
-                            <input name="gender" type="text" placeholder="Male / Female" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <select name="gender" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                                <option value="" selected>Select gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Category *</label>
-                            <input name="category" type="text" placeholder="GENERAL / OBC / SC / ST" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <select name="category" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                                <option value="" selected>Select category</option>
+                                <option value="GENERAL">GENERAL</option>
+                                <option value="OBC">OBC</option>
+                                <option value="SC">SC</option>
+                                <option value="ST">ST</option>
+                                <option value="EWS">EWS</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Exam Roll Number (optional)</label>
@@ -155,18 +180,17 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Phone *</label>
-                            <input name="emergency_contact_phone" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <input name="emergency_contact_phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number" pattern="^[6-9][0-9]{9}$" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status (optional)</label>
-                            <input name="status" type="text" value="Active" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Next Class (optional)</label>
-                            <input name="next_class" type="text" placeholder="e.g. DBMS Lab @ 2PM" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <select name="status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                                <option value="Active" selected>Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="On Leave">On Leave</option>
+                                <option value="Suspended">Suspended</option>
+                                <option value="Alumni">Alumni</option>
+                            </select>
                         </div>
                     </div>
 
@@ -237,6 +261,22 @@
             });
 
             showStep(0);
+
+            function normalizeIndianMobileInput(inputEl) {
+                const digits = (inputEl.value || '').replace(/\D/g, '').slice(-10);
+                inputEl.value = digits;
+            }
+
+            const phoneEl = document.querySelector('input[name="phone"]');
+            const emergencyPhoneEl = document.querySelector('input[name="emergency_contact_phone"]');
+            if (phoneEl) {
+                phoneEl.addEventListener('input', () => normalizeIndianMobileInput(phoneEl));
+                phoneEl.addEventListener('blur', () => normalizeIndianMobileInput(phoneEl));
+            }
+            if (emergencyPhoneEl) {
+                emergencyPhoneEl.addEventListener('input', () => normalizeIndianMobileInput(emergencyPhoneEl));
+                emergencyPhoneEl.addEventListener('blur', () => normalizeIndianMobileInput(emergencyPhoneEl));
+            }
         })();
     </script>
 </body>

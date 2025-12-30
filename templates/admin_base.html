@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPortal - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .admin-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); }
+        .admin-table thead { background: #f8fafc; }
+        .admin-table th { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; }
+        .admin-input { border-radius: 12px; border: 1px solid #e2e8f0; background: white; padding: 12px 16px; font-size: 14px; }
+        .admin-input:focus { outline: none; border-color: #334155; box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08); }
+        .admin-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; transition: all 0.15s ease; }
+        .admin-btn-primary { background: #0f172a; color: white; }
+        .admin-btn-primary:hover { background: #020617; }
+        .admin-btn-soft { background: #f1f5f9; color: #0f172a; }
+        .admin-btn-soft:hover { background: #e2e8f0; }
+        .admin-btn-danger { background: #fff1f2; color: #be123c; }
+        .admin-btn-danger:hover { background: #ffe4e6; }
+        .admin-pill { border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+    </style>
+</head>
+
+<body class="grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
+
+    <aside class="hidden md:flex flex-col gap-6 border-r border-slate-200 bg-white/90 backdrop-blur-sm p-6 sticky top-0 h-screen">
+        <div class="flex items-center gap-4 mb-2">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center text-white text-xl font-semibold">
+                A
+            </div>
+            <div class="leading-tight">
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">EduPortal</div>
+                <div class="text-sm font-semibold text-slate-900">{{ admin_user.full_name if admin_user else 'Admin' }}</div>
+                <div class="text-xs text-slate-400">Role: {{ admin_user.role if admin_user else '-' }}</div>
+            </div>
+        </div>
+
+        <nav class="space-y-1">
+            <a href="{{ url_for('admin_dashboard') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">🛡️</span> Dashboard</span>
+                <span class="text-xs {% if active_page == 'admin' %}text-slate-200{% else %}text-slate-400{% endif %}">Home</span>
+            </a>
+            <a href="{{ url_for('admin_news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📰</span> News</span>
+                <span class="text-xs {% if active_page == 'admin_news' %}text-slate-200{% else %}text-slate-400{% endif %}">Posts</span>
+            </a>
+            <a href="{{ url_for('admin_exam_forms') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_exam_forms' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📝</span> Exam Forms</span>
+                <span class="text-xs {% if active_page == 'admin_exam_forms' %}text-slate-200{% else %}text-slate-400{% endif %}">Control</span>
+            </a>
+            <a href="{{ url_for('admin_schedules') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_schedules' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">📅</span> Schedules</span>
+                <span class="text-xs {% if active_page == 'admin_schedules' %}text-slate-200{% else %}text-slate-400{% endif %}">Timetable</span>
+            </a>
+            <a href="{{ url_for('admin_teachers') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_teachers' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="text-lg">👨‍🏫</span> Teachers</span>
+                <span class="text-xs {% if active_page == 'admin_teachers' %}text-slate-200{% else %}text-slate-400{% endif %}">Directory</span>
+            </a>
+        </nav>
+
+        <div class="mt-auto p-5 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+            <p class="text-sm font-semibold">Admin Tools</p>
+            <p class="text-xs text-slate-300 mt-1">Manage institute data and settings.</p>
+            <a href="{{ url_for('admin_logout') }}" class="mt-4 w-full admin-btn admin-btn-soft">Logout</a>
+        </div>
+    </aside>
+
+    <main class="flex flex-col min-w-0 min-h-screen">
+        <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 md:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all">☰</button>
+                <div>
+                    <h1 class="text-xl font-semibold text-slate-900">{{ page_title }}</h1>
+                    <p class="text-xs text-slate-500">{{ page_subtitle }}</p>
+                    <div class="hidden md:flex items-center gap-2 mt-2 text-xs text-slate-500">
+                        <a href="{{ url_for('admin_dashboard') }}" class="hover:text-slate-900">Admin</a>
+                        <span class="text-slate-300">/</span>
+                        <span class="text-slate-900 font-medium">{{ page_title }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('admin_logout') }}" class="admin-btn admin-btn-soft">Logout</a>
+            </div>
+        </header>
+
+        <div class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</body>
+
+</html>

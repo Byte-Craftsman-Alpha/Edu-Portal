@@ -1,0 +1,48 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+{% if error %}
+<div class="mb-4 admin-card border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="admin-card p-5">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">News Posts</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ news_count }}</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <a href="{{ url_for('admin_news_list') }}" class="admin-btn admin-btn-soft">Manage</a>
+            <a href="{{ url_for('admin_news_new') }}" class="admin-btn admin-btn-primary">New</a>
+        </div>
+    </div>
+    <div class="admin-card p-5">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Exam Forms</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ open_forms }} <span class="text-sm font-medium text-slate-500">open</span></p>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <a href="{{ url_for('admin_exam_forms') }}" class="admin-btn admin-btn-soft">Manage</a>
+            <a href="{{ url_for('admin_exam_form_new') }}" class="admin-btn admin-btn-primary">New</a>
+        </div>
+    </div>
+    <div class="admin-card p-5">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Schedules</p>
+        <p class="mt-2 text-sm text-slate-600">Manage events and weekly timetable</p>
+        <a href="{{ url_for('admin_schedules') }}" class="mt-4 admin-btn admin-btn-soft">Open</a>
+    </div>
+    <div class="admin-card p-5">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Teachers</p>
+        <p class="mt-2 text-sm text-slate-600">Maintain faculty directory</p>
+        <a href="{{ url_for('admin_teachers') }}" class="mt-4 admin-btn admin-btn-soft">Open</a>
+    </div>
+    <div class="admin-card p-5">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Student Portal</p>
+        <p class="mt-2 text-sm text-slate-600">Jump to student dashboard</p>
+        <a href="{{ url_for('dashboard') }}" class="mt-4 admin-btn admin-btn-soft">Go</a>
+    </div>
+    <div class="admin-card p-5">
+        <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Signed In As</p>
+        <p class="mt-2 text-sm font-semibold text-slate-900">{{ admin_user.full_name if admin_user else 'Admin' }}</p>
+        <p class="text-xs text-slate-500">Role: {{ admin_user.role if admin_user else '' }}</p>
+    </div>
+</div>
+{% endblock %}

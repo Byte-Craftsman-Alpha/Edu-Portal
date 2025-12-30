@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPortal - Admin Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 flex items-center justify-center p-6">
+    <div class="w-full max-w-md">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-[0_30px_80px_rgba(15,23,42,0.15),0_2px_10px_rgba(15,23,42,0.06)] p-8">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center text-white text-xl font-semibold">A</div>
+                <div class="leading-tight">
+                    <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">EduPortal</div>
+                    <div class="text-lg font-semibold text-slate-900">Administrative Login</div>
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('admin_login_post') }}" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Username</label>
+                    <input name="username" type="text" autocomplete="username" placeholder="e.g. admin" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-slate-700 focus:ring-4 focus:ring-slate-900/10" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Password</label>
+                    <input name="password" type="password" autocomplete="current-password" placeholder="Enter your password" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-slate-700 focus:ring-4 focus:ring-slate-900/10" />
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 hover:from-slate-950 hover:to-slate-800 text-white text-sm font-medium transition-all">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-6 text-xs text-slate-500">
+                <p class="font-medium text-slate-700">Default Admin</p>
+                <p class="mt-1">Username: <span class="font-semibold text-slate-700">admin</span></p>
+                <p>Password: <span class="font-semibold text-slate-700">admin123</span></p>
+            </div>
+
+            <div class="mt-6 text-sm text-slate-600">
+                <a href="{{ url_for('login') }}" class="inline-flex items-center justify-center w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all">
+                    Back to Student Login
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

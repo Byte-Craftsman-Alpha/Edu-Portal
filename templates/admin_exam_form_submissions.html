@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="space-y-4">
+        <div class="admin-card p-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Form</p>
+                    <p class="text-lg font-semibold text-slate-900">{{ form.title }}</p>
+                    <p class="text-sm text-slate-500">{{ form.semester_label }} · Status: {{ form.status }}</p>
+                </div>
+                <div class="text-sm text-slate-600">Total submissions: <span class="font-semibold text-slate-900">{{ submissions|length }}</span></div>
+            </div>
+        </div>
+
+        <div class="admin-card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="admin-table w-full text-left">
+                    <thead class="border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3 font-medium">Submitted</th>
+                            <th class="px-4 py-3 font-medium">Student</th>
+                            <th class="px-4 py-3 font-medium">Roll No</th>
+                            <th class="px-4 py-3 font-medium">Program</th>
+                            <th class="px-4 py-3 font-medium">Sem</th>
+                            <th class="px-4 py-3 font-medium">Phone</th>
+                            <th class="px-4 py-3 font-medium">Email</th>
+                            <th class="px-4 py-3 font-medium">Guardian</th>
+                            <th class="px-4 py-3 font-medium">Category</th>
+                            <th class="px-4 py-3 font-medium">Gender</th>
+                            <th class="px-4 py-3 font-medium">Status</th>
+                            <th class="px-4 py-3 font-medium">Residential</th>
+                            <th class="px-4 py-3 font-medium">Address</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        {% if submissions %}
+                            {% for s in submissions %}
+                                <tr class="border-t border-slate-100 align-top">
+                                    <td class="px-4 py-3 text-slate-500">{{ s.submitted_at|fmt_dt }}</td>
+                                    <td class="px-4 py-3 font-medium text-slate-900">{{ s.student_name }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.roll_no }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.program }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.semester }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.phone }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.email }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.guardian }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.category }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.gender }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.status }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.residential_status }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ s.address }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td class="px-4 py-8 text-slate-500" colspan="13">No submissions yet for this form.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+</div>
+{% endblock %}

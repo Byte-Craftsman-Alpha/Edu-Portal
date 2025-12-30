@@ -1,0 +1,53 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-end mb-4">
+    <a href="{{ url_for('admin_news_new') }}" class="admin-btn admin-btn-primary">New Post</a>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="admin-table w-full text-left">
+            <thead class="border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Date</th>
+                    <th class="px-4 py-3 font-medium">Priority</th>
+                    <th class="px-4 py-3 font-medium">Heading</th>
+                    <th class="px-4 py-3 font-medium">Sender</th>
+                    <th class="px-4 py-3 font-medium">Type</th>
+                    <th class="px-4 py-3 font-medium">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% if posts %}
+                    {% for p in posts %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3 text-slate-500">{{ p.date_time|fmt_dt }}</td>
+                            <td class="px-4 py-3">
+                                <span class="admin-pill {% if p.priority in ['URGENT','HIGH'] %}bg-rose-50 text-rose-700{% elif p.priority == 'NORMAL' %}bg-slate-100 text-slate-700{% else %}bg-indigo-50 text-indigo-700{% endif %}">
+                                    {{ p.priority }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ p.heading }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ p.sender }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ p.news_type }}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ url_for('admin_news_edit', post_id=p.id) }}" class="admin-btn admin-btn-soft text-xs">Edit</a>
+                                    <form method="post" action="{{ url_for('admin_news_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
+                                        <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="px-4 py-8 text-slate-500" colspan="6">No posts yet.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+{% if error %}
+<div class="mb-4 admin-card border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="admin-card p-6 mb-6">
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div class="flex-1">
+            <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Schedule Group</p>
+            <form method="get" action="{{ url_for('admin_schedules') }}" class="mt-2 flex flex-col sm:flex-row gap-2">
+                <select name="schedule_id" class="admin-input flex-1">
+                    {% for g in schedule_groups or [] %}
+                        <option value="{{ g.id }}" {% if selected_schedule_id is defined and g.id == selected_schedule_id %}selected{% endif %}>
+                            {{ g.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="admin-btn admin-btn-primary">Load</button>
+            </form>
+        </div>
+        <div class="flex-1">
+            <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Create New Schedule Group</p>
+            <form method="post" action="{{ url_for('admin_schedule_group_create') }}" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <input name="name" type="text" placeholder="Group name" class="admin-input" />
+                <input name="program" type="text" placeholder="Program (optional)" class="admin-input" />
+                <input name="department" type="text" placeholder="Department (optional)" class="admin-input" />
+                <div class="flex gap-2">
+                    <input name="semester" type="number" min="1" max="12" placeholder="Sem" class="admin-input w-28" />
+                    <button type="submit" class="admin-btn admin-btn-soft flex-1">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="admin-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-900">Schedule Events</h2>
+            <span class="text-xs text-slate-500">Add / Delete</span>
+        </div>
+
+        <form method="post" action="{{ url_for('admin_schedules_event_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
+            <input name="title" type="text" placeholder="Title" class="admin-input" />
+            <input name="location" type="text" placeholder="Location" class="admin-input" />
+            <input name="start_at" type="datetime-local" class="admin-input" />
+            <input name="end_at" type="datetime-local" class="admin-input" />
+            <div class="md:col-span-2 flex justify-end">
+                <button type="submit" class="admin-btn admin-btn-primary">Add Event</button>
+            </div>
+        </form>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-xs text-slate-500">
+                        <th class="px-4 py-3 font-medium">Title</th>
+                        <th class="px-4 py-3 font-medium">Location</th>
+                        <th class="px-4 py-3 font-medium">Start</th>
+                        <th class="px-4 py-3 font-medium">End</th>
+                        <th class="px-4 py-3 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    {% if events %}
+                        {% for e in events %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ e.title }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ e.location }}</td>
+                            <td class="px-4 py-3 text-slate-500">{{ e.start_at|fmt_dt }}</td>
+                            <td class="px-4 py-3 text-slate-500">{{ e.end_at|fmt_dt }}</td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="{{ url_for('admin_schedules_event_delete', event_id=e.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this event?');">
+                                    <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="px-4 py-8 text-slate-500" colspan="5">No events added yet.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="admin-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-900">Weekly Timetable</h2>
+            <span class="text-xs text-slate-500">Add / Delete</span>
+        </div>
+
+        <form method="post" action="{{ url_for('admin_timetable_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
+            <select name="day_of_week" class="admin-input">
+                <option value="">Day of week</option>
+                <option value="0">Monday</option>
+                <option value="1">Tuesday</option>
+                <option value="2">Wednesday</option>
+                <option value="3">Thursday</option>
+                <option value="4">Friday</option>
+                <option value="5">Saturday</option>
+                <option value="6">Sunday</option>
+            </select>
+            <input name="subject" type="text" placeholder="Subject" class="admin-input" />
+            <input name="room" type="text" placeholder="Room" class="admin-input" />
+            <input name="instructor" type="text" placeholder="Instructor" class="admin-input" />
+            <input name="start_time" type="time" class="admin-input" />
+            <input name="end_time" type="time" class="admin-input" />
+            <div class="md:col-span-2 flex justify-end">
+                <button type="submit" class="admin-btn admin-btn-primary">Add Timetable Row</button>
+            </div>
+        </form>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-xs text-slate-500">
+                        <th class="px-4 py-3 font-medium">Day</th>
+                        <th class="px-4 py-3 font-medium">Time</th>
+                        <th class="px-4 py-3 font-medium">Subject</th>
+                        <th class="px-4 py-3 font-medium">Room</th>
+                        <th class="px-4 py-3 font-medium">Instructor</th>
+                        <th class="px-4 py-3 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    {% if timetable_rows %}
+                        {% for r in timetable_rows %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3 text-slate-700">{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][r.day_of_week] if r.day_of_week is not none else '' }}</td>
+                            <td class="px-4 py-3 text-slate-500">{{ r.start_time }} - {{ r.end_time }}</td>
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ r.subject }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ r.room }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ r.instructor }}</td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="{{ url_for('admin_timetable_delete', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this timetable row?');">
+                                    <button type="submit" class="admin-btn admin-btn-danger text-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="px-4 py-8 text-slate-500" colspan="6">No timetable rows yet.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

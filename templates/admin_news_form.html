@@ -1,0 +1,57 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+{% if error %}
+<div class="mb-4 admin-card border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="max-w-3xl">
+    <div class="admin-card p-6">
+        <form method="post" action="{% if post %}{{ url_for('admin_news_update', post_id=post.id) }}{% else %}{{ url_for('admin_news_create') }}{% endif %}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Priority</label>
+                        <select name="priority" class="admin-input w-full">
+                            {% set val = (post.priority if post else 'NORMAL') %}
+                            <option value="URGENT" {% if val == 'URGENT' %}selected{% endif %}>URGENT</option>
+                            <option value="HIGH" {% if val == 'HIGH' %}selected{% endif %}>HIGH</option>
+                            <option value="NORMAL" {% if val == 'NORMAL' %}selected{% endif %}>NORMAL</option>
+                            <option value="LOW" {% if val == 'LOW' %}selected{% endif %}>LOW</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Type</label>
+                        <input name="news_type" type="text" value="{{ post.news_type if post else '' }}" placeholder="e.g. Notice" class="admin-input w-full" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Heading</label>
+                    <input name="heading" type="text" value="{{ post.heading if post else '' }}" placeholder="Announcement title" class="admin-input w-full" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Body</label>
+                    <textarea name="body" rows="6" placeholder="Write announcement..." class="admin-input w-full">{{ post.body if post else '' }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Sender</label>
+                        <input name="sender" type="text" value="{{ post.sender if post else '' }}" placeholder="e.g. Principal Office" class="admin-input w-full" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Tags</label>
+                        <input name="tags" type="text" value="{{ post.tags if post else '' }}" placeholder="Comma-separated tags" class="admin-input w-full" />
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="submit" class="admin-btn admin-btn-primary">Save</button>
+                </div>
+            </form>
+    </div>
+</div>
+{% endblock %}
