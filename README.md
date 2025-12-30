@@ -2,7 +2,7 @@
 
 EduPortal is a student portal + admin panel built with **Flask** and **SQLite**.
 
-It includes a student-facing portal (dashboard/news/schedules/exams/library/profile) and an admin dashboard (news, schedules, exam forms, admit card windows, teachers, etc.).
+It includes a student-facing portal (dashboard/news/schedules/exams/library/profile) and an admin dashboard (students, news, schedules, exam forms, admit card windows, teachers, etc.).
 
 This repository is designed to be **easy to run locally** and includes a script to generate a full dummy database for end-to-end testing.
 
@@ -186,7 +186,8 @@ Seeded students exist in the DB (created by `init_db()` / `seed_dummy_db.py`).
 ### Admin Panel
 
 - **Dashboard**: counts + quick overview
-- **News**: create / delete posts
+- **Students**: view / edit / delete student records (includes cleanup of related rows and uploaded vault files)
+- **News**: create / edit / delete posts
 - **Schedules**:
   - manage global monthly events/holidays
   - manage weekly timetable per schedule group
@@ -194,7 +195,7 @@ Seeded students exist in the DB (created by `init_db()` / `seed_dummy_db.py`).
   - open/close windows
   - delete forms
   - manage admit card openings
-- **Teachers**: directory management
+- **Teachers**: add / delete teachers
 
 ---
 
