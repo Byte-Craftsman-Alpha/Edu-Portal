@@ -13,7 +13,8 @@ This repository is designed to be **easy to run locally** and includes a script 
 - **Backend**: Python + Flask
 - **Database**: SQLite (`eduportal.db`)
 - **Server (optional production-style)**: Waitress (`wsgi.py`)
-- **Frontend**: Jinja2 templates + Tailwind (CDN)
+- **Frontend**: Jinja2 templates + Tailwind (CDN) + Iconify
+- **UX**: GitHub-style navigation progress bar for smooth transitions
 
 ---
 
@@ -167,6 +168,7 @@ Seeded students exist in the DB (created by `init_db()` / `seed_dummy_db.py`).
 - **News**
   - DB-backed feed
   - priority-based items
+  - advanced filters (priority, type, sender, tags, date range)
 - **Schedules**
   - personalized **weekly timetable** based on the student’s `schedule_id`
   - global **monthly events & holidays** (`calendar_items`)
@@ -182,12 +184,17 @@ Seeded students exist in the DB (created by `init_db()` / `seed_dummy_db.py`).
     - uploaded file under `static/uploads/`
 - **Profile**
   - student details + profile data
+- **Navigation UX**
+  - GitHub-style progress bar on page transitions
+  - Smooth animations and responsive design
 
 ### Admin Panel
 
 - **Dashboard**: counts + quick overview
 - **Students**: view / edit / delete student records (includes cleanup of related rows and uploaded vault files)
 - **News**: create / edit / delete posts
+  - advanced search and filtering
+  - improved header alignment and UI
 - **Schedules**:
   - manage global monthly events/holidays
   - manage weekly timetable per schedule group

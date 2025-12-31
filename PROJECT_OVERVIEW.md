@@ -13,10 +13,11 @@ EduPortal is a student portal + admin panel built with Flask and SQLite.
 
 ## Overview
 
-- **Student Portal**: Dashboard, news, schedules, library, vault, exams, profile
+- **Student Portal**: Dashboard, news (with advanced filters), schedules, library, vault, exams, profile
 - **Admin Panel**: Manage students, news, schedules, exam forms, admit cards, teachers
 - **Tech Stack**: Python + Flask, SQLite, Tailwind CSS, Iconify
 - **Features**: Responsive design, dummy data generator, production-ready server
+- **UX**: GitHub-style navigation progress bar for smooth transitions
 
 ## Getting Started
 
@@ -49,6 +50,13 @@ EduPortal is a student portal + admin panel built with Flask and SQLite.
 
 - Admin: username `admin`, password `admin123`
 - Students: roll numbers `CS-2024-042`, `CS-2024-043`, etc., password `student123`
+
+## Recent Improvements
+
+- **Admin Features**: Full CRUD operations for students, news management with advanced search
+- **UI/UX**: GitHub-style navigation progress bar, improved header alignments, enhanced filters
+- **Documentation**: Complete open-source files (LICENSE, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY)
+- **Git Ready**: Comprehensive README with project documentation and upload checklist
 
 ## License
 

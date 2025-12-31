@@ -9,7 +9,9 @@ All notable changes to EduPortal will be documented in this file.
 - Fixed advanced filter icon/toggle on student News page
 - Improved admin News header alignment (search + New Post button)
 - Updated README with project documentation and Git upload checklist
-- Added LICENSE, CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md
+- Added LICENSE, CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, PROJECT_OVERVIEW.md
+- GitHub-style navigation progress bar for smooth page transitions
+- Enhanced news advanced filters (priority, type, sender, tags, date range)
 
 ### Changed
 - Improved UI consistency across admin panels
