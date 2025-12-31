@@ -2320,7 +2320,7 @@ def admin_news_create():
             error="Please fill all required fields.",
         )
     db = get_db()
-    now = datetime.utcnow().isoformat(timespec="seconds")
+    now = datetime.now().isoformat(timespec="seconds")
 
     attachment = save_news_attachment(request.files.get("attachment"))
     attachment_path = attachment[0] if attachment else None

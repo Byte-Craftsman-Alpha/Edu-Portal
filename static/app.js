@@ -1,49 +1,3 @@
-// Splash screen management
-function initSplashScreen() {
-    const splash = document.getElementById('splash-screen');
-    if (!splash) return;
-
-    // Check if this is the first visit in the session
-    const hasSeenSplash = sessionStorage.getItem('eduportal-splash-seen');
-    
-    if (hasSeenSplash) {
-        // Already seen in this session, hide immediately
-        splash.classList.add('hidden');
-        return;
-    }
-
-    // Mark as seen for this session
-    sessionStorage.setItem('eduportal-splash-seen', 'true');
-
-    // Minimum display time of 3.5 seconds
-    const minDisplayTime = 3500;
-    const startTime = Date.now();
-
-    // Hide splash when page is fully loaded AND minimum time has passed
-    function hideSplash() {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, minDisplayTime - elapsed);
-        
-        setTimeout(() => {
-            splash.classList.add('hidden');
-            // Remove from DOM after transition
-            setTimeout(() => {
-                splash.remove();
-            }, 500);
-        }, remaining);
-    }
-
-    // Hide when everything is loaded
-    if (document.readyState === 'complete') {
-        hideSplash();
-    } else {
-        window.addEventListener('load', hideSplash);
-    }
-
-    // Fallback: hide after 5 seconds max
-    setTimeout(hideSplash, 5000);
-}
-
 // Page navigation progress bar
 function initPageProgress() {
     const progressBar = document.getElementById('page-progress');
@@ -492,7 +446,6 @@ function initMobileNav() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initSplashScreen();
     initPageProgress();
     generateAttendance();
     applyAttendanceRings();
