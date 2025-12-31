@@ -222,6 +222,56 @@ The DB stores `library_resources.pdf_url` as either:
 
 ---
 
+## Project Documentation
+
+### Core Files
+- `README.md` – Project overview, setup, and feature list
+- `requirements.txt` – Python dependencies
+- `.env.example` – Environment variable template
+- `app.py` – Main Flask application (routes, DB schema, auth)
+- `wsgi.py` – Production server entry (Waitress)
+- `seed_dummy_db.py` – Dummy data generator for testing
+
+### Templates
+- `templates/base.html` – Base layout for student portal (includes Iconify, Tailwind)
+- `templates/admin_base.html` – Base layout for admin panel
+- `templates/*.html` – Page templates (dashboard, news, schedules, library, vault, exams, profile, admin pages)
+
+### Static Assets
+- `static/app.js` – Shared client-side interactions
+- `static/app_icon/logo.png` – Logo used in UI
+- `static/uploads/` – Runtime uploads (news attachments, library PDFs) – **do not commit**
+- `uploads/vault/` – Student vault files – **do not commit**
+
+### Database
+- `eduportal.db` – SQLite database (auto-created) – **do not commit**
+
+---
+
+## Uploading to Git (What to Include/Exclude)
+
+### Include
+- All source files (`*.py`, `templates/`, `static/` except runtime uploads)
+- `README.md`, `requirements.txt`, `.env.example`
+- Documentation files (if any)
+- `static/app_icon/logo.png` and other static assets
+- Any custom CSS/JS under `static/` that are part of the app
+
+### Exclude (already in `.gitignore` or should be)
+- `*.db` (SQLite databases)
+- `uploads/` and `static/uploads/` (user uploads)
+- `.env` (environment secrets)
+- `__pycache__/`, `*.pyc`
+- IDE/editor files (`.vscode/`, `.idea/`, etc.)
+- OS-generated files (`.DS_Store`, `Thumbs.db`)
+- Temporary files and logs
+
+### Tip
+- Use `seed_dummy_db.py --force` to generate a fresh demo DB after cloning.
+- Never commit real user data or production databases.
+
+---
+
 ## Project Structure
 
 - `app.py`
