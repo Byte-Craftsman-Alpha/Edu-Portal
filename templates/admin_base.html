@@ -22,10 +22,33 @@
         .admin-btn-danger { background: #fff1f2; color: #be123c; }
         .admin-btn-danger:hover { background: #ffe4e6; }
         .admin-pill { border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+
+        /* Progress bar styles */
+        #page-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            z-index: 9999;
+            transition: width 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        #page-progress.loading {
+            opacity: 1;
+        }
+
+        /* Prevent scroll during navigation */
+        body.navigating {
+            overflow: hidden;
+        }
     </style>
 </head>
 
 <body class="grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
+    <!-- Progress bar -->
+    <div id="page-progress"></div>
 
     <div data-mobile-nav-backdrop class="md:hidden fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
 

@@ -1,3 +1,67 @@
+// Page navigation progress bar
+function initPageProgress() {
+    const progressBar = document.getElementById('page-progress');
+    if (!progressBar) return;
+
+    let progressInterval;
+    let progress = 0;
+
+    function startProgress() {
+        progress = 0;
+        progressBar.style.width = '0%';
+        progressBar.classList.add('loading');
+        document.body.classList.add('navigating');
+
+        progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 150);
+    }
+
+    function completeProgress() {
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+            progressBar.classList.remove('loading');
+            progressBar.style.width = '0%';
+            document.body.classList.remove('navigating');
+        }, 300);
+    }
+
+    // Intercept navigation clicks
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        // Skip external links, anchors, and special links
+        if (
+            href.startsWith('http') ||
+            href.startsWith('#') ||
+            href.startsWith('mailto:') ||
+            href.startsWith('tel:') ||
+            link.hasAttribute('target') ||
+            link.hasAttribute('download') ||
+            e.ctrlKey || e.metaKey || e.shiftKey
+        ) {
+            return;
+        }
+
+        // Check if it's a same-origin navigation
+        const url = new URL(href, window.location.origin);
+        if (url.origin === window.location.origin && url.pathname !== window.location.pathname) {
+            e.preventDefault();
+            startProgress();
+            window.location.href = href;
+        }
+    });
+
+    // Complete progress when page is loaded/hidden
+    window.addEventListener('pagehide', completeProgress);
+    window.addEventListener('beforeunload', completeProgress);
+}
+
 function generateAttendance() {
     const grid = document.getElementById('attendanceGrid');
     if (!grid) {
@@ -382,6 +446,7 @@ function initMobileNav() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    initPageProgress();
     generateAttendance();
     applyAttendanceRings();
     initWeeklyTimetable();
