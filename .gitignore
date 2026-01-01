@@ -32,6 +32,9 @@ Thumbs.db
 # SQLite DB (do not commit local dev DB)
 *.db
 
+# student excel sheet
+*.xlsx
+
 # Uploads (user-generated)
 static/uploads/*
 !static/uploads/.gitkeep
