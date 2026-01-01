@@ -128,6 +128,12 @@
             return;
         }
 
+        if (bottomSheet.parentElement !== document.body) {
+            document.body.appendChild(bottomSheet);
+        }
+
+        const mq = window.matchMedia('(min-width: 768px)');
+
         let scrollLockY = 0;
         let isOpen = false;
         function lockScroll() {
@@ -153,6 +159,7 @@
         }
 
         function open() {
+            if (mq.matches) return;
             if (qHidden && qInput) {
                 qHidden.value = qInput.value || '';
             }
@@ -186,11 +193,24 @@
             }
         });
 
+        function syncMode() {
+            if (mq.matches) {
+                close();
+            }
+        }
+
+        try {
+            mq.addEventListener('change', syncMode);
+        } catch {
+            mq.addListener(syncMode);
+        }
+
         let startY = 0;
         let isDragging = false;
         let dragStartTime = 0;
 
         function onStart(e) {
+            if (mq.matches) return;
             const t = e.touches ? e.touches[0] : e;
             startY = t.clientY;
             isDragging = true;

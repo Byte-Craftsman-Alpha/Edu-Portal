@@ -197,6 +197,10 @@
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span> Vault</span>
                 <span class="text-xs text-slate-400">Files</span>
             </a>
+            <a href="{{ url_for('teachers') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'teachers' %} active{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'teachers' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Teachers</span>
+                <span class="text-xs text-slate-400">Directory</span>
+            </a>
             <a href="{{ url_for('exams') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'exams' %} active{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'exams' %}solar:pen-2-bold{% else %}solar:pen-2-outline{% endif %}"></span> Exams</span>
                 <span class="text-xs text-slate-400">Results</span>
@@ -245,6 +249,10 @@
             <a href="{{ url_for('vault') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'vault' %} active{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span> Vault</span>
                 <span class="text-xs text-slate-400">Files</span>
+            </a>
+            <a href="{{ url_for('teachers') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'teachers' %} active{% endif %}">
+                <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'teachers' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Teachers</span>
+                <span class="text-xs text-slate-400">Directory</span>
             </a>
             <a href="{{ url_for('exams') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'exams' %} active{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'exams' %}solar:pen-2-bold{% else %}solar:pen-2-outline{% endif %}"></span> Exams</span>
