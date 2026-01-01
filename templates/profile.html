@@ -20,6 +20,7 @@
                 </div>
             </div>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <button id="changePasswordBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:lock-password-outline"></span> Change Password</button>
                 <a href="{{ url_for('logout') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-rose-600" data-icon="solar:logout-2-outline"></span> Logout</a>
             </div>
         </div>
@@ -120,4 +121,52 @@
         </div>
     </div>
 </section>
+
+<!-- Change Password Bottom Sheet -->
+<div id="changePasswordBottomSheet" class="fixed inset-0 z-50 pointer-events-none opacity-0 transition-opacity duration-300" data-auto-open="{% if cp_error or cp_success %}1{% else %}0{% endif %}">
+    <div class="absolute inset-0 bg-black/50 pointer-events-none" id="changePasswordSheetBackdrop"></div>
+    <div id="changePasswordSheet" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 pointer-events-auto max-h-[85vh] overflow-hidden">
+        <div class="flex justify-center py-3" id="changePasswordSheetHandle">
+            <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
+        </div>
+        <div class="px-6 pb-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-900">Change Password</h3>
+                <button id="changePasswordSheetClose" type="button" class="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+                    <span class="iconify text-xl text-slate-600" data-icon="solar:close-circle-bold"></span>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mt-1">Update your account password</p>
+        </div>
+        <div class="px-6 pb-6 overflow-y-auto" style="max-height: calc(85vh - 140px);">
+            {% if cp_error %}
+                <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ cp_error }}</div>
+            {% endif %}
+
+            {% if cp_success %}
+                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ cp_success }}</div>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('student_change_password_post') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
+                    <input name="current_password" type="password" autocomplete="current-password" class="minimal-input w-full" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">New Password</label>
+                    <input name="new_password" type="password" autocomplete="new-password" class="minimal-input w-full" required>
+                    <p class="text-xs text-slate-500 mt-2">Minimum 8 characters</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
+                    <input name="confirm_password" type="password" autocomplete="new-password" class="minimal-input w-full" required>
+                </div>
+                <button type="submit" class="w-full px-4 py-3 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2">
+                    <span class="iconify text-base" data-icon="solar:lock-password-bold"></span>
+                    Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

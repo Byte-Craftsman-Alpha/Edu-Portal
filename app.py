@@ -1685,6 +1685,63 @@ def admin_logout():
     return redirect(url_for("admin_login"))
 
 
+@app.get("/admin/change-password")
+@admin_login_required
+def admin_change_password():
+    db = get_db()
+    aid = get_current_admin_id()
+    admin_user = db.execute("SELECT * FROM admin_users WHERE id = ?", (aid,)).fetchone()
+    return render_template(
+        "admin_change_password.html",
+        page_title="Change Password",
+        page_subtitle="Update your admin password",
+        active_page="admin",
+        admin_user=admin_user,
+        error=None,
+        success=None,
+    )
+
+
+@app.post("/admin/change-password")
+@admin_login_required
+def admin_change_password_post():
+    current_password = request.form.get("current_password") or ""
+    new_password = request.form.get("new_password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+
+    next_url = get_safe_next_url("admin_dashboard")
+    sep = "&" if ("?" in next_url) else "?"
+
+    db = get_db()
+    aid = get_current_admin_id()
+    admin_user = db.execute("SELECT * FROM admin_users WHERE id = ?", (aid,)).fetchone()
+    if not admin_user:
+        session.pop("admin_user_id", None)
+        return redirect(url_for("admin_login"))
+
+    if not current_password or not new_password or not confirm_password:
+        return redirect(f"{next_url}{sep}ap_error={quote('Please fill in all fields.')}")
+
+    if not admin_user["password_hash"] or not check_password_hash(admin_user["password_hash"], current_password):
+        return redirect(f"{next_url}{sep}ap_error={quote('Current password is incorrect.')}")
+
+    if len(new_password) < 8:
+        return redirect(
+            f"{next_url}{sep}ap_error={quote('New password must be at least 8 characters.')}")
+
+    if new_password != confirm_password:
+        return redirect(
+            f"{next_url}{sep}ap_error={quote('New password and confirmation do not match.')}")
+
+    db.execute(
+        "UPDATE admin_users SET password_hash = ? WHERE id = ?",
+        (generate_password_hash(new_password), int(admin_user["id"])),
+    )
+    db.commit()
+
+    return redirect(f"{next_url}{sep}ap_success={quote('Password updated successfully.')}")
+
+
 @app.get("/admin")
 @admin_login_required
 def admin_dashboard():
@@ -1692,7 +1749,14 @@ def admin_dashboard():
     aid = get_current_admin_id()
     admin_user = db.execute("SELECT * FROM admin_users WHERE id = ?", (aid,)).fetchone()
     news_count = db.execute("SELECT COUNT(*) FROM news_posts").fetchone()[0]
-    open_forms = db.execute("SELECT COUNT(*) FROM exam_forms WHERE status = 'OPEN'").fetchone()[0]
+    open_forms = 0
+    try:
+        rows = db.execute("SELECT open_from, open_to FROM exam_forms").fetchall()
+        for r in rows:
+            if is_exam_form_open(r["open_from"], r["open_to"]):
+                open_forms += 1
+    except Exception:
+        open_forms = db.execute("SELECT COUNT(*) FROM exam_forms WHERE status = 'OPEN'").fetchone()[0]
     return render_template(
         "admin_dashboard.html",
         page_title="Admin Panel",
@@ -3999,9 +4063,13 @@ def profile():
     profile = db.execute("SELECT * FROM student_profile WHERE student_id = ?", (sid,)).fetchone()
 
     vault_folders = db.execute(
-        "SELECT * FROM vault_folders WHERE student_id = ? ORDER BY datetime(created_at) DESC",
+        "SELECT id, name FROM vault_folders WHERE student_id = ? ORDER BY created_at DESC",
         (sid,),
     ).fetchall()
+
+    cp_error = (request.args.get("cp_error") or "").strip() or None
+    cp_success = (request.args.get("cp_success") or "").strip() or None
+
     return render_template(
         "profile.html",
         page_title="My Profile",
@@ -4011,7 +4079,61 @@ def profile():
         program=program,
         profile=profile,
         vault_folders=vault_folders,
+        cp_error=cp_error,
+        cp_success=cp_success,
     )
+
+
+@app.get("/profile/change-password")
+@login_required
+def student_change_password():
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    return render_template(
+        "change_password.html",
+        page_title="Change Password",
+        page_subtitle="Update your password",
+        active_page="profile",
+        student=student,
+        error=None,
+        success=None,
+    )
+
+
+@app.post("/profile/change-password")
+@login_required
+def student_change_password_post():
+    current_password = request.form.get("current_password") or ""
+    new_password = request.form.get("new_password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    if not student:
+        session.pop("student_id", None)
+        return redirect(url_for("login"))
+
+    if not current_password or not new_password or not confirm_password:
+        return redirect(url_for("profile", cp_error="Please fill in all fields."))
+
+    if not student["password_hash"] or not check_password_hash(student["password_hash"], current_password):
+        return redirect(url_for("profile", cp_error="Current password is incorrect."))
+
+    if len(new_password) < 8:
+        return redirect(url_for("profile", cp_error="New password must be at least 8 characters."))
+
+    if new_password != confirm_password:
+        return redirect(url_for("profile", cp_error="New password and confirmation do not match."))
+
+    db.execute(
+        "UPDATE students SET password_hash = ? WHERE id = ?",
+        (generate_password_hash(new_password), int(student["id"])),
+    )
+    db.commit()
+
+    return redirect(url_for("profile", cp_success="Password updated successfully."))
 
 
 @app.get("/administration")

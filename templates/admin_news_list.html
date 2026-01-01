@@ -256,7 +256,7 @@
                                     data-tags="{{ (p.tags or '')|e }}"
                                 ><span class="iconify text-base text-amber-600" data-icon="solar:pen-2-outline"></span> Edit</button>
                                 <form method="post" action="{{ url_for('admin_news_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
-                                    <button type="submit" class="admin-btn admin-btn-danger w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base text-rose-200" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
+                                    <button type="submit" class="admin-btn admin-btn-danger w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                 </form>
                             </div>
                         </div>

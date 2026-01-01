@@ -62,6 +62,249 @@ function initPageProgress() {
     window.addEventListener('beforeunload', completeProgress);
 }
 
+function initChangePasswordBottomSheet() {
+    const actionBtn = document.getElementById('changePasswordBtn');
+    const bottomSheet = document.getElementById('changePasswordBottomSheet');
+    const backdrop = document.getElementById('changePasswordSheetBackdrop');
+    const sheet = document.getElementById('changePasswordSheet');
+    const closeBtn = document.getElementById('changePasswordSheetClose');
+    const handle = document.getElementById('changePasswordSheetHandle');
+
+    if (!bottomSheet || !backdrop || !sheet || !closeBtn || !handle) {
+        return;
+    }
+
+    let scrollLockY = 0;
+
+    function lockScroll() {
+        scrollLockY = window.scrollY || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollLockY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function unlockScroll() {
+        document.body.style.position = '';
+        const top = document.body.style.top;
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+        window.scrollTo(0, Number.isFinite(y) ? y : 0);
+    }
+
+    function openSheet() {
+        lockScroll();
+        bottomSheet.classList.remove('opacity-0', 'pointer-events-none');
+        bottomSheet.classList.add('opacity-100');
+        sheet.classList.remove('translate-y-full');
+        backdrop.classList.remove('pointer-events-none');
+        backdrop.classList.add('pointer-events-auto');
+    }
+
+    function closeSheet() {
+        bottomSheet.classList.add('opacity-0', 'pointer-events-none');
+        bottomSheet.classList.remove('opacity-100');
+        sheet.classList.add('translate-y-full');
+        backdrop.classList.add('pointer-events-none');
+        backdrop.classList.remove('pointer-events-auto');
+        unlockScroll();
+    }
+
+    if (actionBtn) {
+        actionBtn.addEventListener('click', openSheet);
+    }
+    closeBtn.addEventListener('click', closeSheet);
+    backdrop.addEventListener('click', closeSheet);
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeSheet();
+        }
+    });
+
+    // Swipe down to close
+    let startY = 0;
+    let isDragging = false;
+    let dragStartTime = 0;
+
+    function onStart(e) {
+        const t = e.touches ? e.touches[0] : e;
+        startY = t.clientY;
+        isDragging = true;
+        dragStartTime = Date.now();
+        sheet.style.transition = 'none';
+    }
+
+    function onMove(e) {
+        if (!isDragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        const dy = t.clientY - startY;
+        if (dy > 0) {
+            sheet.style.transform = `translateY(${dy}px)`;
+        }
+    }
+
+    function onEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = '';
+
+        const endY = (e.changedTouches ? e.changedTouches[0] : e).clientY;
+        const dy = endY - startY;
+        const dt = Date.now() - dragStartTime;
+
+        if (dy > 120 || (dy > 60 && dt < 250)) {
+            sheet.style.transform = '';
+            closeSheet();
+            return;
+        }
+
+        sheet.style.transform = '';
+    }
+
+    handle.addEventListener('touchstart', onStart, { passive: true });
+    handle.addEventListener('touchmove', onMove, { passive: true });
+    handle.addEventListener('touchend', onEnd, { passive: true });
+    handle.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    // Auto-open when server sent message
+    const autoOpen = bottomSheet.getAttribute('data-auto-open') === '1';
+    if (autoOpen) {
+        setTimeout(openSheet, 50);
+    }
+}
+
+function initAdminChangePasswordBottomSheet() {
+    const actionBtn = document.getElementById('adminChangePasswordBtn');
+    const actionBtnMobile = document.getElementById('adminChangePasswordBtnMobile');
+    const actionBtnSidebar = document.getElementById('adminChangePasswordBtnSidebar');
+    const bottomSheet = document.getElementById('adminChangePasswordBottomSheet');
+    const backdrop = document.getElementById('adminChangePasswordSheetBackdrop');
+    const sheet = document.getElementById('adminChangePasswordSheet');
+    const closeBtn = document.getElementById('adminChangePasswordSheetClose');
+    const handle = document.getElementById('adminChangePasswordSheetHandle');
+
+    if (!bottomSheet || !backdrop || !sheet || !closeBtn || !handle) {
+        return;
+    }
+
+    let scrollLockY = 0;
+
+    function lockScroll() {
+        scrollLockY = window.scrollY || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollLockY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function unlockScroll() {
+        document.body.style.position = '';
+        const top = document.body.style.top;
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+        window.scrollTo(0, Number.isFinite(y) ? y : 0);
+    }
+
+    function openSheet() {
+        lockScroll();
+        bottomSheet.classList.remove('opacity-0', 'pointer-events-none');
+        bottomSheet.classList.add('opacity-100');
+        sheet.classList.remove('translate-y-full');
+        backdrop.classList.remove('pointer-events-none');
+        backdrop.classList.add('pointer-events-auto');
+    }
+
+    function closeSheet() {
+        bottomSheet.classList.add('opacity-0', 'pointer-events-none');
+        bottomSheet.classList.remove('opacity-100');
+        sheet.classList.add('translate-y-full');
+        backdrop.classList.add('pointer-events-none');
+        backdrop.classList.remove('pointer-events-auto');
+        unlockScroll();
+    }
+
+    [actionBtn, actionBtnMobile, actionBtnSidebar].forEach((btn) => {
+        if (!btn) return;
+        btn.addEventListener('click', openSheet);
+    });
+    closeBtn.addEventListener('click', closeSheet);
+    backdrop.addEventListener('click', closeSheet);
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeSheet();
+        }
+    });
+
+    // Swipe down to close
+    let startY = 0;
+    let isDragging = false;
+    let dragStartTime = 0;
+
+    function onStart(e) {
+        const t = e.touches ? e.touches[0] : e;
+        startY = t.clientY;
+        isDragging = true;
+        dragStartTime = Date.now();
+        sheet.style.transition = 'none';
+    }
+
+    function onMove(e) {
+        if (!isDragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        const dy = t.clientY - startY;
+        if (dy > 0) {
+            sheet.style.transform = `translateY(${dy}px)`;
+        }
+    }
+
+    function onEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = '';
+
+        const endY = (e.changedTouches ? e.changedTouches[0] : e).clientY;
+        const dy = endY - startY;
+        const dt = Date.now() - dragStartTime;
+
+        if (dy > 120 || (dy > 60 && dt < 250)) {
+            sheet.style.transform = '';
+            closeSheet();
+            return;
+        }
+
+        sheet.style.transform = '';
+    }
+
+    handle.addEventListener('touchstart', onStart, { passive: true });
+    handle.addEventListener('touchmove', onMove, { passive: true });
+    handle.addEventListener('touchend', onEnd, { passive: true });
+    handle.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    // Auto-open when server sent message
+    const autoOpen = bottomSheet.getAttribute('data-auto-open') === '1';
+    if (autoOpen) {
+        setTimeout(openSheet, 50);
+    }
+}
+
 function generateAttendance() {
     const grid = document.getElementById('attendanceGrid');
     if (!grid) {
@@ -957,6 +1200,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initVaultBottomSheet();
     initVaultPageBottomSheet();
     initVaultFileManager();
+    initChangePasswordBottomSheet();
+    initAdminChangePasswordBottomSheet();
 
     const subtitle = document.getElementById('headerSubtitle');
     if (subtitle && subtitle.dataset.autodate === 'true') {
