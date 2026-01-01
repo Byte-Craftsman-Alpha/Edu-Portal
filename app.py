@@ -1788,14 +1788,21 @@ def admin_schedules():
     calendar_items = db.execute(
         "SELECT * FROM calendar_items ORDER BY date(item_date) DESC, id DESC"
     ).fetchall()
+
     timetable_rows = db.execute(
         """
-        SELECT * FROM weekly_timetable
-        WHERE schedule_id = ?
-        ORDER BY day_of_week ASC, time(start_time) ASC
-        """,
-        (int(selected_id),),
+        SELECT wt.*, sg.name AS schedule_group_name
+        FROM weekly_timetable wt
+        LEFT JOIN schedule_groups sg ON sg.id = wt.schedule_id
+        ORDER BY wt.schedule_id ASC, wt.day_of_week ASC, time(wt.start_time) ASC
+        """
     ).fetchall()
+
+    timetable_by_group = {}
+    for r in timetable_rows:
+        sid = int(r["schedule_id"]) if r["schedule_id"] is not None else 0
+        timetable_by_group.setdefault(sid, []).append(r)
+
     return render_template(
         "admin_schedules.html",
         page_title="Manage Schedules",
@@ -1803,6 +1810,7 @@ def admin_schedules():
         active_page="admin_schedules",
         calendar_items=calendar_items,
         timetable_rows=timetable_rows,
+        timetable_by_group=timetable_by_group,
         schedule_groups=groups,
         selected_schedule_id=int(selected_id),
         error=None,
@@ -1998,6 +2006,42 @@ def admin_timetable_create():
     return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
 
 
+@app.post("/admin/schedules/timetable/<int:row_id>/update")
+@admin_login_required
+def admin_timetable_update(row_id: int):
+    schedule_id_raw = (request.form.get("schedule_id") or request.args.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+
+    day_of_week_raw = (request.form.get("day_of_week") or "").strip()
+    start_time = (request.form.get("start_time") or "").strip()
+    end_time = (request.form.get("end_time") or "").strip()
+    subject = (request.form.get("subject") or "").strip()
+    room = (request.form.get("room") or "").strip()
+    instructor = (request.form.get("instructor") or "").strip()
+    try:
+        day_of_week = int(day_of_week_raw)
+    except Exception:
+        day_of_week = -1
+
+    if day_of_week < 0 or day_of_week > 6 or not start_time or not end_time or not subject or not room or not instructor:
+        return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+    db = get_db()
+    db.execute(
+        """
+        UPDATE weekly_timetable
+        SET schedule_id = ?, day_of_week = ?, start_time = ?, end_time = ?, subject = ?, room = ?, instructor = ?
+        WHERE id = ?
+        """,
+        (int(schedule_id), int(day_of_week), start_time, end_time, subject, room, instructor, int(row_id)),
+    )
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
 @app.post("/admin/schedules/timetable/<int:row_id>/delete")
 @admin_login_required
 def admin_timetable_delete(row_id: int):
@@ -2008,6 +2052,109 @@ def admin_timetable_delete(row_id: int):
         schedule_id = 1
     db = get_db()
     db.execute("DELETE FROM weekly_timetable WHERE id = ?", (int(row_id),))
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
+@app.post("/admin/schedules/timetable/bulk-delete")
+@admin_login_required
+def admin_timetable_bulk_delete():
+    schedule_id_raw = (request.form.get("schedule_id") or request.args.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+
+    ids = request.form.getlist("row_ids")
+    resolved = []
+    for raw in ids:
+        try:
+            resolved.append(int(raw))
+        except Exception:
+            continue
+    if not resolved:
+        return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+    db = get_db()
+    placeholders = ",".join(["?"] * len(resolved))
+    db.execute(f"DELETE FROM weekly_timetable WHERE id IN ({placeholders})", tuple(resolved))
+    db.commit()
+    return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+
+@app.post("/admin/schedules/timetable/bulk-update")
+@admin_login_required
+def admin_timetable_bulk_update():
+    schedule_id_raw = (request.form.get("schedule_id") or request.args.get("schedule_id") or "").strip()
+    try:
+        schedule_id = int(schedule_id_raw)
+    except Exception:
+        schedule_id = 1
+
+    ids = request.form.getlist("row_ids")
+    resolved = []
+    for raw in ids:
+        try:
+            resolved.append(int(raw))
+        except Exception:
+            continue
+    if not resolved:
+        return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
+
+    day_of_week_raw = (request.form.get("day_of_week") or "").strip()
+    start_time = (request.form.get("start_time") or "").strip()
+    end_time = (request.form.get("end_time") or "").strip()
+    subject = (request.form.get("subject") or "").strip()
+    room = (request.form.get("room") or "").strip()
+    instructor = (request.form.get("instructor") or "").strip()
+
+    day_of_week = None
+    if day_of_week_raw:
+        try:
+            day_of_week = int(day_of_week_raw)
+        except Exception:
+            day_of_week = None
+    if day_of_week is not None and (day_of_week < 0 or day_of_week > 6):
+        day_of_week = None
+
+    db = get_db()
+    rows = db.execute(
+        f"SELECT * FROM weekly_timetable WHERE id IN ({','.join(['?'] * len(resolved))})",
+        tuple(resolved),
+    ).fetchall()
+    by_id = {int(r["id"]): r for r in rows}
+
+    for rid in resolved:
+        r = by_id.get(int(rid))
+        if not r:
+            continue
+
+        new_schedule_id = schedule_id if schedule_id else int(r["schedule_id"] or 1)
+        new_day = day_of_week if day_of_week is not None else int(r["day_of_week"])
+        new_start = start_time or str(r["start_time"])
+        new_end = end_time or str(r["end_time"])
+        new_subject = subject or str(r["subject"])
+        new_room = room or str(r["room"])
+        new_instructor = instructor or str(r["instructor"])
+
+        db.execute(
+            """
+            UPDATE weekly_timetable
+            SET schedule_id = ?, day_of_week = ?, start_time = ?, end_time = ?, subject = ?, room = ?, instructor = ?
+            WHERE id = ?
+            """,
+            (
+                int(new_schedule_id),
+                int(new_day),
+                new_start,
+                new_end,
+                new_subject,
+                new_room,
+                new_instructor,
+                int(rid),
+            ),
+        )
+
     db.commit()
     return redirect(url_for("admin_schedules", schedule_id=int(schedule_id)))
 

@@ -157,38 +157,140 @@
             <input id="weeklySearch" type="text" placeholder="Search weekly timetable..." class="admin-input w-full" />
         </div>
 
-        {% if timetable_rows %}
-            <div id="weeklyItems" class="grid grid-cols-1 gap-4">
-                {% for r in timetable_rows %}
-                    {% set day_label = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][r.day_of_week] if r.day_of_week is not none else '' %}
-                    <details class="rounded-2xl border border-slate-200 bg-white" data-search="{{ day_label }} {{ r.start_time }} {{ r.end_time }} {{ r.subject }} {{ r.room }} {{ r.instructor }}">
-                        <summary class="list-none cursor-pointer select-none p-4">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">{{ day_label }} • {{ r.start_time }} - {{ r.end_time }}</div>
-                                    <div class="mt-1 text-sm font-semibold text-slate-900 truncate">{{ r.subject }}</div>
-                                    <div class="text-sm text-slate-600 mt-1">Room: {{ r.room }} • Instructor: {{ r.instructor }}</div>
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input id="weeklySelectAll" type="checkbox" class="rounded border-slate-300" />
+                    Select all
+                    <span id="weeklySelectedCount" class="text-xs text-slate-500">(0 selected)</span>
+                </label>
+                <div class="flex items-center gap-2">
+                    <button id="weeklyBulkDelete" type="button" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2" disabled>
+                        <span class="iconify text-sm text-rose-200" data-icon="solar:trash-bin-trash-outline"></span>
+                        Delete selected
+                    </button>
+                    <button id="weeklyBulkUpdateToggle" type="button" class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2" disabled>
+                        <span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span>
+                        Edit selected
+                    </button>
+                </div>
+            </div>
+
+            <div id="weeklyBulkUpdatePanel" class="mt-4 hidden">
+                <form id="weeklyBulkUpdateForm" method="post" action="{{ url_for('admin_timetable_bulk_update') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
+                    <input type="hidden" name="row_ids" value="" />
+
+                    <select name="day_of_week" class="admin-input">
+                        <option value="">Day of week (optional)</option>
+                        <option value="0">Monday</option>
+                        <option value="1">Tuesday</option>
+                        <option value="2">Wednesday</option>
+                        <option value="3">Thursday</option>
+                        <option value="4">Friday</option>
+                        <option value="5">Saturday</option>
+                        <option value="6">Sunday</option>
+                    </select>
+                    <input name="subject" type="text" placeholder="Subject (optional)" class="admin-input" />
+                    <input name="room" type="text" placeholder="Room (optional)" class="admin-input" />
+                    <input name="instructor" type="text" placeholder="Instructor (optional)" class="admin-input" />
+                    <input name="start_time" type="time" class="admin-input" />
+                    <input name="end_time" type="time" class="admin-input" />
+
+                    <div class="sm:col-span-2 flex items-center justify-end gap-2 pt-1">
+                        <button id="weeklyBulkUpdateCancel" type="button" class="admin-btn admin-btn-soft text-xs">Cancel</button>
+                        <button type="submit" class="admin-btn admin-btn-primary text-xs inline-flex items-center gap-2">
+                            <span class="iconify text-sm" data-icon="solar:check-circle-bold"></span>
+                            Apply changes
+                        </button>
+                    </div>
+                </form>
+
+                <form id="weeklyBulkDeleteForm" method="post" action="{{ url_for('admin_timetable_bulk_delete') }}" class="hidden">
+                    <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
+                </form>
+            </div>
+        </div>
+
+        {% if timetable_by_group %}
+            <div id="weeklyItems" class="space-y-6">
+                {% for g in schedule_groups or [] %}
+                    {% set rows = timetable_by_group.get(g.id) %}
+                    {% if rows %}
+                        <div class="rounded-2xl border border-slate-200 bg-white">
+                            <div class="p-4 border-b border-slate-100 flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Schedule Group</div>
+                                    <div class="text-sm font-semibold text-slate-900">{{ g.name }}</div>
                                 </div>
-                                <div class="text-xs text-slate-400 mt-1">Expand</div>
+                                <span class="text-xs text-slate-400">{{ rows|length }} rows</span>
                             </div>
-                        </summary>
+                            <div class="p-4 grid grid-cols-1 gap-3">
+                                {% for r in rows %}
+                                    {% set day_label = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][r.day_of_week] if r.day_of_week is not none else '' %}
+                                    <details class="rounded-2xl border border-slate-200 bg-white" data-search="{{ g.name }} {{ day_label }} {{ r.start_time }} {{ r.end_time }} {{ r.subject }} {{ r.room }} {{ r.instructor }}">
+                                        <summary class="list-none cursor-pointer select-none p-4">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="flex items-start gap-3 min-w-0">
+                                                    <label class="pt-1">
+                                                        <input type="checkbox" class="weeklyRowCheckbox rounded border-slate-300" value="{{ r.id }}" />
+                                                    </label>
+                                                    <div class="min-w-0">
+                                                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">{{ day_label }} • {{ r.start_time }} - {{ r.end_time }}</div>
+                                                        <div class="mt-1 text-sm font-semibold text-slate-900 truncate">{{ r.subject }}</div>
+                                                        <div class="text-sm text-slate-600 mt-1">Room: {{ r.room }} • Instructor: {{ r.instructor }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-slate-400 mt-1">Expand</div>
+                                            </div>
+                                        </summary>
 
-                        <div class="px-4 pb-4">
-                            <div class="pt-3 border-t border-slate-100">
-                                <div class="text-sm text-slate-600">Day: <span class="text-slate-900 font-semibold">{{ day_label }}</span></div>
-                                <div class="text-sm text-slate-600 mt-1">Time: <span class="text-slate-900 font-semibold">{{ r.start_time }} - {{ r.end_time }}</span></div>
-                                <div class="text-sm text-slate-600 mt-1">Room: <span class="text-slate-900 font-semibold">{{ r.room }}</span></div>
-                                <div class="text-sm text-slate-600 mt-1">Instructor: <span class="text-slate-900 font-semibold">{{ r.instructor }}</span></div>
-                            </div>
+                                        <div class="px-4 pb-4">
+                                            <div class="pt-3 border-t border-slate-100">
+                                                <div class="text-sm text-slate-600">Group: <span class="text-slate-900 font-semibold">{{ g.name }}</span></div>
+                                                <div class="text-sm text-slate-600 mt-1">Day: <span class="text-slate-900 font-semibold">{{ day_label }}</span></div>
+                                                <div class="text-sm text-slate-600 mt-1">Time: <span class="text-slate-900 font-semibold">{{ r.start_time }} - {{ r.end_time }}</span></div>
+                                                <div class="text-sm text-slate-600 mt-1">Room: <span class="text-slate-900 font-semibold">{{ r.room }}</span></div>
+                                                <div class="text-sm text-slate-600 mt-1">Instructor: <span class="text-slate-900 font-semibold">{{ r.instructor }}</span></div>
+                                            </div>
 
-                            <div class="flex items-center justify-end gap-2 mt-4">
-                                <form method="post" action="{{ url_for('admin_timetable_delete', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this timetable row?');">
-                                    <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-200" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
-                                </form>
+                                            <form method="post" action="{{ url_for('admin_timetable_update', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                                                <input type="hidden" name="schedule_id" value="{{ g.id }}" />
+                                                <select name="day_of_week" class="admin-input">
+                                                    <option value="0" {% if r.day_of_week == 0 %}selected{% endif %}>Monday</option>
+                                                    <option value="1" {% if r.day_of_week == 1 %}selected{% endif %}>Tuesday</option>
+                                                    <option value="2" {% if r.day_of_week == 2 %}selected{% endif %}>Wednesday</option>
+                                                    <option value="3" {% if r.day_of_week == 3 %}selected{% endif %}>Thursday</option>
+                                                    <option value="4" {% if r.day_of_week == 4 %}selected{% endif %}>Friday</option>
+                                                    <option value="5" {% if r.day_of_week == 5 %}selected{% endif %}>Saturday</option>
+                                                    <option value="6" {% if r.day_of_week == 6 %}selected{% endif %}>Sunday</option>
+                                                </select>
+                                                <input name="subject" type="text" value="{{ r.subject }}" class="admin-input" />
+                                                <input name="room" type="text" value="{{ r.room }}" class="admin-input" />
+                                                <input name="instructor" type="text" value="{{ r.instructor }}" class="admin-input" />
+                                                <input name="start_time" type="time" value="{{ r.start_time }}" class="admin-input" />
+                                                <input name="end_time" type="time" value="{{ r.end_time }}" class="admin-input" />
+                                                <div class="sm:col-span-2 flex items-center justify-end pt-1">
+                                                    <button type="submit" class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span> Update</button>
+                                                </div>
+                                            </form>
+
+                                            <div class="flex items-center justify-end gap-2 mt-2">
+                                                <form method="post" action="{{ url_for('admin_timetable_delete', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this timetable row?');">
+                                                    <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-200" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </details>
+                                {% endfor %}
                             </div>
                         </div>
-                    </details>
+                    {% endif %}
                 {% endfor %}
+
+                {% if not timetable_rows %}
+                    <div class="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">No timetable rows yet.</div>
+                {% endif %}
             </div>
         {% else %}
             <div class="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">No timetable rows yet.</div>
@@ -218,6 +320,102 @@
 
         wireSearch('monthlySearch', 'monthlyItems');
         wireSearch('weeklySearch', 'weeklyItems');
+
+        var selectAll = document.getElementById('weeklySelectAll');
+        var selectedCount = document.getElementById('weeklySelectedCount');
+        var bulkDeleteBtn = document.getElementById('weeklyBulkDelete');
+        var bulkUpdateToggle = document.getElementById('weeklyBulkUpdateToggle');
+        var bulkPanel = document.getElementById('weeklyBulkUpdatePanel');
+        var bulkCancel = document.getElementById('weeklyBulkUpdateCancel');
+        var bulkUpdateForm = document.getElementById('weeklyBulkUpdateForm');
+        var bulkDeleteForm = document.getElementById('weeklyBulkDeleteForm');
+
+        function getRowCheckboxes() {
+            var container = document.getElementById('weeklyItems');
+            if (!container) return [];
+            return Array.prototype.slice.call(container.querySelectorAll('.weeklyRowCheckbox'));
+        }
+
+        function getSelectedIds() {
+            return getRowCheckboxes().filter(function (cb) { return cb.checked; }).map(function (cb) { return cb.value; });
+        }
+
+        function syncSelectedUi() {
+            var ids = getSelectedIds();
+            if (selectedCount) {
+                selectedCount.textContent = '(' + ids.length + ' selected)';
+            }
+            var has = ids.length > 0;
+            if (bulkDeleteBtn) bulkDeleteBtn.disabled = !has;
+            if (bulkUpdateToggle) bulkUpdateToggle.disabled = !has;
+            if (bulkUpdateForm) {
+                var hidden = bulkUpdateForm.querySelector('input[name="row_ids"]');
+                if (hidden) hidden.value = ids.join(',');
+            }
+            if (bulkDeleteForm) {
+                var hidden2 = bulkDeleteForm.querySelector('input[name="row_ids"]');
+                if (hidden2) hidden2.value = ids.join(',');
+            }
+            if (selectAll) {
+                var all = getRowCheckboxes();
+                var allChecked = all.length > 0 && all.every(function (cb) { return cb.checked; });
+                selectAll.checked = allChecked;
+            }
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                var all = getRowCheckboxes();
+                all.forEach(function (cb) { cb.checked = selectAll.checked; });
+                syncSelectedUi();
+            });
+        }
+
+        getRowCheckboxes().forEach(function (cb) {
+            cb.addEventListener('change', syncSelectedUi);
+        });
+
+        if (bulkUpdateToggle && bulkPanel) {
+            bulkUpdateToggle.addEventListener('click', function () {
+                bulkPanel.classList.toggle('hidden');
+            });
+        }
+        if (bulkCancel && bulkPanel) {
+            bulkCancel.addEventListener('click', function () {
+                bulkPanel.classList.add('hidden');
+            });
+        }
+
+        function setHiddenIds(form, ids) {
+            if (!form) return;
+            form.querySelectorAll('input[data-weekly-selected="1"]').forEach(function (n) { n.remove(); });
+            ids.forEach(function (id) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'row_ids';
+                inp.value = id;
+                inp.setAttribute('data-weekly-selected', '1');
+                form.appendChild(inp);
+            });
+        }
+
+        if (bulkDeleteBtn && bulkDeleteForm) {
+            bulkDeleteBtn.addEventListener('click', function () {
+                if (!confirm('Delete selected timetable rows?')) return;
+                var ids = getSelectedIds();
+                setHiddenIds(bulkDeleteForm, ids);
+                bulkDeleteForm.submit();
+            });
+        }
+
+        if (bulkUpdateForm) {
+            bulkUpdateForm.addEventListener('submit', function (e) {
+                var ids = getSelectedIds();
+                setHiddenIds(bulkUpdateForm, ids);
+            });
+        }
+
+        syncSelectedUi();
     })();
 </script>
 {% endblock %}
