@@ -66,36 +66,62 @@
         <div class="minimal-card p-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-semibold text-slate-900">Monthly Events & Holidays</h3>
+                    <h3 class="text-lg font-semibold text-slate-900">Monthly Overview</h3>
                     <p class="text-sm text-slate-500 mt-1">{{ month_label }}</p>
                 </div>
-                <span class="minimal-badge bg-emerald-50 text-emerald-700">MONTH</span>
+                <div class="flex items-center gap-2">
+                    <button id="monthOverviewToggle" type="button" class="md:hidden px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center gap-2">
+                        <span class="iconify text-base" data-icon="solar:list-check-outline"></span>
+                        <span id="monthOverviewToggleLabel">View all</span>
+                    </button>
+                    <span class="minimal-badge bg-emerald-50 text-emerald-700">MONTH</span>
+                </div>
             </div>
 
-            <div class="space-y-4">
-                {% if month_items %}
-                    {% for m in month_items %}
-                        {% set is_holiday = (m.item_type == 'HOLIDAY') %}
-                        <div class="p-4 rounded-xl border {% if is_holiday %}border-rose-200 bg-gradient-to-r from-rose-50 to-white{% else %}border-amber-200 bg-gradient-to-r from-amber-50 to-white{% endif %} flex flex-col md:flex-row gap-4 items-start">
-                            <div class="minimal-badge {% if is_holiday %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %} flex items-center gap-1.5">
-                                {% if is_holiday %}
-                                    <span class="iconify" data-icon="solar:sun-2-linear"></span>
-                                {% else %}
-                                    <span class="iconify" data-icon="solar:confetti-linear"></span>
-                                {% endif %}
-                                {{ m.item_type }}
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
-                                    <h4 class="text-sm font-semibold text-slate-900">{{ m.title }}</h4>
-                                    <span class="text-xs text-slate-400">{{ m.item_date }}</span>
+            <div id="monthOverviewList" class="flex md:block gap-4 overflow-x-auto hide-scrollbar md:overflow-visible md:space-y-4 md:gap-0 scroll-smooth">
+                {% if month_overview %}
+                    {% for it in month_overview %}
+                        {% if it.kind == 'SCHEDULE' %}
+                            <div class="shrink-0 w-[40%] min-w-[240px] md:w-auto md:min-w-0">
+                                <div class="p-4 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-white flex flex-col md:flex-row gap-4 items-start">
+                                    <div class="minimal-badge bg-indigo-100 text-indigo-700 flex items-center gap-1.5">
+                                        <span class="iconify" data-icon="solar:calendar-linear"></span>
+                                        SCHEDULE
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
+                                            <h4 class="text-sm font-semibold text-slate-900 break-words">{{ it.title }}</h4>
+                                            <span class="text-xs text-slate-400">{{ it.date }}</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600 leading-relaxed break-words">{{ it.location or '' }}</p>
+                                    </div>
                                 </div>
-                                <p class="text-sm text-slate-600 leading-relaxed">{{ m.description }}</p>
                             </div>
-                        </div>
+                        {% else %}
+                            {% set is_holiday = (it.item_type == 'HOLIDAY') %}
+                            <div class="shrink-0 w-[40%] min-w-[240px] md:w-auto md:min-w-0">
+                                <div class="p-4 rounded-xl border {% if is_holiday %}border-rose-200 bg-gradient-to-r from-rose-50 to-white{% else %}border-amber-200 bg-gradient-to-r from-amber-50 to-white{% endif %} flex flex-col md:flex-row gap-4 items-start">
+                                    <div class="minimal-badge {% if is_holiday %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %} flex items-center gap-1.5">
+                                        {% if is_holiday %}
+                                            <span class="iconify" data-icon="solar:sun-2-linear"></span>
+                                        {% else %}
+                                            <span class="iconify" data-icon="solar:confetti-linear"></span>
+                                        {% endif %}
+                                        {{ it.item_type }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-2">
+                                            <h4 class="text-sm font-semibold text-slate-900 break-words">{{ it.title }}</h4>
+                                            <span class="text-xs text-slate-400">{{ it.date }}</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600 leading-relaxed break-words">{{ it.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 {% else %}
-                    <div class="p-6 rounded-xl border border-slate-200 bg-white text-sm text-slate-500">No events or holidays for this month.</div>
+                    <div class="p-6 rounded-xl border border-slate-200 bg-white text-sm text-slate-500 w-full">No events or schedules for this month.</div>
                 {% endif %}
             </div>
         </div>
@@ -163,4 +189,43 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        function bindToggle(toggleId, listId, labelId) {
+            const toggle = document.getElementById(toggleId);
+            const list = document.getElementById(listId);
+            const label = document.getElementById(labelId);
+            if (!toggle || !list || !label) return;
+
+            let expanded = false;
+
+            function apply() {
+                expanded = !expanded;
+                label.textContent = expanded ? 'Collapse' : 'View all';
+
+                list.classList.toggle('flex-col', expanded);
+                list.classList.toggle('overflow-x-auto', !expanded);
+                list.classList.toggle('overflow-x-hidden', expanded);
+                list.classList.toggle('gap-4', !expanded);
+                list.classList.toggle('space-y-4', expanded);
+
+                list.querySelectorAll(':scope > div').forEach((card) => {
+                    card.classList.toggle('w-full', expanded);
+                    card.classList.toggle('min-w-0', expanded);
+                    card.classList.toggle('shrink-0', !expanded);
+                    if (expanded) {
+                        card.style.minWidth = '0px';
+                    } else {
+                        card.style.minWidth = '';
+                    }
+                });
+            }
+
+            toggle.addEventListener('click', apply);
+        }
+
+        bindToggle('monthOverviewToggle', 'monthOverviewList', 'monthOverviewToggleLabel');
+    })();
+</script>
 {% endblock %}

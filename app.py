@@ -3727,6 +3727,32 @@ def schedules():
         (month_start, month_end, int(schedule_id)),
     ).fetchall()
 
+    month_overview = []
+    for m in month_items:
+        month_overview.append(
+            {
+                "kind": "CALENDAR_ITEM",
+                "date": str(m["item_date"]),
+                "item_type": m["item_type"],
+                "title": m["title"],
+                "description": m["description"],
+            }
+        )
+
+    for e in month_schedule_events:
+        month_overview.append(
+            {
+                "kind": "SCHEDULE",
+                "date": str(e["start_at"])[:10],
+                "title": e["title"],
+                "location": e["location"],
+                "start_at": e["start_at"],
+                "end_at": e["end_at"],
+            }
+        )
+
+    month_overview.sort(key=lambda x: (x.get("date") or "", x.get("kind") or ""))
+
     calendar_weeks = []
     cal = calendar.Calendar(firstweekday=0)
     for week in cal.monthdatescalendar(today.year, today.month):
@@ -3786,6 +3812,8 @@ def schedules():
         events=events,
         timetable_by_day=timetable_by_day,
         month_items=month_items,
+        month_schedule_events=month_schedule_events,
+        month_overview=month_overview,
         month_label=today.strftime("%B %Y"),
         today_dow=today_dow,
         today_date=today.date().isoformat(),
