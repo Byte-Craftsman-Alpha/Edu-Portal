@@ -2,7 +2,7 @@
 
 {% block content %}
 <section class="tab-content space-y-8">
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
         <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:bell-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Notifications</p>
@@ -27,6 +27,12 @@
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:folder-with-files-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Study Material</p>
             <p class="text-xs text-slate-400 mt-1">Resources</p>
+        </a>
+
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('teachers') }}">
+            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:users-group-rounded-linear"></span></div>
+            <p class="text-sm font-medium text-slate-700">Teachers</p>
+            <p class="text-xs text-slate-400 mt-1">Faculty directory</p>
         </a>
     </div>
 

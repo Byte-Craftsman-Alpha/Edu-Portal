@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="tab-content space-y-6">
+    <div class="minimal-card p-5">
+        <div class="flex flex-col gap-3">
+            <form method="get" class="flex flex-col md:flex-row md:items-end gap-3">
+                <div class="flex-1">
+                    <label class="hidden md:block text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2">Search</label>
+                    <div class="flex items-end gap-2">
+                        <input id="teachersSearch" name="q" type="text" value="{{ (filters.q if filters else '') }}" class="minimal-input w-full h-[46px]" placeholder="Search teachers by name, designation, department, email, phone...">
+
+                        <button id="teachersFiltersBtn" type="button" class="md:hidden px-3 h-[46px] rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all" aria-label="Advanced filters">
+                            <span class="iconify text-lg" data-icon="solar:settings-outline"></span>
+                        </button>
+
+                        <details id="teachersDesktopFilters" class="relative hidden md:block">
+                            <summary class="px-4 h-[46px] rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2 cursor-pointer select-none" aria-label="Advanced filters">
+                                <span class="iconify text-lg" data-icon="solar:settings-outline"></span>
+                                Filters
+                            </summary>
+                            <div class="absolute right-0 top-full mt-2 w-[min(720px,92vw)] z-30">
+                                <div class="minimal-card p-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                        <div class="md:col-span-6">
+                                            <label class="block text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2">Department</label>
+                                            <input name="department" value="{{ (filters.department if filters else '') }}" type="text" class="minimal-input w-full" placeholder="e.g. CSE">
+                                        </div>
+                                        <div class="md:col-span-6">
+                                            <label class="block text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2">Designation</label>
+                                            <input name="designation" value="{{ (filters.designation if filters else '') }}" type="text" class="minimal-input w-full" placeholder="e.g. HOD">
+                                        </div>
+                                        <div class="md:col-span-12 flex items-center justify-end gap-2 pt-1">
+                                            <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
+                                            <a href="{{ url_for('teachers') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="teachersFiltersBottomSheet" class="fixed inset-0 z-[70] pointer-events-none opacity-0 transition-opacity duration-300 md:hidden">
+        <div class="absolute inset-0 bg-slate-900/60 pointer-events-none" id="teachersFiltersSheetBackdrop"></div>
+        <div id="teachersFiltersSheet" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 pointer-events-auto max-h-[85vh] overflow-hidden">
+            <div class="flex justify-center py-3" id="teachersFiltersSheetHandle">
+                <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
+            </div>
+            <div class="px-6 pb-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-900">Advanced Filters</h3>
+                    <button id="teachersFiltersSheetClose" type="button" class="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+                        <span class="iconify text-xl text-slate-600" data-icon="solar:close-circle-bold"></span>
+                    </button>
+                </div>
+                <p class="text-sm text-slate-500 mt-1">Refine teacher directory</p>
+            </div>
+            <div class="px-6 pb-6 overflow-y-auto" style="max-height: calc(85vh - 140px);">
+                <form method="get" class="space-y-4">
+                    <input id="teachersFiltersQ" type="hidden" name="q" value="{{ (filters.q if filters else '') }}">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Department</label>
+                        <input name="department" value="{{ (filters.department if filters else '') }}" type="text" class="minimal-input w-full" placeholder="e.g. CSE">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Designation</label>
+                        <input name="designation" value="{{ (filters.designation if filters else '') }}" type="text" class="minimal-input w-full" placeholder="e.g. HOD">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
+                        <a href="{{ url_for('teachers') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="minimal-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-xs text-slate-500">
+                        <th class="px-4 py-3 font-medium">Name</th>
+                        <th class="px-4 py-3 font-medium">Designation</th>
+                        <th class="px-4 py-3 font-medium">Department</th>
+                        <th class="px-4 py-3 font-medium">Email</th>
+                        <th class="px-4 py-3 font-medium">Phone</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    {% if teachers %}
+                        {% for t in teachers %}
+                            <tr class="border-t border-slate-100">
+                                <td class="px-4 py-3 font-medium text-slate-900">{{ t.name }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ t.designation }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ t.department }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ t.email or '' }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ t.phone or '' }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="px-4 py-8 text-slate-500" colspan="5">No teachers found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function () {
+        const btn = document.getElementById('teachersFiltersBtn');
+        const bottomSheet = document.getElementById('teachersFiltersBottomSheet');
+        const backdrop = document.getElementById('teachersFiltersSheetBackdrop');
+        const sheet = document.getElementById('teachersFiltersSheet');
+        const closeBtn = document.getElementById('teachersFiltersSheetClose');
+        const handle = document.getElementById('teachersFiltersSheetHandle');
+        const qHidden = document.getElementById('teachersFiltersQ');
+        const qInput = document.getElementById('teachersSearch');
+
+        if (!btn || !bottomSheet || !backdrop || !sheet || !closeBtn || !handle) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        let isOpen = false;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            if (qHidden && qInput) {
+                qHidden.value = qInput.value || '';
+            }
+            lockScroll();
+            isOpen = true;
+            bottomSheet.classList.remove('opacity-0', 'pointer-events-none');
+            bottomSheet.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full');
+            backdrop.classList.remove('pointer-events-none');
+            backdrop.classList.add('pointer-events-auto');
+        }
+
+        function close() {
+            bottomSheet.classList.add('opacity-0', 'pointer-events-none');
+            bottomSheet.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full');
+            backdrop.classList.add('pointer-events-none');
+            backdrop.classList.remove('pointer-events-auto');
+            if (isOpen) {
+                unlockScroll();
+            }
+            isOpen = false;
+        }
+
+        btn.addEventListener('click', open);
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        let startY = 0;
+        let isDragging = false;
+        let dragStartTime = 0;
+
+        function onStart(e) {
+            const t = e.touches ? e.touches[0] : e;
+            startY = t.clientY;
+            isDragging = true;
+            dragStartTime = Date.now();
+            sheet.style.transition = 'none';
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            const t = e.touches ? e.touches[0] : e;
+            const dy = t.clientY - startY;
+            if (dy > 0) {
+                sheet.style.transform = `translateY(${dy}px)`;
+            }
+        }
+
+        function onEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            sheet.style.transition = '';
+
+            const endY = (e.changedTouches ? e.changedTouches[0] : e).clientY;
+            const dy = endY - startY;
+            const dt = Date.now() - dragStartTime;
+
+            if (dy > 120 || (dy > 60 && dt < 250)) {
+                sheet.style.transform = '';
+                close();
+                return;
+            }
+            sheet.style.transform = '';
+        }
+
+        handle.addEventListener('touchstart', onStart, { passive: true });
+        handle.addEventListener('touchmove', onMove, { passive: true });
+        handle.addEventListener('touchend', onEnd, { passive: true });
+        handle.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+    })();
+</script>
+{% endblock %}

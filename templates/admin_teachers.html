@@ -7,6 +7,132 @@
 </div>
 {% endif %}
 
+<div data-admin-teacher-edit-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+<div data-admin-teacher-edit-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-3xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Update</p>
+                    <p class="text-lg font-semibold text-slate-900">Edit Teacher</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-teacher-edit-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-teacher-edit-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[70vh] overflow-y-auto">
+                <form method="post" action="" class="space-y-4" data-admin-teacher-edit-form>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Name</label>
+                            <input name="name" type="text" class="admin-input w-full" required data-f-name />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Designation</label>
+                            <input name="designation" type="text" class="admin-input w-full" required data-f-designation />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department</label>
+                            <input name="department" type="text" class="admin-input w-full" required data-f-department />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email</label>
+                            <input name="email" type="email" class="admin-input w-full" data-f-email />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone</label>
+                            <input name="phone" type="text" class="admin-input w-full" data-f-phone />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="flex flex-col gap-3 mb-4">
+    <form method="get" class="flex flex-col md:flex-row md:items-end gap-3">
+        <div class="flex-1">
+            <label class="hidden md:block text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2">Search</label>
+            <div class="flex items-end gap-2">
+                <input id="adminTeachersSearch" name="q" type="text" value="{{ (filters.q if filters else '') }}" class="admin-input w-full h-[46px]" placeholder="Search teachers by name, designation, department, email, phone...">
+
+                <button id="adminTeachersFiltersBtn" type="button" class="md:hidden admin-btn admin-btn-soft h-[46px] px-3" aria-label="Advanced filters">
+                    <span class="iconify text-lg" data-icon="solar:settings-outline"></span>
+                </button>
+
+                <details id="adminTeachersDesktopFilters" class="relative hidden md:block">
+                    <summary class="admin-btn admin-btn-soft h-[46px] px-4 inline-flex items-center justify-center gap-2 cursor-pointer select-none" aria-label="Advanced filters">
+                        <span class="iconify text-lg" data-icon="solar:settings-outline"></span>
+                        Filters
+                    </summary>
+                    <div class="absolute right-0 top-full mt-2 w-[min(720px,92vw)] z-30">
+                        <div class="admin-card border border-slate-200 bg-white rounded-2xl p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div class="md:col-span-6">
+                                    <label class="block text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2">Department</label>
+                                    <input name="department" value="{{ (filters.department if filters else '') }}" type="text" class="admin-input w-full" placeholder="e.g. CSE">
+                                </div>
+                                <div class="md:col-span-6">
+                                    <label class="block text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2">Designation</label>
+                                    <input name="designation" value="{{ (filters.designation if filters else '') }}" type="text" class="admin-input w-full" placeholder="e.g. HOD">
+                                </div>
+                                <div class="md:col-span-12 flex items-center justify-end gap-2 pt-1">
+                                    <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
+                                    <a href="{{ url_for('admin_teachers') }}" class="admin-btn admin-btn-soft inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="adminTeachersFiltersBottomSheet" class="fixed inset-0 z-[70] pointer-events-none opacity-0 transition-opacity duration-300 md:hidden">
+    <div class="absolute inset-0 bg-slate-900/60 pointer-events-none" id="adminTeachersFiltersSheetBackdrop"></div>
+    <div id="adminTeachersFiltersSheet" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 pointer-events-auto max-h-[85vh] overflow-hidden">
+        <div class="flex justify-center py-3" id="adminTeachersFiltersSheetHandle">
+            <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
+        </div>
+        <div class="px-6 pb-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-900">Advanced Filters</h3>
+                <button id="adminTeachersFiltersSheetClose" type="button" class="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+                    <span class="iconify text-xl text-slate-600" data-icon="solar:close-circle-bold"></span>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mt-1">Refine teacher directory</p>
+        </div>
+        <div class="px-6 pb-6 overflow-y-auto" style="max-height: calc(85vh - 140px);">
+            <form method="get" class="space-y-4">
+                <input id="adminTeachersFiltersQ" type="hidden" name="q" value="{{ (filters.q if filters else '') }}">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Department</label>
+                    <input name="department" value="{{ (filters.department if filters else '') }}" type="text" class="admin-input w-full" placeholder="e.g. CSE">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Designation</label>
+                    <input name="designation" value="{{ (filters.designation if filters else '') }}" type="text" class="admin-input w-full" placeholder="e.g. HOD">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button type="submit" class="admin-btn admin-btn-primary w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
+                    <a href="{{ url_for('admin_teachers') }}" class="admin-btn admin-btn-soft w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="admin-card p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-slate-900">Add Teacher</h2>
@@ -48,9 +174,22 @@
                             <td class="px-4 py-3 text-slate-700">{{ t.email or '' }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ t.phone or '' }}</td>
                             <td class="px-4 py-3">
-                                <form method="post" action="{{ url_for('admin_teachers_delete', teacher_id=t.id) }}" onsubmit="return confirm('Delete this teacher?');">
-                                    <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
-                                </form>
+                                <div class="flex items-center gap-2 whitespace-nowrap">
+                                    <button
+                                        type="button"
+                                        class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"
+                                        data-admin-teacher-edit-open
+                                        data-teacher-id="{{ t.id }}"
+                                        data-name="{{ t.name|e }}"
+                                        data-designation="{{ t.designation|e }}"
+                                        data-department="{{ t.department|e }}"
+                                        data-email="{{ (t.email or '')|e }}"
+                                        data-phone="{{ (t.phone or '')|e }}"
+                                    ><span class="iconify text-sm" data-icon="solar:pen-2-outline"></span> Edit</button>
+                                    <form method="post" action="{{ url_for('admin_teachers_delete', teacher_id=t.id) }}" onsubmit="return confirm('Delete this teacher?');">
+                                        <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
@@ -63,4 +202,252 @@
         </table>
     </div>
 </div>
+
+<script>
+    (function () {
+        const btn = document.getElementById('adminTeachersFiltersBtn');
+        const bottomSheet = document.getElementById('adminTeachersFiltersBottomSheet');
+        const backdrop = document.getElementById('adminTeachersFiltersSheetBackdrop');
+        const sheet = document.getElementById('adminTeachersFiltersSheet');
+        const closeBtn = document.getElementById('adminTeachersFiltersSheetClose');
+        const handle = document.getElementById('adminTeachersFiltersSheetHandle');
+        const qHidden = document.getElementById('adminTeachersFiltersQ');
+        const qInput = document.getElementById('adminTeachersSearch');
+
+        if (!btn || !bottomSheet || !backdrop || !sheet || !closeBtn || !handle) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        let isOpen = false;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open() {
+            if (qHidden && qInput) {
+                qHidden.value = qInput.value || '';
+            }
+            lockScroll();
+            isOpen = true;
+            bottomSheet.classList.remove('opacity-0', 'pointer-events-none');
+            bottomSheet.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full');
+            backdrop.classList.remove('pointer-events-none');
+            backdrop.classList.add('pointer-events-auto');
+        }
+
+        function close() {
+            bottomSheet.classList.add('opacity-0', 'pointer-events-none');
+            bottomSheet.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full');
+            backdrop.classList.add('pointer-events-none');
+            backdrop.classList.remove('pointer-events-auto');
+            if (isOpen) {
+                unlockScroll();
+            }
+            isOpen = false;
+        }
+
+        btn.addEventListener('click', open);
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        let startY = 0;
+        let isDragging = false;
+        let dragStartTime = 0;
+
+        function onStart(e) {
+            const t = e.touches ? e.touches[0] : e;
+            startY = t.clientY;
+            isDragging = true;
+            dragStartTime = Date.now();
+            sheet.style.transition = 'none';
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            const t = e.touches ? e.touches[0] : e;
+            const dy = t.clientY - startY;
+            if (dy > 0) {
+                sheet.style.transform = `translateY(${dy}px)`;
+            }
+        }
+
+        function onEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            sheet.style.transition = '';
+
+            const endY = (e.changedTouches ? e.changedTouches[0] : e).clientY;
+            const dy = endY - startY;
+            const dt = Date.now() - dragStartTime;
+
+            if (dy > 120 || (dy > 60 && dt < 250)) {
+                sheet.style.transform = '';
+                close();
+                return;
+            }
+            sheet.style.transform = '';
+        }
+
+        handle.addEventListener('touchstart', onStart, { passive: true });
+        handle.addEventListener('touchmove', onMove, { passive: true });
+        handle.addEventListener('touchend', onEnd, { passive: true });
+        handle.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+    })();
+
+    (function () {
+        const openBtns = Array.from(document.querySelectorAll('[data-admin-teacher-edit-open]'));
+        const closeBtn = document.querySelector('[data-admin-teacher-edit-close]');
+        const backdrop = document.querySelector('[data-admin-teacher-edit-backdrop]');
+        const sheet = document.querySelector('[data-admin-teacher-edit-sheet]');
+        const handleEl = document.querySelector('[data-admin-teacher-edit-handle]');
+        const form = document.querySelector('[data-admin-teacher-edit-form]');
+
+        if (!openBtns.length || !closeBtn || !backdrop || !sheet || !form) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open(btn) {
+            const teacherId = btn.getAttribute('data-teacher-id');
+            if (!teacherId) return;
+
+            form.setAttribute('action', `{{ url_for('admin_teacher_update', teacher_id=0) }}`.replace('0', String(teacherId)));
+
+            const map = {
+                name: 'data-name',
+                designation: 'data-designation',
+                department: 'data-department',
+                email: 'data-email',
+                phone: 'data-phone',
+            };
+
+            Object.keys(map).forEach((field) => {
+                const input = form.querySelector(`[data-f-${field}]`);
+                if (!input) return;
+                input.value = btn.getAttribute(map[field]) || '';
+            });
+
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            sheet.style.transform = '';
+            unlockScroll();
+        }
+
+        openBtns.forEach((btn) => btn.addEventListener('click', () => open(btn)));
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let isDragging = false;
+            let dragStartTime = 0;
+
+            function onStart(e) {
+                const t = e.touches ? e.touches[0] : e;
+                startY = t.clientY;
+                isDragging = true;
+                dragStartTime = Date.now();
+                sheet.style.transition = 'none';
+            }
+
+            function onMove(e) {
+                if (!isDragging) return;
+                const t = e.touches ? e.touches[0] : e;
+                const dy = t.clientY - startY;
+                if (dy > 0) {
+                    sheet.style.transform = `translateY(${dy}px)`;
+                }
+            }
+
+            function onEnd(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                sheet.style.transition = '';
+
+                const endY = (e.changedTouches ? e.changedTouches[0] : e).clientY;
+                const dy = endY - startY;
+                const dt = Date.now() - dragStartTime;
+
+                if (dy > 120 || (dy > 60 && dt < 250)) {
+                    sheet.style.transform = '';
+                    close();
+                    return;
+                }
+                sheet.style.transform = '';
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: true });
+            handleEl.addEventListener('touchend', onEnd, { passive: true });
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+</script>
 {% endblock %}

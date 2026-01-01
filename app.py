@@ -2016,15 +2016,73 @@ def admin_timetable_delete(row_id: int):
 @admin_login_required
 def admin_teachers():
     db = get_db()
-    teachers = db.execute("SELECT * FROM teachers ORDER BY name ASC").fetchall()
+
+    filters = {
+        "q": (request.args.get("q") or "").strip(),
+        "department": (request.args.get("department") or "").strip(),
+        "designation": (request.args.get("designation") or "").strip(),
+    }
+
+    rows = db.execute("SELECT * FROM teachers ORDER BY name ASC").fetchall()
+
+    q = filters["q"].lower()
+    f_department = filters["department"].lower()
+    f_designation = filters["designation"].lower()
+
+    teachers = []
+    for t in rows:
+        t_dict = dict(t)
+        hay = " ".join(
+            [
+                str(t_dict.get("name") or ""),
+                str(t_dict.get("designation") or ""),
+                str(t_dict.get("department") or ""),
+                str(t_dict.get("email") or ""),
+                str(t_dict.get("phone") or ""),
+            ]
+        ).lower()
+        if q and q not in hay:
+            continue
+        if f_department and (str(t_dict.get("department") or "").lower() != f_department):
+            continue
+        if f_designation and (str(t_dict.get("designation") or "").lower() != f_designation):
+            continue
+        teachers.append(t)
+
     return render_template(
         "admin_teachers.html",
         page_title="Teachers",
         page_subtitle="Manage faculty list",
         active_page="admin_teachers",
         teachers=teachers,
+        filters=filters,
         error=None,
     )
+
+
+@app.post("/admin/teachers/<int:teacher_id>/update")
+@admin_login_required
+def admin_teacher_update(teacher_id: int):
+    db = get_db()
+    t = db.execute("SELECT * FROM teachers WHERE id = ?", (int(teacher_id),)).fetchone()
+    if not t:
+        return redirect(url_for("admin_teachers"))
+
+    name = (request.form.get("name") or "").strip()
+    designation = (request.form.get("designation") or "").strip()
+    department = (request.form.get("department") or "").strip()
+    email = (request.form.get("email") or "").strip() or None
+    phone = (request.form.get("phone") or "").strip() or None
+
+    if not name or not designation or not department:
+        return redirect(url_for("admin_teachers"))
+
+    db.execute(
+        "UPDATE teachers SET name = ?, designation = ?, department = ?, email = ?, phone = ? WHERE id = ?",
+        (name, designation, department, email, phone, int(teacher_id)),
+    )
+    db.commit()
+    return redirect(url_for("admin_teachers"))
 
 
 @app.get("/admin/students")
@@ -3186,6 +3244,55 @@ def dashboard():
         vault_files=files,
         immediate_attention=immediate_attention,
         announcements=announcements,
+    )
+
+
+@app.get("/teachers")
+@login_required
+def teachers():
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+
+    filters = {
+        "q": (request.args.get("q") or "").strip(),
+        "department": (request.args.get("department") or "").strip(),
+        "designation": (request.args.get("designation") or "").strip(),
+    }
+
+    rows = db.execute("SELECT * FROM teachers ORDER BY name ASC").fetchall()
+    q = filters["q"].lower()
+    f_department = filters["department"].lower()
+    f_designation = filters["designation"].lower()
+
+    resolved = []
+    for t in rows:
+        t_dict = dict(t)
+        hay = " ".join(
+            [
+                str(t_dict.get("name") or ""),
+                str(t_dict.get("designation") or ""),
+                str(t_dict.get("department") or ""),
+                str(t_dict.get("email") or ""),
+                str(t_dict.get("phone") or ""),
+            ]
+        ).lower()
+        if q and q not in hay:
+            continue
+        if f_department and (str(t_dict.get("department") or "").lower() != f_department):
+            continue
+        if f_designation and (str(t_dict.get("designation") or "").lower() != f_designation):
+            continue
+        resolved.append(t)
+
+    return render_template(
+        "teachers.html",
+        page_title="Teachers",
+        page_subtitle="Faculty directory",
+        active_page="teachers",
+        student=student,
+        teachers=resolved,
+        filters=filters,
     )
 
 
