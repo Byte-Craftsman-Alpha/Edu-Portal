@@ -2,6 +2,34 @@
 
 {% block content %}
 <section class="tab-content space-y-8">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news') }}">
+            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:bell-linear"></span></div>
+            <p class="text-sm font-medium text-slate-700">Notifications</p>
+            <p class="text-xs text-slate-400 mt-1">Latest updates</p>
+        </a>
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('schedules') }}">
+            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:calendar-linear"></span></div>
+            <p class="text-sm font-medium text-slate-700">Calendar</p>
+            <p class="text-xs text-slate-400 mt-1">Timetable</p>
+        </a>
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news', tag='Assignments') }}">
+            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:pen-2-linear"></span></div>
+            <p class="text-sm font-medium text-slate-700">Assignments</p>
+            <p class="text-xs text-slate-400 mt-1">Pending tasks</p>
+        </a>
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('exams') }}">
+            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:cup-star-linear"></span></div>
+            <p class="text-sm font-medium text-slate-700">Results</p>
+            <p class="text-xs text-slate-400 mt-1">Performance</p>
+        </a>
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('library') }}">
+            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:folder-with-files-linear"></span></div>
+            <p class="text-sm font-medium text-slate-700">Study Material</p>
+            <p class="text-xs text-slate-400 mt-1">Resources</p>
+        </a>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 minimal-card p-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -195,34 +223,6 @@
             </div>
             <a class="mt-6 block w-full py-3 rounded-xl bg-white text-indigo-700 text-sm font-medium hover:bg-slate-100 transition-all text-center inline-flex items-center justify-center gap-2" href="{{ url_for('news') }}"><span class="iconify text-base" data-icon="solar:bell-bold"></span> View All Notifications</a>
         </div>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news') }}">
-            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:bell-linear"></span></div>
-            <p class="text-sm font-medium text-slate-700">Notifications</p>
-            <p class="text-xs text-slate-400 mt-1">Latest updates</p>
-        </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('schedules') }}">
-            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:calendar-linear"></span></div>
-            <p class="text-sm font-medium text-slate-700">Calendar</p>
-            <p class="text-xs text-slate-400 mt-1">Timetable</p>
-        </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news', tag='Assignments') }}">
-            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:pen-2-linear"></span></div>
-            <p class="text-sm font-medium text-slate-700">Assignments</p>
-            <p class="text-xs text-slate-400 mt-1">Pending tasks</p>
-        </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('exams') }}">
-            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:cup-star-linear"></span></div>
-            <p class="text-sm font-medium text-slate-700">Results</p>
-            <p class="text-xs text-slate-400 mt-1">Performance</p>
-        </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('library') }}">
-            <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:folder-with-files-linear"></span></div>
-            <p class="text-sm font-medium text-slate-700">Study Material</p>
-            <p class="text-xs text-slate-400 mt-1">Resources</p>
-        </a>
     </div>
 
     <div class="minimal-card p-6">
