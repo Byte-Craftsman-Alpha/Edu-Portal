@@ -9,7 +9,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, abort, redirect, render_template, render_template_string, request, send_file, url_for
+from flask import Blueprint, abort, redirect, render_template, render_template_string, request, send_file, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from ..config import NEWS_UPLOAD_DIR, VAULT_UPLOAD_DIR
@@ -66,8 +67,14 @@ def is_exam_form_open(open_from: str | None, open_to: str | None, now: datetime 
         return False
     try:
         current = now or datetime.utcnow()
-        start = datetime.fromisoformat(open_from)
-        end = datetime.fromisoformat(open_to)
+        try:
+            start = datetime.fromisoformat(open_from)
+        except Exception:
+            start = datetime.strptime(open_from, "%Y-%m-%d")
+        try:
+            end = datetime.fromisoformat(open_to)
+        except Exception:
+            end = datetime.strptime(open_to, "%Y-%m-%d")
         return start <= current <= end
     except Exception:
         return False
@@ -411,6 +418,167 @@ def vault_file_download(file_id: int):
     )
 
 
+@bp.post("/vault/files/<int:file_id>/delete", endpoint="vault_file_delete")
+@login_required
+def vault_file_delete(file_id: int):
+    sid = get_current_student_id()
+    db = get_db()
+    f = db.execute(
+        "SELECT * FROM vault_files WHERE id = ? AND student_id = ?",
+        (int(file_id), sid),
+    ).fetchone()
+    if not f:
+        return redirect(get_safe_next_url("student.dashboard"))
+
+    delete_vault_physical_file(f["stored_path"])
+    db.execute(
+        "DELETE FROM vault_files WHERE id = ? AND student_id = ?",
+        (int(file_id), sid),
+    )
+    db.commit()
+    return redirect(get_safe_next_url("student.dashboard"))
+
+
+@bp.post("/vault/files/bulk-delete", endpoint="vault_files_bulk_delete")
+@login_required
+def vault_files_bulk_delete():
+    sid = get_current_student_id()
+    raw_ids = request.form.getlist("file_ids")
+    file_ids: list[int] = []
+    for x in raw_ids:
+        try:
+            file_ids.append(int(x))
+        except Exception:
+            continue
+    if not file_ids:
+        return redirect(get_safe_next_url("student.vault"))
+
+    db = get_db()
+    q_marks = ",".join(["?"] * len(file_ids))
+    rows = db.execute(
+        f"SELECT id, stored_path FROM vault_files WHERE student_id = ? AND id IN ({q_marks})",
+        [sid, *file_ids],
+    ).fetchall()
+    for r in rows:
+        delete_vault_physical_file(r["stored_path"])
+
+    db.execute(
+        f"DELETE FROM vault_files WHERE student_id = ? AND id IN ({q_marks})",
+        [sid, *file_ids],
+    )
+    db.commit()
+    return redirect(get_safe_next_url("student.vault"))
+
+
+@bp.post("/vault/files/bulk-move", endpoint="vault_files_bulk_move")
+@login_required
+def vault_files_bulk_move():
+    sid = get_current_student_id()
+    raw_ids = request.form.getlist("file_ids")
+    try:
+        target_folder_id = int(request.form.get("target_folder_id") or "0")
+    except Exception:
+        target_folder_id = 0
+
+    file_ids: list[int] = []
+    for x in raw_ids:
+        try:
+            file_ids.append(int(x))
+        except Exception:
+            continue
+    if not file_ids or not target_folder_id:
+        return redirect(get_safe_next_url("student.vault"))
+
+    db = get_db()
+    target = db.execute(
+        "SELECT id FROM vault_folders WHERE id = ? AND student_id = ?",
+        (int(target_folder_id), sid),
+    ).fetchone()
+    if not target:
+        return redirect(get_safe_next_url("student.vault"))
+
+    q_marks = ",".join(["?"] * len(file_ids))
+    db.execute(
+        f"UPDATE vault_files SET folder_id = ? WHERE student_id = ? AND id IN ({q_marks})",
+        [int(target_folder_id), sid, *file_ids],
+    )
+    db.commit()
+    return redirect(get_safe_next_url("student.vault"))
+
+
+@bp.post("/vault/files/bulk-copy", endpoint="vault_files_bulk_copy")
+@login_required
+def vault_files_bulk_copy():
+    sid = get_current_student_id()
+    raw_ids = request.form.getlist("file_ids")
+    try:
+        target_folder_id = int(request.form.get("target_folder_id") or "0")
+    except Exception:
+        target_folder_id = 0
+
+    file_ids: list[int] = []
+    for x in raw_ids:
+        try:
+            file_ids.append(int(x))
+        except Exception:
+            continue
+    if not file_ids or not target_folder_id:
+        return redirect(get_safe_next_url("student.vault"))
+
+    db = get_db()
+    target = db.execute(
+        "SELECT id FROM vault_folders WHERE id = ? AND student_id = ?",
+        (int(target_folder_id), sid),
+    ).fetchone()
+    if not target:
+        return redirect(get_safe_next_url("student.vault"))
+
+    q_marks = ",".join(["?"] * len(file_ids))
+    rows = db.execute(
+        f"SELECT * FROM vault_files WHERE student_id = ? AND id IN ({q_marks})",
+        [sid, *file_ids],
+    ).fetchall()
+
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    for f in rows:
+        src_abs = get_vault_abs_path(f["stored_path"])
+        if src_abs is None or not src_abs.exists() or not src_abs.is_file():
+            continue
+
+        original_name = (f["original_name"] or "").strip()
+        safe = secure_filename(original_name)
+        if not safe:
+            safe = f"file_{f['id']}"
+        unique = f"{uuid.uuid4().hex}_{safe}"
+        dst_abs = VAULT_UPLOAD_DIR / str(int(sid)) / unique
+        dst_abs.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            shutil.copyfile(str(src_abs), str(dst_abs))
+        except Exception:
+            continue
+
+        rel_path = f"vault/{int(sid)}/{unique}"
+        size_bytes = int(dst_abs.stat().st_size) if dst_abs.exists() else int(f["size_bytes"] or 0)
+        db.execute(
+            """
+            INSERT INTO vault_files (student_id, folder_id, original_name, stored_path, mime, size_bytes, uploaded_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                sid,
+                int(target_folder_id),
+                original_name or safe,
+                rel_path,
+                (f["mime"] or None),
+                size_bytes,
+                now,
+            ),
+        )
+
+    db.commit()
+    return redirect(get_safe_next_url("student.vault"))
+
+
 @bp.get("/vault")
 @login_required
 def vault():
@@ -525,6 +693,440 @@ def news():
         news_types=news_types,
         filters=filters,
     )
+
+
+@bp.get("/schedules")
+@login_required
+def schedules():
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    schedule_id = int(student["schedule_id"] or 1) if student and ("schedule_id" in student.keys()) else 1
+
+    events = db.execute(
+        "SELECT * FROM schedules WHERE schedule_id = ? ORDER BY datetime(start_at) ASC",
+        (int(schedule_id),),
+    ).fetchall()
+
+    timetable_rows = db.execute(
+        """
+        SELECT * FROM weekly_timetable
+        WHERE schedule_id = ?
+        ORDER BY day_of_week ASC, time(start_time) ASC
+        """,
+        (int(schedule_id),),
+    ).fetchall()
+    timetable_by_day = {i: [] for i in range(7)}
+    for row in timetable_rows:
+        timetable_by_day[int(row["day_of_week"])].append(row)
+
+    today = datetime.now()
+    today_dow = today.weekday()
+    month_start = f"{today.year:04d}-{today.month:02d}-01"
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    month_end = f"{today.year:04d}-{today.month:02d}-{last_day:02d}"
+    month_items = db.execute(
+        """
+        SELECT * FROM calendar_items
+        WHERE date(item_date) >= date(?) AND date(item_date) <= date(?)
+        ORDER BY date(item_date) ASC
+        """,
+        (month_start, month_end),
+    ).fetchall()
+
+    month_schedule_events = db.execute(
+        """
+        SELECT * FROM schedules
+        WHERE date(start_at) >= date(?) AND date(start_at) <= date(?)
+          AND schedule_id = ?
+        ORDER BY datetime(start_at) ASC
+        """,
+        (month_start, month_end, int(schedule_id)),
+    ).fetchall()
+
+    month_overview = []
+    for m in month_items:
+        month_overview.append(
+            {
+                "kind": "CALENDAR_ITEM",
+                "date": str(m["item_date"]),
+                "item_type": m["item_type"],
+                "title": m["title"],
+                "description": m["description"],
+            }
+        )
+    for e in month_schedule_events:
+        month_overview.append(
+            {
+                "kind": "SCHEDULE",
+                "date": str(e["start_at"])[:10],
+                "title": e["title"],
+                "location": e["location"],
+                "start_at": e["start_at"],
+                "end_at": e["end_at"],
+            }
+        )
+    month_overview.sort(key=lambda x: (x.get("date") or "", x.get("kind") or ""))
+
+    calendar_weeks = []
+    cal = calendar.Calendar(firstweekday=0)
+    for week in cal.monthdatescalendar(today.year, today.month):
+        calendar_weeks.append(
+            [
+                {
+                    "date": d.isoformat(),
+                    "day": d.day,
+                    "in_month": d.month == today.month,
+                }
+                for d in week
+            ]
+        )
+
+    month_items_by_date: dict[str, list[dict]] = {}
+    for m in month_items:
+        key = m["item_date"]
+        month_items_by_date.setdefault(key, []).append(
+            {
+                "type": m["item_type"],
+                "title": m["title"],
+                "description": m["description"],
+            }
+        )
+
+    schedule_by_date: dict[str, list[dict]] = {}
+    for e in month_schedule_events:
+        key = str(e["start_at"])[:10]
+        schedule_by_date.setdefault(key, []).append(
+            {
+                "title": e["title"],
+                "location": e["location"],
+                "start_at": e["start_at"],
+                "end_at": e["end_at"],
+            }
+        )
+
+    timetable_for_popup = {
+        str(d): [
+            {
+                "start_time": r["start_time"],
+                "end_time": r["end_time"],
+                "subject": r["subject"],
+                "room": r["room"],
+                "instructor": r["instructor"],
+            }
+            for r in timetable_by_day[d]
+        ]
+        for d in timetable_by_day
+    }
+
+    return render_template(
+        "schedules.html",
+        page_title="Schedules",
+        page_subtitle="Class & Exam Timetable",
+        active_page="schedules",
+        student=student,
+        events=events,
+        timetable_by_day=timetable_by_day,
+        month_items=month_items,
+        month_schedule_events=month_schedule_events,
+        month_overview=month_overview,
+        month_label=today.strftime("%B %Y"),
+        today_dow=today_dow,
+        today_date=today.date().isoformat(),
+        calendar_weeks=calendar_weeks,
+        month_items_by_date=month_items_by_date,
+        schedule_by_date=schedule_by_date,
+        timetable_for_popup=timetable_for_popup,
+    )
+
+
+@bp.get("/exams")
+@login_required
+def exams():
+    db = get_db()
+    forms = db.execute("SELECT * FROM exam_forms ORDER BY id DESC").fetchall()
+
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    details = db.execute("SELECT * FROM student_details WHERE student_id = ?", (sid,)).fetchone()
+    student_program = db.execute("SELECT * FROM student_programs WHERE student_id = ?", (sid,)).fetchone()
+    profile = db.execute("SELECT * FROM student_profile WHERE student_id = ?", (sid,)).fetchone()
+
+    student_program_id_int: int | None = None
+    if student_program and ("program_id" in student_program.keys()):
+        try:
+            student_program_id_int = int(student_program["program_id"])
+        except Exception:
+            student_program_id_int = None
+
+    resolved_student_program = ""
+    resolved_student_department = ""
+    if student_program and ("program_id" in student_program.keys()):
+        try:
+            program_row = db.execute(
+                "SELECT * FROM programs WHERE id = ?",
+                (int(student_program["program_id"]),),
+            ).fetchone()
+            if program_row:
+                resolved_student_program = _norm_text(program_row["name"])
+                resolved_student_department = _norm_text(program_row["branch"])
+        except Exception:
+            resolved_student_program = ""
+            resolved_student_department = ""
+
+    if not resolved_student_program:
+        resolved_student_program = _norm_text(student["program"] if student and ("program" in student.keys()) else "")
+
+    if profile and ("department" in profile.keys()):
+        resolved_student_department = _norm_text(profile["department"])
+    elif not resolved_student_department:
+        resolved_student_department = _norm_text("")
+
+    exam_roll_number = ""
+    if student and details:
+        exam_roll_number = (details["exam_roll_number"] or "").strip() or (student["roll_no"] or "").strip()
+    elif student:
+        exam_roll_number = (student["roll_no"] or "").strip()
+
+    resolved_forms = []
+    for f in forms:
+        raw_form_program = (f["program"] or "") if ("program" in f.keys()) else ""
+        form_department = _scope_rule_clean((f["department"] or "") if ("department" in f.keys()) else "")
+        if not _scope_match_program(resolved_student_program, student_program_id_int, raw_form_program):
+            continue
+        if not _scope_match(resolved_student_department, form_department):
+            continue
+
+        is_open = is_exam_form_open(
+            f["open_from"] if ("open_from" in f.keys()) else None,
+            f["open_to"] if ("open_to" in f.keys()) else None,
+        )
+        resolved_forms.append(
+            {
+                **dict(f),
+                "computed_status": "OPEN" if is_open else "CLOSED",
+                "is_open": is_open,
+                "resolved_apply_url": resolve_exam_link(
+                    f["apply_url"] if ("apply_url" in f.keys()) else None,
+                    f["apply_roll_placeholder"] if ("apply_roll_placeholder" in f.keys()) else None,
+                    exam_roll_number,
+                ),
+            }
+        )
+
+    admit_card_link = None
+    resolved_admit_openings = []
+    openings = db.execute("SELECT * FROM admit_card_openings ORDER BY id DESC").fetchall()
+    for o in openings:
+        raw_o_program = (o["program"] or "") if ("program" in o.keys()) else ""
+        o_department = _scope_rule_clean((o["department"] or "") if ("department" in o.keys()) else "")
+        if not _scope_match_program(resolved_student_program, student_program_id_int, raw_o_program):
+            continue
+        if not _scope_match(resolved_student_department, o_department):
+            continue
+
+        is_open = is_exam_form_open(
+            o["open_from"] if ("open_from" in o.keys()) else None,
+            o["open_to"] if ("open_to" in o.keys()) else None,
+        )
+        link = ""
+        if exam_roll_number:
+            link = resolve_exam_link(
+                o["admit_card_url"] if ("admit_card_url" in o.keys()) else None,
+                o["roll_placeholder"] if ("roll_placeholder" in o.keys()) else None,
+                exam_roll_number,
+            )
+        resolved_admit_openings.append(
+            {
+                **dict(o),
+                "is_open": is_open,
+                "computed_status": "OPEN" if is_open else "CLOSED",
+                "resolved_url": link,
+            }
+        )
+
+    for o in resolved_admit_openings:
+        if o.get("is_open") and o.get("resolved_url"):
+            admit_card_link = o.get("resolved_url")
+            break
+
+    admit_card = None
+    admit_subjects = []
+    semester_result = None
+    semester_result_courses = []
+    if student and details and student_program and ("program_id" in student_program.keys()):
+        program_id = int(student_program["program_id"])
+        program = db.execute("SELECT * FROM programs WHERE id = ?", (program_id,)).fetchone()
+        session = db.execute(
+            """
+            SELECT * FROM exam_sessions
+            WHERE program_id = ? AND semester = ? AND status = 'ACTIVE'
+            ORDER BY datetime(issued_at) DESC
+            LIMIT 1
+            """,
+            (program_id, int(student["sem"])),
+        ).fetchone()
+
+        if session and program:
+            admit_card = {
+                "university": session["university"],
+                "session_label": session["session_label"],
+                "program_label": f"{program['name']} ({program['branch']}) - {int(student['sem'])} Semester",
+                "college_label": session["college_label"],
+                "student_name": student["name"],
+                "roll_number": details["exam_roll_number"] or student["roll_no"],
+                "father_name": details["father_name"],
+                "gender": details["gender"],
+                "category": details["category"],
+                "address": details["address"],
+                "exam_center": session["exam_center"],
+            }
+
+            admit_subjects = db.execute(
+                """
+                SELECT
+                    s.code AS subject_code,
+                    s.name AS subject_name,
+                    t.paper_type AS paper_type,
+                    t.exam_date AS exam_date,
+                    t.exam_time AS exam_time
+                FROM student_subject_enrollments e
+                JOIN subjects s ON s.id = e.subject_id
+                LEFT JOIN exam_timetable t
+                    ON t.subject_id = s.id AND t.session_id = ?
+                WHERE e.student_id = ? AND e.session_label = ?
+                ORDER BY s.code ASC
+                """,
+                (session["id"], sid, session["session_label"]),
+            ).fetchall()
+
+        semester_result = db.execute(
+            """
+            SELECT * FROM semester_results
+            WHERE student_id = ? AND program_id = ? AND semester = ?
+            ORDER BY declared_on DESC
+            LIMIT 1
+            """,
+            (sid, program_id, int(student["sem"])),
+        ).fetchone()
+        if semester_result:
+            semester_result_courses = db.execute(
+                """
+                SELECT * FROM semester_result_courses
+                WHERE result_id = ?
+                ORDER BY category ASC, course_code ASC
+                """,
+                (semester_result["id"],),
+            ).fetchall()
+
+    results = db.execute("SELECT * FROM exam_results ORDER BY datetime(published_at) DESC").fetchall()
+
+    return render_template(
+        "exams.html",
+        page_title="Exams Portal",
+        page_subtitle="Track your performance",
+        active_page="exams",
+        student=student,
+        forms=resolved_forms,
+        admit_card_link=admit_card_link,
+        admit_openings=resolved_admit_openings,
+        admit_card=admit_card,
+        admit_subjects=admit_subjects,
+        semester_result=semester_result,
+        semester_result_courses=semester_result_courses,
+        results=results,
+    )
+
+
+@bp.get("/profile")
+@login_required
+def profile():
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+
+    student_program = db.execute("SELECT * FROM student_programs WHERE student_id = ?", (sid,)).fetchone()
+    program = None
+    if student_program and ("program_id" in student_program.keys()):
+        program = db.execute(
+            "SELECT * FROM programs WHERE id = ?",
+            (int(student_program["program_id"]),),
+        ).fetchone()
+
+    profile_row = db.execute("SELECT * FROM student_profile WHERE student_id = ?", (sid,)).fetchone()
+
+    vault_folders = db.execute(
+        "SELECT id, name FROM vault_folders WHERE student_id = ? ORDER BY created_at DESC",
+        (sid,),
+    ).fetchall()
+
+    cp_error = (request.args.get("cp_error") or "").strip() or None
+    cp_success = (request.args.get("cp_success") or "").strip() or None
+
+    return render_template(
+        "profile.html",
+        page_title="My Profile",
+        page_subtitle="Manage personal information",
+        active_page="profile",
+        student=student,
+        program=program,
+        profile=profile_row,
+        vault_folders=vault_folders,
+        cp_error=cp_error,
+        cp_success=cp_success,
+    )
+
+
+@bp.get("/profile/change-password", endpoint="change_password")
+@login_required
+def change_password():
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    return render_template(
+        "change_password.html",
+        page_title="Change Password",
+        page_subtitle="Update your password",
+        active_page="profile",
+        student=student,
+        error=None,
+        success=None,
+    )
+
+
+@bp.post("/profile/change-password", endpoint="change_password_post")
+@login_required
+def change_password_post():
+    current_password = request.form.get("current_password") or ""
+    new_password = request.form.get("new_password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+
+    db = get_db()
+    sid = get_current_student_id()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    if not student:
+        session.pop("student_id", None)
+        return redirect(url_for("auth.login"))
+
+    if not current_password or not new_password or not confirm_password:
+        return redirect(url_for("student.profile", cp_error="Please fill in all fields."))
+
+    if not student["password_hash"] or not check_password_hash(student["password_hash"], current_password):
+        return redirect(url_for("student.profile", cp_error="Current password is incorrect."))
+
+    if len(new_password) < 8:
+        return redirect(url_for("student.profile", cp_error="New password must be at least 8 characters."))
+
+    if new_password != confirm_password:
+        return redirect(url_for("student.profile", cp_error="New password and confirmation do not match."))
+
+    db.execute(
+        "UPDATE students SET password_hash = ? WHERE id = ?",
+        (generate_password_hash(new_password), int(student["id"])),
+    )
+    db.commit()
+
+    return redirect(url_for("student.profile", cp_success="Password updated successfully."))
 
 
 @bp.get("/administration")
