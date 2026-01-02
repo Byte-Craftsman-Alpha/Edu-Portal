@@ -21,7 +21,7 @@
             </div>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <button id="changePasswordBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:lock-password-outline"></span> Change Password</button>
-                <a href="{{ url_for('logout') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-rose-600" data-icon="solar:logout-2-outline"></span> Logout</a>
+                <a href="{{ url_for('auth.logout') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-rose-600" data-icon="solar:logout-2-outline"></span> Logout</a>
             </div>
         </div>
     </div>
@@ -91,13 +91,13 @@
                 <h3 class="text-lg font-semibold text-slate-900">Vault Folders</h3>
                 <p class="text-sm text-slate-500 mt-1">Your document folders</p>
             </div>
-            <a href="{{ url_for('vault') }}" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:folder-with-files-bold"></span> Open Vault</a>
+            <a href="{{ url_for('student.vault') }}" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:folder-with-files-bold"></span> Open Vault</a>
         </div>
 
         {% if vault_folders %}
             <div class="flex flex-wrap gap-2">
                 {% for f in vault_folders %}
-                    <a href="{{ url_for('vault', folder_id=f.id) }}" class="minimal-badge bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">{{ f.name }}</a>
+                    <a href="{{ url_for('student.vault', folder_id=f.id) }}" class="minimal-badge bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">{{ f.name }}</a>
                 {% endfor %}
             </div>
         {% else %}
@@ -115,8 +115,8 @@
         </div>
 
         <div class="flex flex-wrap gap-3">
-            <a href="{{ url_for('administration') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Administration</a>
-            <a href="{{ url_for('fee_payment') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Fee Payment</a>
+            <a href="{{ url_for('student.administration') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Administration</a>
+            <a href="{{ url_for('student.fee_payment') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Fee Payment</a>
             <a href="https://www.example.edu" target="_blank" rel="noopener" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Institute Official Page</a>
         </div>
     </div>
@@ -147,7 +147,7 @@
                 <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ cp_success }}</div>
             {% endif %}
 
-            <form method="post" action="{{ url_for('student_change_password_post') }}" class="space-y-4">
+            <form method="post" action="{{ url_for('student.change_password_post') }}" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
                     <input name="current_password" type="password" autocomplete="current-password" class="minimal-input w-full" required>

@@ -55,7 +55,7 @@
                                 </div>
                                 <div class="md:col-span-12 flex items-center justify-end gap-2 pt-1">
                                     <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                                    <a href="{{ url_for('admin_students') }}" class="admin-btn admin-btn-soft inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                                    <a href="{{ url_for('admin.students') }}" class="admin-btn admin-btn-soft inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
                                 </div>
                             </div>
                         </div>
@@ -135,7 +135,7 @@
                 </div>
                 <div class="flex flex-col gap-2">
                     <button type="submit" class="admin-btn admin-btn-primary w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                    <a href="{{ url_for('admin_students') }}" class="admin-btn admin-btn-soft w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                    <a href="{{ url_for('admin.students') }}" class="admin-btn admin-btn-soft w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
                 </div>
             </form>
         </div>
@@ -157,7 +157,7 @@
                 <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-students-bulk-handle></div>
             </div>
             <div class="p-5 max-h-[70vh] overflow-y-auto">
-                <form method="post" action="{{ url_for('admin_students_bulk_update') }}" class="space-y-4" id="adminStudentsBulkForm">
+                <form method="post" action="{{ url_for('admin.students_bulk_update') }}" class="space-y-4" id="adminStudentsBulkForm">
                     <div class="admin-card p-4 bg-slate-50 border border-slate-200">
                         <p class="text-sm font-semibold text-slate-900">Fields to update</p>
                         <p class="text-xs text-slate-500 mt-1">Leave a field blank to keep current value unchanged.</p>
@@ -434,7 +434,7 @@
                                     data-emergency_contact_phone="{{ (p.emergency_contact_phone if p else '')|e }}"
                                     data-pending_amount="{{ (du.pending_amount if du else 0) }}"
                                 ><span class="inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:pen-2-bold"></span> Edit</span></button>
-                                <form method="post" action="{{ url_for('admin_student_delete', student_id=s.id) }}" onsubmit="return confirm('Delete this student record? This will delete related data (vault files, attendance, results, submissions).');">
+                                <form method="post" action="{{ url_for('admin.student_delete', student_id=s.id) }}" onsubmit="return confirm('Delete this student record? This will delete related data (vault files, attendance, results, submissions).');">
                                     <button type="submit" class="admin-btn admin-btn-danger w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:trash-bin-trash-bold"></span> Delete</button>
                                 </form>
                             </div>

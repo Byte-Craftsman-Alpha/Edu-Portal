@@ -87,7 +87,7 @@
                                 </div>
                                 <div class="md:col-span-12 flex items-center justify-end gap-2 pt-1">
                                     <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                                    <a href="{{ url_for('admin_teachers') }}" class="admin-btn admin-btn-soft inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                                    <a href="{{ url_for('admin.teachers') }}" class="admin-btn admin-btn-soft inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
                                 </div>
                             </div>
                         </div>
@@ -126,7 +126,7 @@
                 </div>
                 <div class="flex flex-col gap-2">
                     <button type="submit" class="admin-btn admin-btn-primary w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                    <a href="{{ url_for('admin_teachers') }}" class="admin-btn admin-btn-soft w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
+                    <a href="{{ url_for('admin.teachers') }}" class="admin-btn admin-btn-soft w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:restart-outline"></span> Reset</a>
                 </div>
             </form>
         </div>
@@ -139,7 +139,7 @@
         <span class="text-xs text-slate-500">Faculty list</span>
     </div>
 
-    <form method="post" action="{{ url_for('admin_teachers_create') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <form method="post" action="{{ url_for('admin.teachers_create') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <input name="name" type="text" placeholder="Full name" class="admin-input" />
         <input name="designation" type="text" placeholder="Designation (e.g. HOD)" class="admin-input" />
         <input name="department" type="text" placeholder="Department" class="admin-input" />
@@ -186,7 +186,7 @@
                                         data-email="{{ (t.email or '')|e }}"
                                         data-phone="{{ (t.phone or '')|e }}"
                                     ><span class="iconify text-sm" data-icon="solar:pen-2-outline"></span> Edit</button>
-                                    <form method="post" action="{{ url_for('admin_teachers_delete', teacher_id=t.id) }}" onsubmit="return confirm('Delete this teacher?');">
+                                    <form method="post" action="{{ url_for('admin.teachers_delete', teacher_id=t.id) }}" onsubmit="return confirm('Delete this teacher?');">
                                         <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                     </form>
                                 </div>
@@ -361,7 +361,7 @@
             const teacherId = btn.getAttribute('data-teacher-id');
             if (!teacherId) return;
 
-            form.setAttribute('action', `{{ url_for('admin_teacher_update', teacher_id=0) }}`.replace('0', String(teacherId)));
+            form.setAttribute('action', `{{ url_for('admin.teacher_update', teacher_id=0) }}`.replace('0', String(teacherId)));
 
             const map = {
                 name: 'data-name',

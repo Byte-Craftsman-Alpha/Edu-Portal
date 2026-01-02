@@ -56,7 +56,7 @@
                                 </div>
                                 <div class="md:col-span-6 flex flex-col md:flex-row items-stretch md:items-center justify-end gap-2 pt-1">
                                     <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                                    <a href="{{ url_for('library') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-amber-600" data-icon="solar:restart-outline"></span> Reset</a>
+                                    <a href="{{ url_for('student.library') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-amber-600" data-icon="solar:restart-outline"></span> Reset</a>
                                 </div>
                             </div>
                         </div>
@@ -120,7 +120,7 @@
                 </div>
             </div>
             <div class="px-6 pb-6 max-h-[70vh] overflow-y-auto hide-scrollbar">
-                <form method="post" action="{{ url_for('library_resource_upload') }}" enctype="multipart/form-data" class="mt-4">
+                <form method="post" action="{{ url_for('student.library_resource_upload') }}" enctype="multipart/form-data" class="mt-4">
                     <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
                         <div class="md:col-span-3">
                             <label class="block text-xs font-medium text-slate-500 mb-1">Heading</label>
@@ -311,7 +311,7 @@
 
                     <div class="flex flex-col gap-2">
                         <button type="submit" class="w-full px-4 py-3 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Apply</button>
-                        <a href="{{ url_for('library') }}" class="w-full px-4 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-amber-600" data-icon="solar:restart-outline"></span> Reset</a>
+                        <a href="{{ url_for('student.library') }}" class="w-full px-4 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all text-center inline-flex items-center justify-center gap-2"><span class="iconify text-base text-amber-600" data-icon="solar:restart-outline"></span> Reset</a>
                     </div>
                 </div>
             </div>

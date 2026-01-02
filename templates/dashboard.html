@@ -3,33 +3,33 @@
 {% block content %}
 <section class="tab-content space-y-8">
     <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news') }}">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('student.news') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:bell-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Notifications</p>
             <p class="text-xs text-slate-400 mt-1">Latest updates</p>
         </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('schedules') }}">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('student.schedules') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:calendar-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Calendar</p>
             <p class="text-xs text-slate-400 mt-1">Timetable</p>
         </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('news', tag='Assignments') }}">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('student.news', tag='Assignments') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:pen-2-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Assignments</p>
             <p class="text-xs text-slate-400 mt-1">Pending tasks</p>
         </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('exams') }}">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('student.exams') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:cup-star-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Results</p>
             <p class="text-xs text-slate-400 mt-1">Performance</p>
         </a>
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('library') }}">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('student.library') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:folder-with-files-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Study Material</p>
             <p class="text-xs text-slate-400 mt-1">Resources</p>
         </a>
 
-        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('teachers') }}">
+        <a class="minimal-card p-5 text-center hover:shadow-md transition-all cursor-pointer group" href="{{ url_for('student.teachers') }}">
             <div class="text-2xl mb-3 group-hover:scale-110 transition-transform"><span class="iconify" data-icon="solar:users-group-rounded-linear"></span></div>
             <p class="text-sm font-medium text-slate-700">Teachers</p>
             <p class="text-xs text-slate-400 mt-1">Faculty directory</p>
@@ -44,8 +44,8 @@
                     <p class="text-sm text-slate-500 mt-1">Organize important documents into folders</p>
                 </div>
                 <div class="flex gap-2">
-                    <a class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" href="{{ url_for('news') }}">News Feed</a>
-                    <a class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium" href="{{ url_for('schedules') }}">Timetable</a>
+                    <a class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" href="{{ url_for('student.news') }}">News Feed</a>
+                    <a class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium" href="{{ url_for('student.schedules') }}">Timetable</a>
                 </div>
             </div>
 
@@ -81,7 +81,7 @@
                         {% endif %}
                     </div>
                     
-                    <a href="{{ url_for('vault') }}" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View All Folders →</a>
+                    <a href="{{ url_for('student.vault') }}" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View All Folders →</a>
                 </div>
 
                 <!-- Desktop View -->
@@ -90,7 +90,7 @@
                         <p class="text-sm font-semibold text-slate-900">Create Folder</p>
                         <span class="text-xs text-slate-500">{{ (vault_folders|length) if vault_folders is defined else 0 }} folders</span>
                     </div>
-                    <form method="post" action="{{ url_for('vault_folder_create') }}" class="flex flex-col sm:flex-row gap-2">
+                    <form method="post" action="{{ url_for('student.vault_folder_create') }}" class="flex flex-col sm:flex-row gap-2">
                         <input name="name" class="minimal-input w-full" placeholder="e.g. Certificates" required>
                         <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:add-square-bold"></span> Create</button>
                     </form>
@@ -111,7 +111,7 @@
                         <p class="text-sm font-semibold text-slate-900">Upload Document</p>
                         <span class="text-xs text-slate-500">Stored privately</span>
                     </div>
-                    <form method="post" action="{{ url_for('vault_file_upload') }}" enctype="multipart/form-data" class="space-y-3">
+                    <form method="post" action="{{ url_for('student.vault_file_upload') }}" enctype="multipart/form-data" class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-1">Folder</label>
                             <select name="folder_id" class="minimal-input w-full" {% if not vault_folders %}disabled{% endif %} required>
@@ -141,7 +141,7 @@
                         <p class="text-sm font-semibold text-slate-900">Upload Document</p>
                         <span class="text-xs text-slate-500">Stored privately</span>
                     </div>
-                    <form method="post" action="{{ url_for('vault_file_upload') }}" enctype="multipart/form-data" class="space-y-3">
+                    <form method="post" action="{{ url_for('student.vault_file_upload') }}" enctype="multipart/form-data" class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-1">Folder</label>
                             <select name="folder_id" class="minimal-input w-full" {% if not vault_folders %}disabled{% endif %} required>
@@ -180,8 +180,8 @@
                                     <p class="text-xs text-slate-500 mt-1">Folder: <span class="text-slate-700">{{ vf.folder_name }}</span> · {{ vf.uploaded_at|fmt_dt }}</p>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <a href="{{ url_for('vault_file_download', file_id=vf.id) }}" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:download-bold"></span> Download</a>
-                                    <form method="post" action="{{ url_for('vault_file_delete', file_id=vf.id) }}" onsubmit="return confirm('Delete this file?');">
+                                    <a href="{{ url_for('student.vault_file_download', file_id=vf.id) }}" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:download-bold"></span> Download</a>
+                                    <form method="post" action="{{ url_for('student.vault_file_delete', file_id=vf.id) }}" onsubmit="return confirm('Delete this file?');">
                                         <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                     </form>
                                 </div>
@@ -227,7 +227,7 @@
                     </div>
                 {% endif %}
             </div>
-            <a class="mt-6 block w-full py-3 rounded-xl bg-white text-indigo-700 text-sm font-medium hover:bg-slate-100 transition-all text-center inline-flex items-center justify-center gap-2" href="{{ url_for('news') }}"><span class="iconify text-base" data-icon="solar:bell-bold"></span> View All Notifications</a>
+            <a class="mt-6 block w-full py-3 rounded-xl bg-white text-indigo-700 text-sm font-medium hover:bg-slate-100 transition-all text-center inline-flex items-center justify-center gap-2" href="{{ url_for('student.news') }}"><span class="iconify text-base" data-icon="solar:bell-bold"></span> View All Notifications</a>
         </div>
     </div>
 
@@ -237,7 +237,7 @@
                 <h3 class="text-lg font-semibold text-slate-900">Recent Announcements</h3>
                 <p class="text-sm text-slate-500 mt-1">Official updates from faculty and admin</p>
             </div>
-            <a class="text-sm font-medium text-indigo-600 hover:text-indigo-700" href="{{ url_for('news') }}">See All →</a>
+            <a class="text-sm font-medium text-indigo-600 hover:text-indigo-700" href="{{ url_for('student.news') }}">See All →</a>
         </div>
 
         <div class="space-y-4">
@@ -319,7 +319,7 @@
             </div>
             <div class="px-6 pb-6 overflow-y-auto" style="max-height: calc(85vh - 160px);">
                 <div id="createFolderContent" class="space-y-4">
-                    <form method="post" action="{{ url_for('vault_folder_create') }}" class="space-y-4">
+                    <form method="post" action="{{ url_for('student.vault_folder_create') }}" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Folder Name</label>
                             <input name="name" class="minimal-input w-full" placeholder="e.g. Certificates, Assignments" required>
@@ -331,7 +331,7 @@
                     </form>
                 </div>
                 <div id="uploadFileContent" class="space-y-4 hidden">
-                    <form method="post" action="{{ url_for('vault_file_upload') }}" enctype="multipart/form-data" class="space-y-4">
+                    <form method="post" action="{{ url_for('student.vault_file_upload') }}" enctype="multipart/form-data" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Select Folder</label>
                             <select name="folder_id" class="minimal-input w-full" {% if not vault_folders %}disabled{% endif %} required>

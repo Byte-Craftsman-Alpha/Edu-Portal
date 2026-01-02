@@ -14,7 +14,7 @@
             <span class="text-xs text-slate-500">Global</span>
         </div>
 
-        <form method="post" action="{{ url_for('admin_calendar_item_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+        <form method="post" action="{{ url_for('admin.calendar_item_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
             <input name="item_date" type="date" class="admin-input" />
             <select name="item_type" class="admin-input">
                 <option value="">Type</option>
@@ -60,7 +60,7 @@
                                 {% endif %}
                             </div>
 
-                            <form method="post" action="{{ url_for('admin_calendar_item_update', item_id=it.id) }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                            <form method="post" action="{{ url_for('admin.calendar_item_update', item_id=it.id) }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
                                 <div>
                                     <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-1">Date</label>
                                     <input name="item_date" type="date" value="{{ it.item_date }}" class="admin-input w-full" />
@@ -85,7 +85,7 @@
                                 <div class="sm:col-span-2 flex items-center justify-end gap-2 pt-1">
                                     <button type="submit" class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span> Update</button>
                             </form>
-                                    <form method="post" action="{{ url_for('admin_calendar_item_delete', item_id=it.id) }}" onsubmit="return confirm('Delete this item?');">
+                                    <form method="post" action="{{ url_for('admin.calendar_item_delete', item_id=it.id) }}" onsubmit="return confirm('Delete this item?');">
                                         <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                     </form>
                                 </div>
@@ -106,7 +106,7 @@
 
         <div class="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 mb-6">
             <p class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Schedule Group</p>
-            <form method="get" action="{{ url_for('admin_schedules') }}" class="mt-3 flex flex-col sm:flex-row gap-2">
+            <form method="get" action="{{ url_for('admin.schedules') }}" class="mt-3 flex flex-col sm:flex-row gap-2">
                 <select name="schedule_id" class="admin-input flex-1">
                     {% for g in schedule_groups or [] %}
                         <option value="{{ g.id }}" {% if selected_schedule_id is defined and g.id == selected_schedule_id %}selected{% endif %}>
@@ -128,7 +128,7 @@
             {% endfor %}
 
             {% if ns.selected_group %}
-                <form id="scheduleGroupRenameForm" method="post" action="{{ url_for('admin_schedule_group_update', group_id=ns.selected_group.id, schedule_id=ns.selected_group.id) }}" class="mt-3 flex flex-col sm:flex-row gap-2 hidden">
+                <form id="scheduleGroupRenameForm" method="post" action="{{ url_for('admin.schedule_group_update', group_id=ns.selected_group.id, schedule_id=ns.selected_group.id) }}" class="mt-3 flex flex-col sm:flex-row gap-2 hidden">
                     <input type="hidden" name="schedule_id" value="{{ ns.selected_group.id }}" />
                     <input name="name" type="text" value="{{ ns.selected_group.name }}" class="admin-input flex-1" />
                     <button type="submit" class="admin-btn admin-btn-soft inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:pen-2-outline"></span> Rename</button>
@@ -137,7 +137,7 @@
 
             <details class="mt-4">
                 <summary class="list-none cursor-pointer select-none text-sm font-semibold text-slate-900">Create new schedule group</summary>
-                <form method="post" action="{{ url_for('admin_schedule_group_create') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <form method="post" action="{{ url_for('admin.schedule_group_create') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input name="name" type="text" placeholder="Group name" class="admin-input" />
                     <input name="semester" type="number" min="1" max="12" placeholder="Semester (optional)" class="admin-input" />
                     <input name="program" type="text" placeholder="Program (optional)" class="admin-input" />
@@ -149,7 +149,7 @@
             </details>
         </div>
 
-        <form method="post" action="{{ url_for('admin_timetable_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+        <form method="post" action="{{ url_for('admin.timetable_create') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
             <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
             <select name="day_of_week" class="admin-input">
                 <option value="">Day of week</option>
@@ -195,7 +195,7 @@
             </div>
 
             <div id="weeklyBulkUpdatePanel" class="mt-4 hidden">
-                <form id="weeklyBulkUpdateForm" method="post" action="{{ url_for('admin_timetable_bulk_update') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <form id="weeklyBulkUpdateForm" method="post" action="{{ url_for('admin.timetable_bulk_update') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
                     <input type="hidden" name="row_ids" value="" />
 
@@ -224,7 +224,7 @@
                     </div>
                 </form>
 
-                <form id="weeklyBulkDeleteForm" method="post" action="{{ url_for('admin_timetable_bulk_delete') }}" class="hidden">
+                <form id="weeklyBulkDeleteForm" method="post" action="{{ url_for('admin.timetable_bulk_delete') }}" class="hidden">
                     <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
                 </form>
             </div>
@@ -269,7 +269,7 @@
                                 <div class="text-sm text-slate-600 mt-1">Instructor: <span class="text-slate-900 font-semibold">{{ r.instructor }}</span></div>
                             </div>
 
-                            <form method="post" action="{{ url_for('admin_timetable_update', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                            <form method="post" action="{{ url_for('admin.timetable_update', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
                                 <input type="hidden" name="schedule_id" value="{{ selected_schedule_id if selected_schedule_id is defined else 1 }}" />
                                                 <select name="day_of_week" class="admin-input">
                                                     <option value="0" {% if r.day_of_week == 0 %}selected{% endif %}>Monday</option>
@@ -291,7 +291,7 @@
                                             </form>
 
                                             <div class="flex items-center justify-end gap-2 mt-2">
-                                                <form method="post" action="{{ url_for('admin_timetable_delete', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this timetable row?');">
+                                                <form method="post" action="{{ url_for('admin.timetable_delete', row_id=r.id, schedule_id=(selected_schedule_id if selected_schedule_id is defined else 1)) }}" onsubmit="return confirm('Delete this timetable row?');">
                                                     <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                                 </form>
                                             </div>

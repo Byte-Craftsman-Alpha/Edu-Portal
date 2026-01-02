@@ -71,29 +71,29 @@
             </div>
             <button data-mobile-nav-toggle class="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all" aria-label="Close menu" aria-expanded="false"><span class="iconify text-xl" data-icon="solar:close-square-outline"></span></button>
         </div>
-
+@@
         <nav class="space-y-1">
-            <a href="{{ url_for('admin_dashboard') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.dashboard') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin' %}solar:shield-user-bold{% else %}solar:shield-user-outline{% endif %}"></span> Dashboard</span>
                 <span class="text-xs {% if active_page == 'admin' %}text-slate-200{% else %}text-slate-400{% endif %}">Home</span>
             </a>
-            <a href="{{ url_for('admin_students') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_students' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.students') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_students' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_students' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Students</span>
                 <span class="text-xs {% if active_page == 'admin_students' %}text-slate-200{% else %}text-slate-400{% endif %}">Users</span>
             </a>
-            <a href="{{ url_for('admin_news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_news' %}solar:document-text-bold{% else %}solar:document-text-outline{% endif %}"></span> News</span>
                 <span class="text-xs {% if active_page == 'admin_news' %}text-slate-200{% else %}text-slate-400{% endif %}">Posts</span>
             </a>
-            <a href="{{ url_for('admin_exam_forms') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_exam_forms' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.exam_forms') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_exam_forms' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_exam_forms' %}solar:pen-2-bold{% else %}solar:pen-2-outline{% endif %}"></span> Exam Forms</span>
                 <span class="text-xs {% if active_page == 'admin_exam_forms' %}text-slate-200{% else %}text-slate-400{% endif %}">Control</span>
             </a>
-            <a href="{{ url_for('admin_schedules') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_schedules' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.schedules') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_schedules' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_schedules' %}solar:calendar-bold{% else %}solar:calendar-outline{% endif %}"></span> Schedules</span>
                 <span class="text-xs {% if active_page == 'admin_schedules' %}text-slate-200{% else %}text-slate-400{% endif %}">Timetable</span>
             </a>
-            <a href="{{ url_for('admin_teachers') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_teachers' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.teachers') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_teachers' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_teachers' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Teachers</span>
                 <span class="text-xs {% if active_page == 'admin_teachers' %}text-slate-200{% else %}text-slate-400{% endif %}">Directory</span>
             </a>
@@ -103,7 +103,7 @@
             <p class="text-sm font-semibold">Admin Tools</p>
             <p class="text-xs text-slate-300 mt-1">Manage institute data and settings.</p>
             <button id="adminChangePasswordBtnMobile" type="button" class="mt-4 w-full admin-btn admin-btn-soft">Change Password</button>
-            <a href="{{ url_for('admin_logout') }}" class="mt-4 w-full admin-btn admin-btn-soft">Logout</a>
+            <a href="{{ url_for('auth.admin_logout') }}" class="mt-4 w-full admin-btn admin-btn-soft">Logout</a>
         </div>
     </aside>
 
@@ -120,27 +120,27 @@
         </div>
 
         <nav class="space-y-1">
-            <a href="{{ url_for('admin_dashboard') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.dashboard') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin' %}solar:shield-user-bold{% else %}solar:shield-user-outline{% endif %}"></span> Dashboard</span>
                 <span class="text-xs {% if active_page == 'admin' %}text-slate-200{% else %}text-slate-400{% endif %}">Home</span>
             </a>
-            <a href="{{ url_for('admin_students') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_students' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.students') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_students' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_students' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Students</span>
                 <span class="text-xs {% if active_page == 'admin_students' %}text-slate-200{% else %}text-slate-400{% endif %}">Users</span>
             </a>
-            <a href="{{ url_for('admin_news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.news_list') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_news' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_news' %}solar:document-text-bold{% else %}solar:document-text-outline{% endif %}"></span> News</span>
                 <span class="text-xs {% if active_page == 'admin_news' %}text-slate-200{% else %}text-slate-400{% endif %}">Posts</span>
             </a>
-            <a href="{{ url_for('admin_exam_forms') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_exam_forms' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.exam_forms') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_exam_forms' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_exam_forms' %}solar:pen-2-bold{% else %}solar:pen-2-outline{% endif %}"></span> Exam Forms</span>
                 <span class="text-xs {% if active_page == 'admin_exam_forms' %}text-slate-200{% else %}text-slate-400{% endif %}">Control</span>
             </a>
-            <a href="{{ url_for('admin_schedules') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_schedules' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.schedules') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_schedules' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_schedules' %}solar:calendar-bold{% else %}solar:calendar-outline{% endif %}"></span> Schedules</span>
                 <span class="text-xs {% if active_page == 'admin_schedules' %}text-slate-200{% else %}text-slate-400{% endif %}">Timetable</span>
             </a>
-            <a href="{{ url_for('admin_teachers') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_teachers' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+            <a href="{{ url_for('admin.teachers') }}" class="flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all {% if active_page == 'admin_teachers' %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'admin_teachers' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Teachers</span>
                 <span class="text-xs {% if active_page == 'admin_teachers' %}text-slate-200{% else %}text-slate-400{% endif %}">Directory</span>
             </a>
@@ -150,7 +150,7 @@
             <p class="text-sm font-semibold">Admin Tools</p>
             <p class="text-xs text-slate-300 mt-1">Manage institute data and settings.</p>
             <button id="adminChangePasswordBtnSidebar" type="button" class="mt-4 w-full admin-btn admin-btn-soft">Change Password</button>
-            <a href="{{ url_for('admin_logout') }}" class="mt-4 w-full admin-btn admin-btn-soft">Logout</a>
+            <a href="{{ url_for('auth.admin_logout') }}" class="mt-4 w-full admin-btn admin-btn-soft">Logout</a>
         </div>
     </aside>
 
@@ -162,7 +162,7 @@
                     <h1 class="text-xl font-semibold text-slate-900">{{ page_title }}</h1>
                     <p class="text-xs text-slate-500">{{ page_subtitle }}</p>
                     <div class="hidden md:flex items-center gap-2 mt-2 text-xs text-slate-500">
-                        <a href="{{ url_for('admin_dashboard') }}" class="hover:text-slate-900">Admin</a>
+                        <a href="{{ url_for('admin.dashboard') }}" class="hover:text-slate-900">Admin</a>
                         <span class="text-slate-300">/</span>
                         <span class="text-slate-900 font-medium">{{ page_title }}</span>
                     </div>
@@ -170,7 +170,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <button id="adminChangePasswordBtn" type="button" class="admin-btn admin-btn-soft">Change Password</button>
-                <a href="{{ url_for('admin_logout') }}" class="admin-btn admin-btn-soft">Logout</a>
+                <a href="{{ url_for('auth.admin_logout') }}" class="admin-btn admin-btn-soft">Logout</a>
             </div>
         </header>
 
@@ -206,7 +206,7 @@
                     <div class="mb-4 admin-card border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ request.args.get('ap_success') }}</div>
                 {% endif %}
 
-                <form method="post" action="{{ url_for('admin_change_password_post') }}" class="space-y-4">
+                <form method="post" action="{{ url_for('admin.change_password_post') }}" class="space-y-4">
                     <input type="hidden" name="next" value="{{ request.path }}">
 
                     <div>

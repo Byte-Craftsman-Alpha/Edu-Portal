@@ -31,7 +31,7 @@
             </div>
 
             <div class="p-5 max-h-[75vh] overflow-y-auto">
-                <form method="post" action="{{ url_for('admin_news_create') }}" enctype="multipart/form-data" class="space-y-4" data-news-new-form>
+                <form method="post" action="{{ url_for('admin.news_create') }}" enctype="multipart/form-data" class="space-y-4" data-news-new-form>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Priority</label>
@@ -255,7 +255,7 @@
                                     data-sender="{{ p.sender|e }}"
                                     data-tags="{{ (p.tags or '')|e }}"
                                 ><span class="iconify text-base text-amber-600" data-icon="solar:pen-2-outline"></span> Edit</button>
-                                <form method="post" action="{{ url_for('admin_news_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
+                                <form method="post" action="{{ url_for('admin.news_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
                                     <button type="submit" class="admin-btn admin-btn-danger w-full inline-flex items-center justify-center gap-2"><span class="iconify text-base text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                 </form>
                             </div>

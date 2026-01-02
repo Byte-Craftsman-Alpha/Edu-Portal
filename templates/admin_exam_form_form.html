@@ -9,7 +9,7 @@
 
 <div class="max-w-3xl">
     <div class="admin-card p-6">
-        <form method="post" action="{% if form %}{{ url_for('admin_exam_form_update', form_id=form.id) }}{% else %}{{ url_for('admin_exam_form_create') }}{% endif %}" class="space-y-4">
+        <form method="post" action="{% if form %}{{ url_for('admin.exam_form_update', form_id=form.id) }}{% else %}{{ url_for('admin.exam_form_create') }}{% endif %}" class="space-y-4">
                 <div>
                     <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
                     <input name="title" type="text" value="{{ form.title if form else '' }}" placeholder="e.g. Semester Examination Form" class="admin-input w-full" />

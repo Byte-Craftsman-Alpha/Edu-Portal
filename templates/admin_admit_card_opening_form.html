@@ -9,7 +9,7 @@
 
 <div class="max-w-3xl">
     <div class="admin-card p-6">
-        <form method="post" action="{% if opening %}{{ url_for('admin_admit_card_opening_update', opening_id=opening.id) }}{% else %}{{ url_for('admin_admit_card_opening_create') }}{% endif %}" class="space-y-4">
+        <form method="post" action="{% if opening %}{{ url_for('admin.admit_card_opening_update', opening_id=opening.id) }}{% else %}{{ url_for('admin.admit_card_opening_create') }}{% endif %}" class="space-y-4">
             <div>
                 <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
                 <input name="title" type="text" value="{{ opening.title if opening else '' }}" placeholder="e.g. Admit Card Download" class="admin-input w-full" />

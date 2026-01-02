@@ -14,8 +14,8 @@ venv/
 ENV/
 env/
 
-# This project uses a local venv folder
-edu_portal/
+# This project previously used a local venv folder named edu_portal/
+# (now renamed to .venv). Keep edu_portal/ available for the application package.
 
 # IDE
 .vscode/

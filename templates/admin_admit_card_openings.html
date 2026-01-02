@@ -23,7 +23,7 @@
             </div>
 
             <div class="p-5 max-h-[75vh] overflow-y-auto">
-                <form method="post" action="{{ url_for('admin_admit_card_opening_create') }}" class="space-y-4">
+                <form method="post" action="{{ url_for('admin.admit_card_opening_create') }}" class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
                         <input name="title" type="text" placeholder="e.g. Admit Card Download" class="admin-input w-full" required />
@@ -113,8 +113,8 @@
                             <td class="px-4 py-3 text-slate-700">{% if o.open_from and o.open_to %}{{ o.open_from }} → {{ o.open_to }}{% else %}-{% endif %}</td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap gap-2">
-                                    <a href="{{ url_for('admin_admit_card_opening_edit', opening_id=o.id) }}" class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span> Edit</a>
-                                    <form method="post" action="{{ url_for('admin_admit_card_opening_delete', opening_id=o.id) }}" onsubmit="return confirm('Delete this admit card opening?');">
+                                    <a href="{{ url_for('admin.admit_card_opening_edit', opening_id=o.id) }}" class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span> Edit</a>
+                                    <form method="post" action="{{ url_for('admin.admit_card_opening_delete', opening_id=o.id) }}" onsubmit="return confirm('Delete this admit card opening?');">
                                         <button type="submit" class="admin-btn bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                     </form>
                                 </div>

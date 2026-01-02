@@ -9,7 +9,7 @@
                 <p class="text-sm text-slate-500 mt-1">Create folders and store your private documents</p>
             </div>
             <div class="flex gap-2">
-                <a class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" href="{{ url_for('dashboard') }}">Back</a>
+                <a class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" href="{{ url_for('student.dashboard') }}">Back</a>
                 <button id="vaultPageActionBtn" class="md:hidden px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2">
                     <span class="iconify text-base" data-icon="solar:add-square-bold"></span>
                     Actions
@@ -25,8 +25,8 @@
                         <span class="text-xs text-slate-500">{{ vault_folders|length }} total</span>
                     </div>
 
-                    <form method="post" action="{{ url_for('vault_folder_create') }}" class="hidden md:flex gap-2">
-                        <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                    <form method="post" action="{{ url_for('student.vault_folder_create') }}" class="hidden md:flex gap-2">
+                        <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                         <input name="name" class="minimal-input w-full" placeholder="New folder name" required>
                         <button type="submit" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:add-square-bold"></span> Create</button>
                     </form>
@@ -35,14 +35,14 @@
                         {% if vault_folders %}
                             {% for f in vault_folders %}
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ url_for('vault', folder_id=f.id) }}" class="flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-all {% if selected_folder and selected_folder.id == f.id %}border-indigo-200 bg-indigo-50 text-indigo-700{% else %}border-slate-200 bg-white text-slate-700 hover:bg-slate-50{% endif %}">
+                                    <a href="{{ url_for('student.vault', folder_id=f.id) }}" class="flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-all {% if selected_folder and selected_folder.id == f.id %}border-indigo-200 bg-indigo-50 text-indigo-700{% else %}border-slate-200 bg-white text-slate-700 hover:bg-slate-50{% endif %}">
                                         <span class="inline-flex items-center gap-2">
                                             <span class="iconify text-base" data-icon="solar:folder-with-files-bold"></span>
                                             <span class="truncate">{{ f.name }}</span>
                                         </span>
                                     </a>
-                                    <form method="post" action="{{ url_for('vault_folder_delete', folder_id=f.id) }}" onsubmit="return confirm('Delete this folder and all files inside it?');">
-                                        <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                    <form method="post" action="{{ url_for('student.vault_folder_delete', folder_id=f.id) }}" onsubmit="return confirm('Delete this folder and all files inside it?');">
+                                        <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                                         <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                     </form>
                                 </div>
@@ -68,8 +68,7 @@
                     </div>
 
                     <div class="mt-4 hidden md:block">
-                        <form method="post" action="{{ url_for('vault_file_upload') }}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-6 gap-3">
-                            <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                        <form method="post" action="{{ url_for('student.vault_file_upload') }}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-6 gap-3">
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-medium text-slate-500 mb-1">Folder</label>
                                 <select name="folder_id" class="minimal-input w-full" {% if not vault_folders %}disabled{% endif %} required>
@@ -96,12 +95,12 @@
                         <div class="p-3 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div class="text-sm text-slate-700 font-medium"><span id="vaultSelectedCount">0</span> selected</div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <form id="vaultBulkDeleteForm" method="post" action="{{ url_for('vault_files_bulk_delete') }}" class="inline-flex">
-                                    <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                <form id="vaultBulkDeleteForm" method="post" action="{{ url_for('student.vault_files_bulk_delete') }}" class="inline-flex">
+                                    <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                                     <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                 </form>
-                                <form id="vaultBulkMoveForm" method="post" action="{{ url_for('vault_files_bulk_move') }}" class="inline-flex items-center gap-2">
-                                    <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                <form id="vaultBulkMoveForm" method="post" action="{{ url_for('student.vault_files_bulk_move') }}" class="inline-flex items-center gap-2">
+                                    <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                                     <select name="target_folder_id" class="minimal-input py-2 text-xs" required>
                                         {% for f in vault_folders %}
                                             <option value="{{ f.id }}">Move to: {{ f.name }}</option>
@@ -109,8 +108,8 @@
                                     </select>
                                     <button type="submit" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:transfer-horizontal-bold"></span> Move</button>
                                 </form>
-                                <form id="vaultBulkCopyForm" method="post" action="{{ url_for('vault_files_bulk_copy') }}" class="inline-flex items-center gap-2">
-                                    <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                <form id="vaultBulkCopyForm" method="post" action="{{ url_for('student.vault_files_bulk_copy') }}" class="inline-flex items-center gap-2">
+                                    <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                                     <select name="target_folder_id" class="minimal-input py-2 text-xs" required>
                                         {% for f in vault_folders %}
                                             <option value="{{ f.id }}">Copy to: {{ f.name }}</option>
@@ -133,7 +132,7 @@
                                 <span class="text-xs text-slate-500">Tap checkbox to multi-select</span>
                             </div>
                             {% for vf in vault_files %}
-                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3" data-vault-file data-file-id="{{ vf.id }}" data-search-text="{{ (vf.original_name ~ ' ' ~ (vf.mime or '') ~ ' ' ~ (vf.folder_name or ''))|lower|e }}" data-download-url="{{ url_for('vault_file_download', file_id=vf.id) }}">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3" data-vault-file data-file-id="{{ vf.id }}" data-search-text="{{ (vf.original_name ~ ' ' ~ (vf.mime or '') ~ ' ' ~ (vf.folder_name or ''))|lower|e }}" data-download-url="{{ url_for('student.vault_file_download', file_id=vf.id) }}">
                                     <div class="flex items-start gap-3 min-w-0 flex-1">
                                         <label class="pt-1">
                                             <input type="checkbox" class="vault-file-checkbox rounded border-slate-300" value="{{ vf.id }}">
@@ -145,9 +144,9 @@
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <button type="button" class="vaultShareBtn px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:share-bold"></span> Share</button>
-                                        <a href="{{ url_for('vault_file_download', file_id=vf.id) }}" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:download-bold"></span> Download</a>
-                                        <form method="post" action="{{ url_for('vault_file_delete', file_id=vf.id) }}" onsubmit="return confirm('Delete this file?');">
-                                            <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                        <a href="{{ url_for('student.vault_file_download', file_id=vf.id) }}" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:download-bold"></span> Download</a>
+                                        <form method="post" action="{{ url_for('student.vault_file_delete', file_id=vf.id) }}" onsubmit="return confirm('Delete this file?');">
+                                            <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                                             <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                         </form>
                                     </div>
@@ -192,8 +191,8 @@
          </div>
          <div class="px-6 pb-6 overflow-y-auto" style="max-height: calc(85vh - 160px);">
              <div id="vaultPageCreateFolderContent" class="space-y-4">
-                 <form method="post" action="{{ url_for('vault_folder_create') }}" class="space-y-4">
-                     <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                 <form method="post" action="{{ url_for('student.vault_folder_create') }}" class="space-y-4">
+                     <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                      <div>
                          <label class="block text-sm font-medium text-slate-700 mb-2">Folder Name</label>
                          <input name="name" class="minimal-input w-full" placeholder="e.g. Certificates, Assignments" required>
@@ -205,8 +204,8 @@
                  </form>
              </div>
              <div id="vaultPageUploadFileContent" class="space-y-4 hidden">
-                 <form method="post" action="{{ url_for('vault_file_upload') }}" enctype="multipart/form-data" class="space-y-4">
-                     <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                 <form method="post" action="{{ url_for('student.vault_file_upload') }}" enctype="multipart/form-data" class="space-y-4">
+                     <input type="hidden" name="next" value="{{ url_for('student.vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
                      <div>
                          <label class="block text-sm font-medium text-slate-700 mb-2">Select Folder</label>
                          <select name="folder_id" class="minimal-input w-full" {% if not vault_folders %}disabled{% endif %} required>

@@ -9,7 +9,7 @@
 
 <div class="max-w-3xl">
     <div class="admin-card p-6">
-        <form method="post" enctype="multipart/form-data" action="{% if post %}{{ url_for('admin_news_update', post_id=post.id) }}{% else %}{{ url_for('admin_news_create') }}{% endif %}" class="space-y-4" data-news-standalone-form>
+        <form method="post" enctype="multipart/form-data" action="{% if post %}{{ url_for('admin.news_update', post_id=post.id) }}{% else %}{{ url_for('admin.news_create') }}{% endif %}" class="space-y-4" data-news-standalone-form>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Priority</label>

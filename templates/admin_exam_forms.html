@@ -19,7 +19,7 @@
             </div>
 
             <div class="p-5 max-h-[75vh] overflow-y-auto">
-                <form method="post" action="{{ url_for('admin_exam_form_create') }}" class="space-y-4">
+                <form method="post" action="{{ url_for('admin.exam_form_create') }}" class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
                         <input name="title" type="text" placeholder="e.g. Semester Examination Form" class="admin-input w-full" required />
@@ -174,7 +174,7 @@
 
             <div class="p-5 max-h-[75vh] overflow-y-auto">
                 <form method="post" action="" class="space-y-4" data-admin-exams-admit-opening-edit-form>
-                    <input type="hidden" name="next" value="{{ url_for('admin_exam_forms') }}">
+                    <input type="hidden" name="next" value="{{ url_for('admin.exam_forms') }}">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
                         <input name="title" type="text" placeholder="e.g. Admit Card Download" class="admin-input w-full" required data-admin-exams-admit-opening-edit-title />
@@ -251,8 +251,8 @@
             </div>
 
             <div class="p-5 max-h-[75vh] overflow-y-auto">
-                <form method="post" action="{{ url_for('admin_admit_card_opening_create') }}" class="space-y-4">
-                    <input type="hidden" name="next" value="{{ url_for('admin_exam_forms') }}">
+                <form method="post" action="{{ url_for('admin.admit_card_opening_create') }}" class="space-y-4">
+                    <input type="hidden" name="next" value="{{ url_for('admin.exam_forms') }}">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Title</label>
                         <input name="title" type="text" placeholder="e.g. Admit Card Download" class="admin-input w-full" required />
@@ -365,7 +365,7 @@
                                         type="button"
                                         class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"
                                         data-admin-exam-form-edit-open
-                                        data-update-url="{{ url_for('admin_exam_form_update', form_id=f.id) }}"
+                                        data-update-url="{{ url_for('admin.exam_form_update', form_id=f.id) }}"
                                         data-title="{{ f.title|e }}"
                                         data-apply-url="{{ (f.apply_url or '')|e }}"
                                         data-apply-placeholder="{{ (f.apply_roll_placeholder or '{exam_roll_number}')|e }}"
@@ -376,7 +376,7 @@
                                         data-open-to="{{ (f.open_to or '')|e }}"
                                         data-note="{{ (f.note or '')|e }}"
                                     ><span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span> Edit</button>
-                                    <form method="post" action="{{ url_for('admin_exam_form_delete', form_id=f.id) }}" onsubmit="return confirm('Delete this exam form?');">
+                                    <form method="post" action="{{ url_for('admin.exam_form_delete', form_id=f.id) }}" onsubmit="return confirm('Delete this exam form?');">
                                         <button type="submit" class="admin-btn bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                     </form>
                                 </div>
@@ -447,10 +447,10 @@
                                         data-department="{{ (o.department or '')|e }}"
                                         data-admit-card-url="{{ (o.admit_card_url or '')|e }}"
                                         data-roll-placeholder="{{ (o.roll_placeholder or '{exam_roll_number}')|e }}"
-                                        data-update-url="{{ url_for('admin_admit_card_opening_update', opening_id=o.id) }}"
+                                        data-update-url="{{ url_for('admin.admit_card_opening_update', opening_id=o.id) }}"
                                     ><span class="iconify text-sm text-amber-600" data-icon="solar:pen-2-outline"></span> Edit</button>
-                                <form method="post" action="{{ url_for('admin_admit_card_opening_delete', opening_id=o.id) }}" onsubmit="return confirm('Delete this admit card opening?');">
-                                    <input type="hidden" name="next" value="{{ url_for('admin_exam_forms') }}">
+                                <form method="post" action="{{ url_for('admin.admit_card_opening_delete', opening_id=o.id) }}" onsubmit="return confirm('Delete this admit card opening?');">
+                                    <input type="hidden" name="next" value="{{ url_for('admin.exam_forms') }}">
                                     <button type="submit" class="admin-btn bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
                                 </form>
                                 </div>
