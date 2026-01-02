@@ -46,7 +46,23 @@ pip install -r requirements.txt
 2) Run the app
 
 ```bash
-python app.py
+flask run
+```
+
+If you're on Windows `cmd`:
+
+```bat
+set FLASK_APP=edu_portal.app:create_app
+set FLASK_ENV=development
+flask run
+```
+
+If you're on Windows PowerShell:
+
+```powershell
+$env:FLASK_APP="edu_portal.app:create_app"
+$env:FLASK_ENV="development"
+flask run
 ```
 
 3) Open in browser
@@ -99,13 +115,15 @@ The DB is created automatically at runtime.
 
 The DB schema is maintained in:
 
-- `app.py` → `init_db()`
+- `edu_portal/app/services/db_service.py` → `init_db()`
 
 `init_db()`:
 
 - creates tables (if missing)
 - applies small schema migrations (adds columns if required)
 - inserts baseline demo rows if the database is empty
+
+Note: `app.py` is the legacy monolithic entrypoint. The current app uses the Flask app factory (`edu_portal.app:create_app`) and blueprints (`auth`, `student`, `admin`).
 
 ---
 

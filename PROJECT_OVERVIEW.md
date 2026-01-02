@@ -39,7 +39,26 @@ EduPortal is a student portal + admin panel built with Flask and SQLite.
 
 4. Run the app:
    ```bash
-   python app.py
+   flask run
+   ```
+
+   Windows `cmd`:
+   ```bat
+   set FLASK_APP=edu_portal.app:create_app
+   set FLASK_ENV=development
+   flask run
+   ```
+
+   Windows PowerShell:
+   ```powershell
+   $env:FLASK_APP="edu_portal.app:create_app"
+   $env:FLASK_ENV="development"
+   flask run
+   ```
+
+   Production-style (Waitress):
+   ```bash
+   python wsgi.py
    ```
 
 5. Open in browser:
