@@ -3366,6 +3366,13 @@ def register_post():
 
 
 @app.get("/")
+def landing():
+    if get_current_student_id() is not None:
+        return redirect(url_for("dashboard"))
+    return render_template("landing.html", current_year=datetime.utcnow().year)
+
+
+@app.get("/dashboard")
 @login_required
 def dashboard():
     db = get_db()

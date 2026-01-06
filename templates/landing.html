@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPortal - Centralized Student Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+    <style>
+        html { scroll-behavior: smooth; }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+
+        .soft-shadow {
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12), 0 2px 10px rgba(15, 23, 42, 0.05);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(14px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shine::after {
+            content: "";
+            position: absolute;
+            top: -30%;
+            left: -60%;
+            width: 60%;
+            height: 160%;
+            transform: rotate(18deg);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transition: left 0.7s ease;
+        }
+
+        .shine:hover::after {
+            left: 140%;
+        }
+
+        .nav-pill {
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.18s ease;
+        }
+
+        .nav-pill.active {
+            background: #0f172a;
+            color: white;
+        }
+
+        .nav-pill:not(.active):hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
+    <div id="page-progress" class="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-indigo-500 to-purple-600 z-[9999] w-0 opacity-0 transition-[width,opacity] duration-300"></div>
+
+    <header class="sticky top-0 z-50">
+        <div class="glass">
+            <div class="max-w-6xl mx-auto px-5 sm:px-6">
+                <div class="py-4 flex items-center justify-between gap-4">
+                    <a href="#top" class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden soft-shadow">
+                            <img src="{{ url_for('static', filename='app_icon/logo.png') }}" alt="EduPortal" class="w-8 h-8 object-contain" />
+                        </div>
+                        <div class="leading-tight">
+                            <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">EduPortal</div>
+                            <div class="text-sm font-semibold text-slate-900">Team-Paradox Launch</div>
+                        </div>
+                    </a>
+
+                    <nav class="hidden lg:flex items-center gap-2 bg-white border border-slate-200 rounded-full p-1">
+                        <a class="nav-pill" href="#introduction" data-nav="introduction">Introduction</a>
+                        <a class="nav-pill" href="#overview" data-nav="overview">Overview</a>
+                        <a class="nav-pill" href="#achievements" data-nav="achievements">Achievements</a>
+                        <a class="nav-pill" href="#features" data-nav="features">Features</a>
+                        <a class="nav-pill" href="#contact" data-nav="contact">Get in Touch</a>
+                    </nav>
+
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('admin_login') }}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all">
+                            <span class="iconify text-base" data-icon="solar:shield-user-outline"></span>
+                            Admin
+                        </a>
+                        <a href="{{ url_for('login') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-950 transition-all shine">
+                            <span class="iconify text-base" data-icon="solar:login-3-outline"></span>
+                            Student Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="top">
+        <section id="introduction" class="relative overflow-hidden">
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="absolute -top-32 -right-24 w-[540px] h-[540px] rounded-full bg-gradient-to-br from-indigo-200 to-purple-200 blur-3xl opacity-60"></div>
+                <div class="absolute -bottom-40 -left-28 w-[560px] h-[560px] rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 blur-3xl opacity-60"></div>
+            </div>
+
+            <div class="max-w-6xl mx-auto px-5 sm:px-6 pt-12 sm:pt-16 pb-14 sm:pb-18 relative">
+                <div class="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-12 items-center">
+                    <div class="reveal">
+                        <div class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/90 border border-slate-200 text-xs font-semibold text-slate-700">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Launched by Team-Paradox
+                        </div>
+
+                        <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.02em] text-slate-900">
+                            One portal.
+                            <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Zero confusion</span>.
+                        </h1>
+
+                        <p class="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+                            EduPortal is built by Team-Paradox, a student tech-community, to centralize the essentials: schedules, news, resources, exams, and files.
+                            It cuts the hustle, eliminates messups, and replaces the traditional scattered approach with one clean home.
+                        </p>
+
+                        <div class="mt-7 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <a href="{{ url_for('register') }}" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold transition-all soft-shadow shine">
+                                <span class="iconify text-base" data-icon="solar:user-plus-outline"></span>
+                                Create Student Account
+                            </a>
+                            <a href="{{ url_for('login') }}" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 text-sm font-semibold hover:bg-slate-50 transition-all">
+                                <span class="iconify text-base" data-icon="solar:login-3-outline"></span>
+                                Sign In
+                            </a>
+                            <a href="#overview" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all">
+                                <span class="iconify text-base" data-icon="solar:arrow-down-outline"></span>
+                                Explore
+                            </a>
+                        </div>
+
+                        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="glass rounded-2xl p-4 soft-shadow">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Centralized</div>
+                                <div class="mt-1 text-sm font-semibold text-slate-900">All basics in one place</div>
+                            </div>
+                            <div class="glass rounded-2xl p-4 soft-shadow">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Faster</div>
+                                <div class="mt-1 text-sm font-semibold text-slate-900">Less hustle, fewer errors</div>
+                            </div>
+                            <div class="glass rounded-2xl p-4 soft-shadow">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Student-first</div>
+                                <div class="mt-1 text-sm font-semibold text-slate-900">Built by the community</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reveal">
+                        <div class="rounded-3xl border border-slate-200 bg-white soft-shadow overflow-hidden">
+                            <div class="p-6 sm:p-7">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">Launch Preview</div>
+                                        <div class="mt-2 text-lg font-semibold text-slate-900">Your day, at a glance</div>
+                                        <p class="mt-1 text-sm text-slate-500">Schedules, announcements, files, and exam updates.</p>
+                                    </div>
+                                    <div class="hidden sm:flex items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">
+                                            <span class="iconify text-sm" data-icon="solar:sparkles-outline"></span>
+                                            Minimal UI
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 grid grid-cols-1 gap-3">
+                                    <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900">Today’s schedule</div>
+                                                <div class="text-xs text-slate-500 mt-1">No more searching WhatsApp threads</div>
+                                            </div>
+                                            <span class="iconify text-xl text-indigo-600" data-icon="solar:calendar-outline"></span>
+                                        </div>
+                                        <div class="mt-3 grid grid-cols-3 gap-2">
+                                            <div class="rounded-xl bg-white border border-slate-200 p-3">
+                                                <div class="text-[11px] text-slate-500">09:00</div>
+                                                <div class="text-xs font-semibold text-slate-900 mt-1">DSA</div>
+                                            </div>
+                                            <div class="rounded-xl bg-white border border-slate-200 p-3">
+                                                <div class="text-[11px] text-slate-500">11:00</div>
+                                                <div class="text-xs font-semibold text-slate-900 mt-1">Math</div>
+                                            </div>
+                                            <div class="rounded-xl bg-white border border-slate-200 p-3">
+                                                <div class="text-[11px] text-slate-500">02:00</div>
+                                                <div class="text-xs font-semibold text-slate-900 mt-1">Lab</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50 to-white p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900">Announcements & news</div>
+                                                <div class="text-xs text-slate-500 mt-1">Urgent updates, always visible</div>
+                                            </div>
+                                            <span class="iconify text-xl text-indigo-600" data-icon="solar:bell-outline"></span>
+                                        </div>
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <span class="px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">Exam form window</span>
+                                            <span class="px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">New circular</span>
+                                            <span class="px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">Timetable change</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-purple-50 to-white p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900">Vault</div>
+                                                <div class="text-xs text-slate-500 mt-1">Store and access important files instantly</div>
+                                            </div>
+                                            <span class="iconify text-xl text-purple-600" data-icon="solar:folder-with-files-outline"></span>
+                                        </div>
+                                        <div class="mt-3 grid grid-cols-2 gap-2">
+                                            <div class="rounded-xl bg-white border border-slate-200 p-3">
+                                                <div class="text-xs font-semibold text-slate-900">Notes</div>
+                                                <div class="text-[11px] text-slate-500 mt-1">Sem-wise</div>
+                                            </div>
+                                            <div class="rounded-xl bg-white border border-slate-200 p-3">
+                                                <div class="text-xs font-semibold text-slate-900">Docs</div>
+                                                <div class="text-[11px] text-slate-500 mt-1">Admit cards</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-6 sm:px-7 py-5 border-t border-slate-200 bg-white/60">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="text-sm text-slate-600">
+                                        Built to reduce confusion and make campus information effortless.
+                                    </div>
+                                    <a href="#features" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-800">
+                                        See features
+                                        <span class="iconify" data-icon="solar:arrow-right-outline"></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview" class="py-14 sm:py-18">
+            <div class="max-w-6xl mx-auto px-5 sm:px-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+                    <div class="reveal">
+                        <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">Overview</div>
+                        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.02em]">
+                            Centralized access to the basics.
+                            <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">No messups</span>.
+                        </h2>
+                        <p class="mt-4 text-base text-slate-600 leading-relaxed">
+                            Traditional student workflows are scattered: PDFs in groups, schedule screenshots, circulars in chats,
+                            and last-minute updates buried under noise. EduPortal organizes it into one structured experience.
+                        </p>
+
+                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 soft-shadow">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Single Source of Truth</div>
+                                        <div class="text-sm text-slate-500 mt-1">No duplicate info, no confusion.</div>
+                                    </div>
+                                    <span class="iconify text-xl text-indigo-600" data-icon="solar:check-circle-outline"></span>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 soft-shadow">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Less Hustle</div>
+                                        <div class="text-sm text-slate-500 mt-1">Fewer mistakes under pressure.</div>
+                                    </div>
+                                    <span class="iconify text-xl text-purple-600" data-icon="solar:bolt-outline"></span>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 soft-shadow">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Clean Experience</div>
+                                        <div class="text-sm text-slate-500 mt-1">Modern UI, fast navigation.</div>
+                                    </div>
+                                    <span class="iconify text-xl text-indigo-600" data-icon="solar:widget-2-outline"></span>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 soft-shadow">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Community-driven</div>
+                                        <div class="text-sm text-slate-500 mt-1">Built by Team-Paradox, for students.</div>
+                                    </div>
+                                    <span class="iconify text-xl text-purple-600" data-icon="solar:users-group-rounded-outline"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reveal">
+                        <div class="rounded-3xl border border-slate-200 bg-white soft-shadow overflow-hidden">
+                            <div class="p-6 sm:p-7">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-sm font-semibold text-slate-900">How it helps</div>
+                                    <span class="text-xs font-semibold text-slate-500">Student-first workflow</span>
+                                </div>
+
+                                <div class="mt-5 space-y-3">
+                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                        <div class="flex items-start gap-3">
+                                            <span class="iconify text-xl text-indigo-600" data-icon="solar:document-text-outline"></span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900">Stop hunting circulars</div>
+                                                <div class="text-sm text-slate-600 mt-1">Important announcements stay surfaced and searchable.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                        <div class="flex items-start gap-3">
+                                            <span class="iconify text-xl text-purple-600" data-icon="solar:calendar-outline"></span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900">Schedules that don’t get lost</div>
+                                                <div class="text-sm text-slate-600 mt-1">One schedule view. No screenshots. No confusion.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                        <div class="flex items-start gap-3">
+                                            <span class="iconify text-xl text-indigo-600" data-icon="solar:folder-with-files-outline"></span>
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900">Vault your essentials</div>
+                                                <div class="text-sm text-slate-600 mt-1">Store documents and notes with folders and quick access.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                                    <a href="#achievements" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-950 transition-all shine">
+                                        <span class="iconify text-base" data-icon="solar:cup-outline"></span>
+                                        See our progress
+                                    </a>
+                                    <a href="#contact" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 text-sm font-semibold hover:bg-slate-50 transition-all">
+                                        <span class="iconify text-base" data-icon="solar:chat-round-dots-outline"></span>
+                                        Contact
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="achievements" class="py-14 sm:py-18">
+            <div class="max-w-6xl mx-auto px-5 sm:px-6">
+                <div class="rounded-3xl border border-slate-200 bg-white soft-shadow overflow-hidden">
+                    <div class="p-7 sm:p-10">
+                        <div class="reveal">
+                            <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">Achievements</div>
+                            <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.02em]">
+                                Built with care.
+                                <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Shipped with intention</span>.
+                            </h2>
+                            <p class="mt-4 text-base text-slate-600 leading-relaxed max-w-3xl">
+                                This launch represents a student community taking ownership of campus workflows.
+                                We focus on building a reliable, accessible portal that reduces stress and prevents last-minute mistakes.
+                            </p>
+                        </div>
+
+                        <div class="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="reveal rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Pages</div>
+                                <div class="mt-2 text-3xl font-semibold text-slate-900"><span class="count" data-target="8">0</span>+</div>
+                                <div class="mt-2 text-sm text-slate-600">Core student sections</div>
+                            </div>
+                            <div class="reveal rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50 to-white p-5">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Features</div>
+                                <div class="mt-2 text-3xl font-semibold text-slate-900"><span class="count" data-target="12">0</span>+</div>
+                                <div class="mt-2 text-sm text-slate-600">Utilities & workflows</div>
+                            </div>
+                            <div class="reveal rounded-2xl border border-slate-200 bg-gradient-to-br from-purple-50 to-white p-5">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Time saved</div>
+                                <div class="mt-2 text-3xl font-semibold text-slate-900"><span class="count" data-target="30">0</span>%</div>
+                                <div class="mt-2 text-sm text-slate-600">Less daily hassle</div>
+                            </div>
+                            <div class="reveal rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5">
+                                <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Community</div>
+                                <div class="mt-2 text-3xl font-semibold text-slate-900"><span class="count" data-target="1">0</span></div>
+                                <div class="mt-2 text-sm text-slate-600">One shared platform</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 reveal rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-900">Launch note</div>
+                                    <div class="text-sm text-slate-600 mt-1">We’re iterating fast. Suggest features and improvements anytime.</div>
+                                </div>
+                                <a href="#contact" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold transition-all shine">
+                                    <span class="iconify text-base" data-icon="solar:mailbox-outline"></span>
+                                    Share feedback
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-7 sm:px-10 py-6 border-t border-slate-200 bg-white/60">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="text-sm text-slate-600">Transparent progress. Community ownership. Real impact.</div>
+                            <a href="{{ url_for('register') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-indigo-700">
+                                Start using EduPortal
+                                <span class="iconify" data-icon="solar:arrow-right-outline"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="py-14 sm:py-18">
+            <div class="max-w-6xl mx-auto px-5 sm:px-6">
+                <div class="reveal">
+                    <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">Our platform features</div>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.02em]">
+                        Crafted utilities.
+                        <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Designed for speed</span>.
+                    </h2>
+                    <p class="mt-4 text-base text-slate-600 leading-relaxed max-w-3xl">
+                        A modern, detail-oriented experience: quick navigation, soft UI, and practical tools that students actually use.
+                    </p>
+                </div>
+
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 soft-shadow hover:shadow-[0_40px_100px_rgba(15,23,42,0.12)] transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700">
+                            <span class="iconify text-2xl" data-icon="solar:home-2-outline"></span>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-slate-900">Dashboard</div>
+                        <div class="mt-1 text-sm text-slate-600">Your daily essentials in one clean view.</div>
+                    </div>
+
+                    <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 soft-shadow hover:shadow-[0_40px_100px_rgba(15,23,42,0.12)] transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-700">
+                            <span class="iconify text-2xl" data-icon="solar:document-text-outline"></span>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-slate-900">News & Feed</div>
+                        <div class="mt-1 text-sm text-slate-600">Urgent announcements and updates that don’t get lost.</div>
+                    </div>
+
+                    <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 soft-shadow hover:shadow-[0_40px_100px_rgba(15,23,42,0.12)] transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700">
+                            <span class="iconify text-2xl" data-icon="solar:calendar-outline"></span>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-slate-900">Schedules</div>
+                        <div class="mt-1 text-sm text-slate-600">A consistent schedule view that reduces daily confusion.</div>
+                    </div>
+
+                    <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 soft-shadow hover:shadow-[0_40px_100px_rgba(15,23,42,0.12)] transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-700">
+                            <span class="iconify text-2xl" data-icon="solar:book-2-outline"></span>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-slate-900">Library</div>
+                        <div class="mt-1 text-sm text-slate-600">Resources and materials accessible without hunting links.</div>
+                    </div>
+
+                    <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 soft-shadow hover:shadow-[0_40px_100px_rgba(15,23,42,0.12)] transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700">
+                            <span class="iconify text-2xl" data-icon="solar:folder-with-files-outline"></span>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-slate-900">Vault</div>
+                        <div class="mt-1 text-sm text-slate-600">Store and organize your personal files and documents.</div>
+                    </div>
+
+                    <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 soft-shadow hover:shadow-[0_40px_100px_rgba(15,23,42,0.12)] transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-700">
+                            <span class="iconify text-2xl" data-icon="solar:pen-2-outline"></span>
+                        </div>
+                        <div class="mt-4 text-sm font-semibold text-slate-900">Exams</div>
+                        <div class="mt-1 text-sm text-slate-600">Results and exam workflows, streamlined.</div>
+                    </div>
+                </div>
+
+                <div class="mt-8 reveal rounded-3xl border border-slate-200 bg-white p-7 soft-shadow">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <div class="text-sm font-semibold text-slate-900">Ready to try the platform?</div>
+                            <div class="mt-1 text-sm text-slate-600">Create an account and access everything from one place.</div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="{{ url_for('register') }}" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold transition-all shine">
+                                <span class="iconify text-base" data-icon="solar:user-plus-outline"></span>
+                                Register
+                            </a>
+                            <a href="{{ url_for('login') }}" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all">
+                                <span class="iconify text-base" data-icon="solar:login-3-outline"></span>
+                                Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-14 sm:py-18">
+            <div class="max-w-6xl mx-auto px-5 sm:px-6">
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8 items-start">
+                    <div class="reveal">
+                        <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">Get in touch</div>
+                        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.02em]">
+                            Launch with us.
+                            <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Build together</span>.
+                        </h2>
+                        <p class="mt-4 text-base text-slate-600 leading-relaxed">
+                            This platform is community-driven. Share feedback, propose features, or volunteer to improve the portal.
+                            We’re focused on real student problems and clean execution.
+                        </p>
+
+                        <div class="mt-6 space-y-3">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 soft-shadow">
+                                <div class="flex items-start gap-3">
+                                    <span class="iconify text-xl text-indigo-600" data-icon="solar:chat-round-dots-outline"></span>
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Feedback</div>
+                                        <div class="text-sm text-slate-600 mt-1">Tell us what’s confusing today, and what should be simplified next.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 soft-shadow">
+                                <div class="flex items-start gap-3">
+                                    <span class="iconify text-xl text-purple-600" data-icon="solar:code-outline"></span>
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Contribute</div>
+                                        <div class="text-sm text-slate-600 mt-1">Help with UI polish, features, testing, or documentation.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reveal">
+                        <div class="rounded-3xl border border-slate-200 bg-white soft-shadow overflow-hidden">
+                            <div class="p-7">
+                                <div class="text-sm font-semibold text-slate-900">Quick contact</div>
+                                <p class="mt-1 text-sm text-slate-600">This is a launch placeholder. Hook this up to email/Forms later.</p>
+
+                                <form class="mt-6 space-y-4" onsubmit="return false;">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Name</label>
+                                        <input class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-ring" placeholder="Your name" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email</label>
+                                        <input type="email" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-ring" placeholder="you@example.com" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Message</label>
+                                        <textarea rows="4" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-ring" placeholder="Feature ideas, issues, or collaboration..."></textarea>
+                                    </div>
+
+                                    <button id="contactBtn" type="submit" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold transition-all shine">
+                                        <span class="iconify text-base" data-icon="solar:send-outline"></span>
+                                        Send message
+                                    </button>
+
+                                    <div id="contactNote" class="hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"></div>
+                                </form>
+                            </div>
+
+                            <div class="px-7 py-6 border-t border-slate-200 bg-white/60">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="text-sm text-slate-600">Prefer direct access?</div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="{{ url_for('login') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all">
+                                            <span class="iconify text-base" data-icon="solar:login-3-outline"></span>
+                                            Student Login
+                                        </a>
+                                        <a href="{{ url_for('admin_login') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all">
+                                            <span class="iconify text-base" data-icon="solar:shield-user-outline"></span>
+                                            Admin Login
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="border-t border-slate-200 bg-white/70">
+            <div class="max-w-6xl mx-auto px-5 sm:px-6 py-10">
+                <div class="grid grid-cols-1 md:grid-cols-[1.3fr_0.7fr_0.7fr] gap-8">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                                <img src="{{ url_for('static', filename='app_icon/logo.png') }}" alt="EduPortal" class="w-8 h-8 object-contain" />
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-slate-900">EduPortal</div>
+                                <div class="text-xs text-slate-500">Centralized student platform</div>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-sm text-slate-600 leading-relaxed max-w-md">
+                            Launched by Team-Paradox, a student tech-community, to reduce hustle and errors in traditional info sharing.
+                            One place for schedules, updates, resources, and essentials.
+                        </p>
+                    </div>
+
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Navigate</div>
+                        <div class="mt-3 space-y-2 text-sm">
+                            <a class="block text-slate-700 hover:text-slate-900" href="#overview">Overview</a>
+                            <a class="block text-slate-700 hover:text-slate-900" href="#achievements">Achievements</a>
+                            <a class="block text-slate-700 hover:text-slate-900" href="#features">Features</a>
+                            <a class="block text-slate-700 hover:text-slate-900" href="#contact">Get in touch</a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Access</div>
+                        <div class="mt-3 space-y-2 text-sm">
+                            <a class="block text-slate-700 hover:text-slate-900" href="{{ url_for('register') }}">Student Registration</a>
+                            <a class="block text-slate-700 hover:text-slate-900" href="{{ url_for('login') }}">Student Login</a>
+                            <a class="block text-slate-700 hover:text-slate-900" href="{{ url_for('admin_login') }}">Admin Login</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="text-xs text-slate-500">© {{ current_year }} EduPortal. Built by Team-Paradox.</div>
+                    <a href="#top" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-slate-900">
+                        Back to top
+                        <span class="iconify" data-icon="solar:arrow-up-outline"></span>
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        (function() {
+            const progress = document.getElementById('page-progress');
+            const navPills = Array.from(document.querySelectorAll('[data-nav]'));
+            const sections = [
+                { id: 'introduction', el: document.getElementById('introduction') },
+                { id: 'overview', el: document.getElementById('overview') },
+                { id: 'achievements', el: document.getElementById('achievements') },
+                { id: 'features', el: document.getElementById('features') },
+                { id: 'contact', el: document.getElementById('contact') },
+            ].filter(s => s.el);
+
+            function setActiveNav(sectionId) {
+                navPills.forEach(p => {
+                    if (p.getAttribute('data-nav') === sectionId) p.classList.add('active');
+                    else p.classList.remove('active');
+                });
+            }
+
+            function onScroll() {
+                const doc = document.documentElement;
+                const scrollTop = doc.scrollTop || document.body.scrollTop;
+                const scrollHeight = doc.scrollHeight - doc.clientHeight;
+                const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+
+                if (progress) {
+                    progress.style.width = pct + '%';
+                    progress.style.opacity = scrollTop > 10 ? '1' : '0';
+                }
+
+                let current = 'introduction';
+                const y = window.scrollY + 140;
+                for (const s of sections) {
+                    const top = s.el.offsetTop;
+                    if (y >= top) current = s.id;
+                }
+                setActiveNav(current);
+            }
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+
+            const revealEls = Array.from(document.querySelectorAll('.reveal'));
+            const io = new IntersectionObserver((entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) entry.target.classList.add('is-visible');
+                }
+            }, { threshold: 0.12 });
+            revealEls.forEach(el => io.observe(el));
+
+            const counters = Array.from(document.querySelectorAll('.count'));
+            const counterIO = new IntersectionObserver((entries) => {
+                for (const entry of entries) {
+                    if (!entry.isIntersecting) continue;
+                    const el = entry.target;
+                    if (el.getAttribute('data-done') === '1') continue;
+                    el.setAttribute('data-done', '1');
+
+                    const target = Number(el.getAttribute('data-target') || '0');
+                    const duration = 900;
+                    const start = performance.now();
+
+                    function tick(now) {
+                        const t = Math.min(1, (now - start) / duration);
+                        const eased = 1 - Math.pow(1 - t, 3);
+                        const value = Math.round(target * eased);
+                        el.textContent = String(value);
+                        if (t < 1) requestAnimationFrame(tick);
+                        else el.textContent = String(target);
+                    }
+
+                    requestAnimationFrame(tick);
+                }
+            }, { threshold: 0.55 });
+            counters.forEach(el => counterIO.observe(el));
+
+            const contactBtn = document.getElementById('contactBtn');
+            const contactNote = document.getElementById('contactNote');
+            if (contactBtn && contactNote) {
+                contactBtn.addEventListener('click', () => {
+                    contactNote.textContent = 'Thanks! For launch, connect this form to email/Google Forms. Your message was captured locally (no backend yet).';
+                    contactNote.classList.remove('hidden');
+                    setTimeout(() => contactNote.classList.add('hidden'), 6000);
+                });
+            }
+        })();
+    </script>
+</body>
+
+</html>
