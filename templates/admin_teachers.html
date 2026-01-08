@@ -9,6 +9,8 @@
 
 <div data-admin-teacher-edit-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
 
+<div data-admin-faculty-edit-backdrop class="fixed inset-0 bg-slate-900/40 opacity-0 pointer-events-none transition-opacity z-40"></div>
+
 <div data-admin-teacher-edit-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
     <div class="mx-auto max-w-3xl">
         <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
@@ -46,6 +48,67 @@
                         <div>
                             <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone</label>
                             <input name="phone" type="text" class="admin-input w-full" data-f-phone />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div data-admin-faculty-edit-sheet class="fixed inset-x-0 bottom-0 translate-y-full opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+    <div class="mx-auto max-w-3xl">
+        <div class="admin-card border border-slate-200 bg-white rounded-t-3xl">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Update</p>
+                    <p class="text-lg font-semibold text-slate-900">Edit Faculty Signup</p>
+                </div>
+                <button type="button" class="admin-btn admin-btn-soft" data-admin-faculty-edit-close>Close</button>
+            </div>
+
+            <div class="px-5 pt-3">
+                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200" data-admin-faculty-edit-handle></div>
+            </div>
+
+            <div class="p-5 max-h-[70vh] overflow-y-auto">
+                <form method="post" action="" class="space-y-4" data-admin-faculty-edit-form>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Name</label>
+                            <input name="full_name" type="text" class="admin-input w-full" required data-ff-full_name />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department</label>
+                            <input name="department" type="text" class="admin-input w-full" required data-ff-department />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Type</label>
+                            <input name="faculty_type" type="text" class="admin-input w-full" required data-ff-faculty_type />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Designation</label>
+                            <input name="designation" type="text" class="admin-input w-full" required data-ff-designation />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email</label>
+                            <input name="email" type="email" class="admin-input w-full" required data-ff-email />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone</label>
+                            <input name="phone" type="text" class="admin-input w-full" required data-ff-phone />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status</label>
+                            <select name="status" class="admin-input w-full" required data-ff-status>
+                                <option value="PENDING">PENDING</option>
+                                <option value="APPROVED">APPROVED</option>
+                                <option value="REJECTED">REJECTED</option>
+                            </select>
                         </div>
                     </div>
 
@@ -196,6 +259,94 @@
                 {% else %}
                     <tr>
                         <td class="px-4 py-8 text-slate-500" colspan="6">No teachers added yet.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card overflow-hidden mt-6">
+    <div class="px-6 py-5 border-b border-slate-200 flex items-center justify-between gap-3">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Faculty Signups</h2>
+            <p class="text-sm text-slate-500 mt-1">Approve or reject faculty accounts. Only approved faculty can access their panel.</p>
+        </div>
+        <a href="{{ url_for('faculty_register') }}" target="_blank" class="admin-btn admin-btn-soft inline-flex items-center gap-2">
+            <span class="iconify text-base text-indigo-600" data-icon="solar:add-square-bold"></span>
+            Open Signup
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="admin-table w-full text-left">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr class="text-xs text-slate-500">
+                    <th class="px-4 py-3 font-medium">Name</th>
+                    <th class="px-4 py-3 font-medium">Department</th>
+                    <th class="px-4 py-3 font-medium">Type</th>
+                    <th class="px-4 py-3 font-medium">Designation</th>
+                    <th class="px-4 py-3 font-medium">Email</th>
+                    <th class="px-4 py-3 font-medium">Phone</th>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                    <th class="px-4 py-3 font-medium">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% if faculty_users %}
+                    {% for f in faculty_users %}
+                        <tr class="border-t border-slate-100">
+                            <td class="px-4 py-3 font-medium text-slate-900">{{ f.full_name }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ f.department }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ f.faculty_type }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ f.designation }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ f.email }}</td>
+                            <td class="px-4 py-3 text-slate-700">{{ f.phone }}</td>
+                            <td class="px-4 py-3">
+                                {% set st = (f.status or 'PENDING')|upper %}
+                                {% if st == 'APPROVED' %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">APPROVED</span>
+                                {% elif st == 'REJECTED' %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">REJECTED</span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">PENDING</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2 whitespace-nowrap">
+                                    {% if (f.status or 'PENDING')|upper != 'APPROVED' %}
+                                        <form method="post" action="{{ url_for('admin_faculty_approve', faculty_id=f.id) }}" onsubmit="return confirm('Approve this faculty account?');">
+                                            <button type="submit" class="admin-btn admin-btn-primary text-xs inline-flex items-center gap-2"><span class="iconify text-sm" data-icon="solar:check-circle-bold"></span> Approve</button>
+                                        </form>
+                                    {% endif %}
+                                    {% if (f.status or 'PENDING')|upper != 'REJECTED' %}
+                                        <form method="post" action="{{ url_for('admin_faculty_reject', faculty_id=f.id) }}" onsubmit="return confirm('Reject this faculty account?');">
+                                            <button type="submit" class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"><span class="iconify text-sm" data-icon="solar:close-circle-bold"></span> Reject</button>
+                                        </form>
+                                    {% endif %}
+                                    <button
+                                        type="button"
+                                        class="admin-btn admin-btn-soft text-xs inline-flex items-center gap-2"
+                                        data-admin-faculty-edit-open
+                                        data-faculty-id="{{ f.id }}"
+                                        data-full_name="{{ f.full_name|e }}"
+                                        data-department="{{ f.department|e }}"
+                                        data-faculty_type="{{ f.faculty_type|e }}"
+                                        data-designation="{{ f.designation|e }}"
+                                        data-email="{{ f.email|e }}"
+                                        data-phone="{{ f.phone|e }}"
+                                        data-status="{{ (f.status or 'PENDING')|upper|e }}"
+                                    ><span class="iconify text-sm" data-icon="solar:pen-2-outline"></span> Edit</button>
+                                    <form method="post" action="{{ url_for('admin_faculty_delete', faculty_id=f.id) }}" onsubmit="return confirm('Delete this faculty user?');">
+                                        <button type="submit" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="px-4 py-8 text-slate-500" colspan="8">No faculty signups yet.</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -373,6 +524,136 @@
 
             Object.keys(map).forEach((field) => {
                 const input = form.querySelector(`[data-f-${field}]`);
+                if (!input) return;
+                input.value = btn.getAttribute(map[field]) || '';
+            });
+
+            lockScroll();
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('opacity-100');
+        }
+
+        function close() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('opacity-100');
+            sheet.style.transform = '';
+            unlockScroll();
+        }
+
+        openBtns.forEach((btn) => btn.addEventListener('click', () => open(btn)));
+        closeBtn.addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        if (handleEl) {
+            let startY = 0;
+            let isDragging = false;
+            let dragStartTime = 0;
+
+            function onStart(e) {
+                const t = e.touches ? e.touches[0] : e;
+                startY = t.clientY;
+                isDragging = true;
+                dragStartTime = Date.now();
+                sheet.style.transition = 'none';
+            }
+
+            function onMove(e) {
+                if (!isDragging) return;
+                const t = e.touches ? e.touches[0] : e;
+                const dy = t.clientY - startY;
+                if (dy > 0) {
+                    sheet.style.transform = `translateY(${dy}px)`;
+                }
+            }
+
+            function onEnd(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                sheet.style.transition = '';
+
+                const endY = (e.changedTouches ? e.changedTouches[0] : e).clientY;
+                const dy = endY - startY;
+                const dt = Date.now() - dragStartTime;
+
+                if (dy > 120 || (dy > 60 && dt < 250)) {
+                    sheet.style.transform = '';
+                    close();
+                    return;
+                }
+                sheet.style.transform = '';
+            }
+
+            handleEl.addEventListener('touchstart', onStart, { passive: true });
+            handleEl.addEventListener('touchmove', onMove, { passive: true });
+            handleEl.addEventListener('touchend', onEnd, { passive: true });
+            handleEl.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+        }
+    })();
+
+    (function () {
+        const openBtns = Array.from(document.querySelectorAll('[data-admin-faculty-edit-open]'));
+        const closeBtn = document.querySelector('[data-admin-faculty-edit-close]');
+        const backdrop = document.querySelector('[data-admin-faculty-edit-backdrop]');
+        const sheet = document.querySelector('[data-admin-faculty-edit-sheet]');
+        const handleEl = document.querySelector('[data-admin-faculty-edit-handle]');
+        const form = document.querySelector('[data-admin-faculty-edit-form]');
+
+        if (!openBtns.length || !closeBtn || !backdrop || !sheet || !form) {
+            return;
+        }
+
+        let scrollLockY = 0;
+        function lockScroll() {
+            scrollLockY = window.scrollY || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollLockY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function unlockScroll() {
+            document.body.style.position = '';
+            const top = document.body.style.top;
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            const y = top ? Math.abs(parseInt(top, 10)) : scrollLockY;
+            window.scrollTo(0, Number.isFinite(y) ? y : 0);
+        }
+
+        function open(btn) {
+            const facultyId = btn.getAttribute('data-faculty-id');
+            if (!facultyId) return;
+
+            form.setAttribute('action', `{{ url_for('admin_faculty_update', faculty_id=0) }}`.replace('0', String(facultyId)));
+
+            const map = {
+                full_name: 'data-full_name',
+                department: 'data-department',
+                faculty_type: 'data-faculty_type',
+                designation: 'data-designation',
+                email: 'data-email',
+                phone: 'data-phone',
+                status: 'data-status',
+            };
+
+            Object.keys(map).forEach((field) => {
+                const input = form.querySelector(`[data-ff-${field}]`);
                 if (!input) return;
                 input.value = btn.getAttribute(map[field]) || '';
             });

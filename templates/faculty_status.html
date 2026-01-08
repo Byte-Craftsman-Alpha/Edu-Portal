@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPortal - Faculty Approval</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.15/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 p-6">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-[0_30px_80px_rgba(15,23,42,0.12),0_2px_10px_rgba(15,23,42,0.06)] p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                        <img src="{{ url_for('static', filename='app_icon/logo.png') }}" alt="EduPortal" class="w-10 h-10 object-contain" />
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">EduPortal</div>
+                        <div class="text-lg font-semibold text-slate-900">Faculty Approval</div>
+                        <div class="text-xs text-slate-500 mt-1">Signed in as: <span class="font-semibold text-slate-900">{{ faculty_user.full_name }}</span></div>
+                    </div>
+                </div>
+                <a href="{{ url_for('faculty_logout') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Logout</a>
+            </div>
+
+            {% if error %}
+            <div class="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% set st = (faculty_user.status or 'PENDING')|upper %}
+            <div class="mt-6">
+                {% if st == 'APPROVED' %}
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+                        Your account is <span class="font-semibold">APPROVED</span>.
+                        <div class="mt-2">
+                            <a href="{{ url_for('faculty_dashboard') }}" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all">
+                                Continue to Faculty Panel
+                            </a>
+                        </div>
+                    </div>
+                {% elif st == 'REJECTED' %}
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
+                        Your account was <span class="font-semibold">REJECTED</span>. Please contact the admin for clarification.
+                    </div>
+                {% else %}
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+                        Your account is <span class="font-semibold">PENDING</span>.
+                        <div class="mt-2 text-slate-700">
+                            Only <span class="font-semibold">approved</span> faculty members can access the faculty panel.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Your submitted details</div>
+                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div class="flex items-center justify-between gap-3"><span class="text-slate-500">Department</span><span class="font-medium text-slate-900">{{ faculty_user.department }}</span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-slate-500">Type</span><span class="font-medium text-slate-900">{{ faculty_user.faculty_type }}</span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-slate-500">Designation</span><span class="font-medium text-slate-900">{{ faculty_user.designation }}</span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-slate-500">Email</span><span class="font-medium text-slate-900">{{ faculty_user.email }}</span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-slate-500">Mobile</span><span class="font-medium text-slate-900">{{ faculty_user.phone }}</span></div>
+                    <div class="flex items-center justify-between gap-3"><span class="text-slate-500">Status</span><span class="font-medium text-slate-900">{{ st }}</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-xs text-slate-500 text-center">
+            <a href="{{ url_for('admin_login') }}" class="hover:text-slate-900">Admin Login</a>
+        </div>
+    </div>
+</body>
+
+</html>

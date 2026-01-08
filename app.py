@@ -54,6 +54,31 @@ def ensure_news_posts_rich_schema(db: sqlite3.Connection) -> None:
         db.execute("ALTER TABLE news_posts ADD COLUMN attachment_mime TEXT")
 
 
+def ensure_news_posts_faculty_schema(db: sqlite3.Connection) -> None:
+    cols = {row[1] for row in db.execute("PRAGMA table_info(news_posts)").fetchall()}
+    if "faculty_id" not in cols:
+        db.execute("ALTER TABLE news_posts ADD COLUMN faculty_id INTEGER")
+
+
+def ensure_faculty_weekly_timetable_schema(db: sqlite3.Connection) -> None:
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS faculty_weekly_timetable (
+            id INTEGER PRIMARY KEY,
+            faculty_id INTEGER NOT NULL,
+            day_of_week INTEGER NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            room TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
+            FOREIGN KEY(faculty_id) REFERENCES faculty_users(id)
+        );
+        """
+    )
+
+
 def save_vault_file(upload, student_id: int) -> tuple[str, str, str, int] | None:
     if upload is None:
         return None
@@ -224,7 +249,7 @@ def faculty_approved_required(fn):
             session.pop("faculty_user_id", None)
             return redirect(url_for("faculty_login"))
         if (faculty_user["status"] or "").strip().upper() != "APPROVED":
-            return redirect(url_for("faculty_dashboard"))
+            return redirect(url_for("faculty_status"))
         return fn(*args, **kwargs)
 
     return wrapper
@@ -587,6 +612,19 @@ def init_db() -> None:
                 instructor TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS faculty_weekly_timetable (
+                id INTEGER PRIMARY KEY,
+                faculty_id INTEGER NOT NULL,
+                day_of_week INTEGER NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                room TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT,
+                FOREIGN KEY(faculty_id) REFERENCES faculty_users(id)
+            );
+
             CREATE TABLE IF NOT EXISTS calendar_items (
                 id INTEGER PRIMARY KEY,
                 item_date TEXT NOT NULL,
@@ -861,7 +899,9 @@ def init_db() -> None:
         )
 
         ensure_news_posts_rich_schema(db)
+        ensure_news_posts_faculty_schema(db)
         ensure_faculty_users_schema(db)
+        ensure_faculty_weekly_timetable_schema(db)
 
         student_cols = {row[1] for row in db.execute("PRAGMA table_info(students)").fetchall()}
         if "password_hash" not in student_cols:
@@ -885,6 +925,8 @@ def init_db() -> None:
         ensure_exam_forms_link_schema(db)
         ensure_admit_card_openings_schema(db)
         ensure_news_posts_rich_schema(db)
+        ensure_news_posts_faculty_schema(db)
+        ensure_faculty_weekly_timetable_schema(db)
 
         default_password = "student123"
         dummy_students = [
@@ -1778,7 +1820,7 @@ def admin_logout():
 @app.get("/faculty/register")
 def faculty_register():
     if get_current_faculty_id() is not None:
-        return redirect(url_for("faculty_dashboard"))
+        return redirect(url_for("faculty_status"))
     return render_template("faculty_register.html", error=None)
 
 
@@ -1838,13 +1880,13 @@ def faculty_register_post():
     fid = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
     db.commit()
     session["faculty_user_id"] = fid
-    return redirect(url_for("faculty_dashboard"))
+    return redirect(url_for("faculty_status"))
 
 
 @app.get("/faculty/login")
 def faculty_login():
     if get_current_faculty_id() is not None:
-        return redirect(url_for("faculty_dashboard"))
+        return redirect(url_for("faculty_status"))
     return render_template("faculty_login.html", error=None)
 
 
@@ -1864,7 +1906,7 @@ def faculty_login_post():
         return render_template("faculty_login.html", error="Invalid email or password.")
 
     session["faculty_user_id"] = int(faculty_user["id"])
-    return redirect(url_for("faculty_dashboard"))
+    return redirect(url_for("faculty_status"))
 
 
 @app.get("/faculty/logout")
@@ -1874,7 +1916,7 @@ def faculty_logout():
 
 
 @app.get("/faculty")
-@faculty_login_required
+@faculty_approved_required
 def faculty_dashboard():
     db = get_db()
     fid = get_current_faculty_id()
@@ -1884,6 +1926,363 @@ def faculty_dashboard():
         return redirect(url_for("faculty_login"))
     return render_template(
         "faculty_dashboard.html",
+        faculty_user=faculty_user,
+        error=None,
+    )
+
+
+@app.get("/faculty/news")
+@faculty_approved_required
+def faculty_news_list():
+    db = get_db()
+    ensure_news_posts_rich_schema(db)
+    ensure_news_posts_faculty_schema(db)
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+
+    posts = db.execute(
+        "SELECT * FROM news_posts WHERE faculty_id = ? ORDER BY datetime(date_time) DESC",
+        (int(fid),),
+    ).fetchall()
+    return render_template(
+        "faculty_news_list.html",
+        faculty_user=faculty_user,
+        posts=posts,
+        error=None,
+    )
+
+
+@app.get("/faculty/news/new")
+@faculty_approved_required
+def faculty_news_new():
+    db = get_db()
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+    return render_template(
+        "faculty_news_form.html",
+        faculty_user=faculty_user,
+        post=None,
+        error=None,
+    )
+
+
+@app.post("/faculty/news/new")
+@faculty_approved_required
+def faculty_news_create():
+    db = get_db()
+    ensure_news_posts_rich_schema(db)
+    ensure_news_posts_faculty_schema(db)
+
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+
+    priority = (request.form.get("priority") or "").strip().upper() or "NORMAL"
+    heading = (request.form.get("heading") or "").strip()
+    body_plain = (request.form.get("body") or "").strip()
+    news_type = (request.form.get("news_type") or "").strip() or "Update"
+    tags = (request.form.get("tags") or "").strip()
+
+    if not heading or not body_plain or not news_type:
+        return render_template(
+            "faculty_news_form.html",
+            faculty_user=faculty_user,
+            post=None,
+            error="Please fill all required fields.",
+        )
+
+    sender = str(faculty_user["full_name"] or "Faculty")
+    now = datetime.now().isoformat(timespec="seconds")
+    attachment = save_news_attachment(request.files.get("attachment"))
+    attachment_path = attachment[0] if attachment else None
+    attachment_name = attachment[1] if attachment else None
+    attachment_mime = attachment[2] if attachment else None
+
+    db.execute(
+        """
+        INSERT INTO news_posts (
+            priority, date_time, heading, body, sender, news_type, tags,
+            body_is_html, attachment_path, attachment_name, attachment_mime, faculty_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            priority,
+            now,
+            heading,
+            body_plain,
+            sender,
+            news_type,
+            tags,
+            0,
+            attachment_path,
+            attachment_name,
+            attachment_mime,
+            int(fid),
+        ),
+    )
+    db.commit()
+    return redirect(url_for("faculty_news_list"))
+
+
+@app.get("/faculty/news/<int:post_id>/edit")
+@faculty_approved_required
+def faculty_news_edit(post_id: int):
+    db = get_db()
+    ensure_news_posts_rich_schema(db)
+    ensure_news_posts_faculty_schema(db)
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+
+    post = db.execute(
+        "SELECT * FROM news_posts WHERE id = ? AND faculty_id = ?",
+        (int(post_id), int(fid)),
+    ).fetchone()
+    if not post:
+        return redirect(url_for("faculty_news_list"))
+    return render_template(
+        "faculty_news_form.html",
+        faculty_user=faculty_user,
+        post=post,
+        error=None,
+    )
+
+
+@app.post("/faculty/news/<int:post_id>/edit")
+@faculty_approved_required
+def faculty_news_update(post_id: int):
+    db = get_db()
+    ensure_news_posts_rich_schema(db)
+    ensure_news_posts_faculty_schema(db)
+
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+
+    post = db.execute(
+        "SELECT * FROM news_posts WHERE id = ? AND faculty_id = ?",
+        (int(post_id), int(fid)),
+    ).fetchone()
+    if not post:
+        return redirect(url_for("faculty_news_list"))
+
+    priority = (request.form.get("priority") or "").strip().upper() or "NORMAL"
+    heading = (request.form.get("heading") or "").strip()
+    body_plain = (request.form.get("body") or "").strip()
+    news_type = (request.form.get("news_type") or "").strip() or "Update"
+    tags = (request.form.get("tags") or "").strip()
+
+    if not heading or not body_plain or not news_type:
+        return render_template(
+            "faculty_news_form.html",
+            faculty_user=faculty_user,
+            post=post,
+            error="Please fill all required fields.",
+        )
+
+    sender = str(faculty_user["full_name"] or "Faculty")
+    attachment = save_news_attachment(request.files.get("attachment"))
+    attachment_path = attachment[0] if attachment else None
+    attachment_name = attachment[1] if attachment else None
+    attachment_mime = attachment[2] if attachment else None
+
+    if attachment:
+        db.execute(
+            """
+            UPDATE news_posts
+            SET priority = ?, heading = ?, body = ?, sender = ?, news_type = ?, tags = ?,
+                body_is_html = ?, attachment_path = ?, attachment_name = ?, attachment_mime = ?
+            WHERE id = ? AND faculty_id = ?
+            """,
+            (
+                priority,
+                heading,
+                body_plain,
+                sender,
+                news_type,
+                tags,
+                0,
+                attachment_path,
+                attachment_name,
+                attachment_mime,
+                int(post_id),
+                int(fid),
+            ),
+        )
+    else:
+        db.execute(
+            """
+            UPDATE news_posts
+            SET priority = ?, heading = ?, body = ?, sender = ?, news_type = ?, tags = ?, body_is_html = ?
+            WHERE id = ? AND faculty_id = ?
+            """,
+            (
+                priority,
+                heading,
+                body_plain,
+                sender,
+                news_type,
+                tags,
+                0,
+                int(post_id),
+                int(fid),
+            ),
+        )
+    db.commit()
+    return redirect(url_for("faculty_news_list"))
+
+
+@app.get("/faculty/schedules")
+@faculty_approved_required
+def faculty_schedules():
+    db = get_db()
+    ensure_faculty_weekly_timetable_schema(db)
+
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+
+    weekly_rows = db.execute(
+        """
+        SELECT * FROM faculty_weekly_timetable
+        WHERE faculty_id = ?
+        ORDER BY day_of_week ASC, time(start_time) ASC
+        """,
+        (int(fid),),
+    ).fetchall()
+
+    calendar_items = db.execute(
+        "SELECT * FROM calendar_items ORDER BY date(item_date) DESC, id DESC"
+    ).fetchall()
+
+    return render_template(
+        "faculty_schedules.html",
+        faculty_user=faculty_user,
+        weekly_rows=weekly_rows,
+        calendar_items=calendar_items,
+        error=None,
+    )
+
+
+@app.post("/faculty/schedules/weekly/new")
+@faculty_approved_required
+def faculty_weekly_create():
+    db = get_db()
+    ensure_faculty_weekly_timetable_schema(db)
+
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+
+    day_of_week_raw = (request.form.get("day_of_week") or "").strip()
+    start_time = (request.form.get("start_time") or "").strip()
+    end_time = (request.form.get("end_time") or "").strip()
+    subject = (request.form.get("subject") or "").strip()
+    room = (request.form.get("room") or "").strip()
+    try:
+        day_of_week = int(day_of_week_raw)
+    except Exception:
+        day_of_week = -1
+
+    if day_of_week < 0 or day_of_week > 6 or not start_time or not end_time or not subject or not room:
+        return redirect(url_for("faculty_schedules"))
+
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    db.execute(
+        """
+        INSERT INTO faculty_weekly_timetable (
+            faculty_id, day_of_week, start_time, end_time, subject, room, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (int(fid), int(day_of_week), start_time, end_time, subject, room, now),
+    )
+    db.commit()
+    return redirect(url_for("faculty_schedules"))
+
+
+@app.post("/faculty/schedules/weekly/<int:row_id>/update")
+@faculty_approved_required
+def faculty_weekly_update(row_id: int):
+    db = get_db()
+    ensure_faculty_weekly_timetable_schema(db)
+    fid = get_current_faculty_id()
+
+    row = db.execute(
+        "SELECT * FROM faculty_weekly_timetable WHERE id = ? AND faculty_id = ?",
+        (int(row_id), int(fid)),
+    ).fetchone()
+    if not row:
+        return redirect(url_for("faculty_schedules"))
+
+    day_of_week_raw = (request.form.get("day_of_week") or "").strip()
+    start_time = (request.form.get("start_time") or "").strip()
+    end_time = (request.form.get("end_time") or "").strip()
+    subject = (request.form.get("subject") or "").strip()
+    room = (request.form.get("room") or "").strip()
+    try:
+        day_of_week = int(day_of_week_raw)
+    except Exception:
+        day_of_week = -1
+
+    if day_of_week < 0 or day_of_week > 6 or not start_time or not end_time or not subject or not room:
+        return redirect(url_for("faculty_schedules"))
+
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    db.execute(
+        """
+        UPDATE faculty_weekly_timetable
+        SET day_of_week = ?, start_time = ?, end_time = ?, subject = ?, room = ?, updated_at = ?
+        WHERE id = ? AND faculty_id = ?
+        """,
+        (int(day_of_week), start_time, end_time, subject, room, now, int(row_id), int(fid)),
+    )
+    db.commit()
+    return redirect(url_for("faculty_schedules"))
+
+
+@app.post("/faculty/schedules/weekly/<int:row_id>/delete")
+@faculty_approved_required
+def faculty_weekly_delete(row_id: int):
+    db = get_db()
+    ensure_faculty_weekly_timetable_schema(db)
+    fid = get_current_faculty_id()
+    db.execute(
+        "DELETE FROM faculty_weekly_timetable WHERE id = ? AND faculty_id = ?",
+        (int(row_id), int(fid)),
+    )
+    db.commit()
+    return redirect(url_for("faculty_schedules"))
+
+
+@app.get("/faculty/status")
+@faculty_login_required
+def faculty_status():
+    db = get_db()
+    fid = get_current_faculty_id()
+    faculty_user = db.execute("SELECT * FROM faculty_users WHERE id = ?", (fid,)).fetchone()
+    if not faculty_user:
+        session.pop("faculty_user_id", None)
+        return redirect(url_for("faculty_login"))
+    return render_template(
+        "faculty_status.html",
         faculty_user=faculty_user,
         error=None,
     )
@@ -1950,6 +2349,7 @@ def admin_change_password_post():
 @admin_login_required
 def admin_dashboard():
     db = get_db()
+    ensure_faculty_users_schema(db)
     aid = get_current_admin_id()
     admin_user = db.execute("SELECT * FROM admin_users WHERE id = ?", (aid,)).fetchone()
     news_count = db.execute("SELECT COUNT(*) FROM news_posts").fetchone()[0]
@@ -2488,9 +2888,7 @@ def admin_teachers():
             continue
         teachers.append(t)
 
-    faculty_rows = db.execute(
-        "SELECT * FROM faculty_users ORDER BY datetime(created_at) DESC"
-    ).fetchall()
+    faculty_rows = db.execute("SELECT * FROM faculty_users ORDER BY datetime(created_at) DESC").fetchall()
 
     return render_template(
         "admin_teachers.html",
