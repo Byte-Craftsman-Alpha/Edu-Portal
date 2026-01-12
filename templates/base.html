@@ -155,7 +155,7 @@
     </style>
 </head>
 
-<body class="grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
+<body class="grid grid-cols-1 md:grid-cols-[280px_1fr] {% if active_page == 'chat' %}h-dvh overflow-hidden{% else %}min-h-screen{% endif %} bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
     <!-- Progress bar -->
     <div id="page-progress"></div>
 
@@ -270,7 +270,7 @@
         </div>
     </aside>
 
-    <main class="flex flex-col min-w-0 min-h-screen">
+    <main class="flex flex-col min-w-0 {% if active_page == 'chat' %}h-full min-h-0{% else %}min-h-screen{% endif %}">
         <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 md:px-8 py-4 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 {% if active_page == 'chat' %}
@@ -315,7 +315,7 @@
             </div>
         </header>
 
-        <div class="flex-1 p-6 md:p-8 overflow-y-auto hide-scrollbar">
+        <div class="flex-1 min-h-0 p-6 md:p-8 {% if active_page == 'chat' %}overflow-hidden{% else %}overflow-y-auto hide-scrollbar{% endif %}">
             {% block content %}{% endblock %}
         </div>
 

@@ -587,11 +587,34 @@ def _chat_base_context(db: sqlite3.Connection) -> dict:
         "chat_items": [],
         "chat_send_url": url_for("chat_send"),
         "chat_poll_url": url_for("chat_poll"),
+        "chat_older_url": url_for("chat_older"),
+        "chat_oldest_id": None,
+        "chat_has_more": False,
         "chat_profile_url_template": "/chat/profile/__TYPE__/__ID__",
         "chat_delete_url_template": "/chat/messages/__ID__/delete",
         "chat_edit_url_template": "/chat/messages/__ID__/edit",
         "chat_can_moderate": _chat_can_moderate(db),
     }
+
+
+def _chat_fetch_recent(db: sqlite3.Connection, limit: int) -> tuple[list[sqlite3.Row], int | None, bool]:
+    limit = max(1, min(int(limit), 200))
+
+    rows = db.execute(
+        """
+        SELECT * FROM group_chat_messages
+        WHERE is_deleted = 0
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (int(limit) + 1,),
+    ).fetchall()
+
+    has_more = len(rows) > limit
+    rows = rows[: int(limit)]
+    rows = list(reversed(rows))
+    oldest_id = int(rows[0]["id"]) if rows else None
+    return rows, oldest_id, has_more
 
 
 def _require_chat_actor(db: sqlite3.Connection) -> dict | None:
@@ -612,16 +635,7 @@ def chat_panel():
         return redirect(url_for("login"))
 
     limit = 60
-    rows = db.execute(
-        """
-        SELECT * FROM group_chat_messages
-        WHERE is_deleted = 0
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (int(limit),),
-    ).fetchall()
-    rows = list(reversed(rows))
+    rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
     items = build_group_chat_items(rows)
 
     ctx = _chat_base_context(db)
@@ -634,6 +648,8 @@ def chat_panel():
             "chat_items": items,
             "chat_actor": actor,
             "chat_can_moderate": False,
+            "chat_oldest_id": oldest_id,
+            "chat_has_more": has_more,
         }
     )
     return render_template("chat_panel.html", **ctx)
@@ -654,16 +670,7 @@ def faculty_chat_panel():
     actor = {"type": "faculty", "id": int(fid), "name": str(faculty_user["full_name"] or "Faculty")}
 
     limit = 60
-    rows = db.execute(
-        """
-        SELECT * FROM group_chat_messages
-        WHERE is_deleted = 0
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (int(limit),),
-    ).fetchall()
-    rows = list(reversed(rows))
+    rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
     items = build_group_chat_items(rows)
 
     ctx = _chat_base_context(db)
@@ -676,6 +683,8 @@ def faculty_chat_panel():
             "chat_items": items,
             "chat_actor": actor,
             "chat_can_moderate": False,
+            "chat_oldest_id": oldest_id,
+            "chat_has_more": has_more,
         }
     )
     return render_template("faculty_chat_panel.html", **ctx)
@@ -695,16 +704,7 @@ def admin_chat_panel():
     actor = {"type": "admin", "id": int(aid), "name": str(admin_user["full_name"] or "Admin")}
 
     limit = 80
-    rows = db.execute(
-        """
-        SELECT * FROM group_chat_messages
-        WHERE is_deleted = 0
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (int(limit),),
-    ).fetchall()
-    rows = list(reversed(rows))
+    rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
     items = build_group_chat_items(rows)
 
     ctx = _chat_base_context(db)
@@ -717,9 +717,75 @@ def admin_chat_panel():
             "chat_items": items,
             "chat_actor": actor,
             "chat_can_moderate": True,
+            "chat_oldest_id": oldest_id,
+            "chat_has_more": has_more,
         }
     )
     return render_template("admin_chat_panel.html", **ctx)
+
+
+@app.get("/chat/older")
+def chat_older():
+    db = get_db()
+    ensure_group_chat_schema(db)
+    actor = _require_chat_actor(db)
+    if not actor:
+        return jsonify({"ok": False, "error": "Not logged in"}), 401
+
+    before_id_raw = (request.args.get("before_id") or "").strip()
+    try:
+        before_id = int(before_id_raw)
+    except Exception:
+        before_id = None
+
+    limit = 40
+    try:
+        limit = int((request.args.get("limit") or "").strip() or 40)
+    except Exception:
+        limit = 40
+    limit = max(5, min(limit, 200))
+
+    if before_id is None:
+        return jsonify({"ok": True, "items": [], "has_more": False, "oldest_id": None})
+
+    last_date = None
+    prev = db.execute(
+        """
+        SELECT created_at FROM group_chat_messages
+        WHERE is_deleted = 0 AND id = ?
+        LIMIT 1
+        """,
+        (int(before_id),),
+    ).fetchone()
+    if prev:
+        last_date = _chat_date_key(str(prev["created_at"] or ""))
+
+    rows = db.execute(
+        """
+        SELECT * FROM group_chat_messages
+        WHERE is_deleted = 0 AND id < ?
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (int(before_id), int(limit) + 1),
+    ).fetchall()
+
+    has_more = len(rows) > limit
+    rows = rows[: int(limit)]
+    rows = list(reversed(rows))
+    oldest_id = int(rows[0]["id"]) if rows else None
+
+    items = build_group_chat_items(list(rows), last_date=last_date)
+    for it in items:
+        if it.get("kind") != "msg":
+            continue
+        m = it.get("msg")
+        if not m:
+            continue
+        ap = m.get("attachment_path")
+        m["attachment_url"] = url_for("static", filename=ap) if ap else None
+
+    return jsonify({"ok": True, "items": items, "has_more": has_more, "oldest_id": oldest_id})
 
 
 @app.post("/chat/send")

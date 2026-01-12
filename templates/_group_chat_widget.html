@@ -34,8 +34,8 @@
     }
 </style>
 
-<div>
-    <div class="mt-4 flex-1 overflow-y-auto rounded-2xl bg-transparent p-3 hide-scrollbar flex flex-col" data-gc-scroll style="padding-bottom: var(--gc-scroll-pad-bottom);">
+<div class="flex flex-col h-full min-h-0">
+    <div class="mt-4 mb-4 flex-1 min-h-0 overflow-y-auto rounded-2xl bg-transparent p-3 hide-scrollbar flex flex-col" data-gc-scroll>
         <div class="flex-1 flex flex-col justify-end gap-3" data-gc-list>
             {% for row in chat_items %}
                 {% if row.kind == 'date' %}
@@ -46,7 +46,7 @@
                     {% set m = row.msg %}
                     {% set mine = (chat_actor and m.actor_type == chat_actor.type and (m.actor_id or 0)|int == (chat_actor.id or 0)|int) %}
                     <div class="w-full flex {% if mine %}justify-end{% else %}justify-start{% endif %}" data-gc-message data-id="{{ m.id }}" data-date="{{ m.date_key }}">
-                        <div class="max-w-[92%] sm:max-w-[75%] flex flex-col">
+                        <div class="max-w-[88%] sm:max-w-[75%] flex flex-col min-w-0">
                             <div class="rounded-2xl border {% if mine %}border-emerald-200 bg-emerald-50{% else %}border-slate-200 bg-white{% endif %} p-3 sm:p-4 shadow-sm">
                                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                                     <button type="button" class="text-left min-w-0" data-gc-profile-btn data-actor-type="{{ m.actor_type }}" data-actor-id="{{ m.actor_id }}">
@@ -70,16 +70,21 @@
                                 {% set att_url = url_for('static', filename=m.attachment_path) %}
                                 {% if m.attachment_is_image %}
                                     <div class="mt-3 rounded-xl border border-slate-200 bg-white overflow-hidden">
-                                        <img src="{{ att_url }}" alt="{{ m.attachment_name or 'Image' }}" class="w-full max-h-72 object-contain bg-slate-50" />
-                                        <div class="p-2 flex items-center justify-between gap-2">
-                                            <p class="text-xs text-slate-600 truncate">{{ m.attachment_name or 'Image' }}</p>
-                                            <a href="{{ att_url }}" target="_blank" rel="noopener" class="px-2 py-1 rounded-lg minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-1">View</a>
+                                        <div class="w-full h-56 sm:h-64 bg-slate-50">
+                                            <img src="{{ att_url }}" alt="{{ m.attachment_name or 'Image' }}" class="w-full h-full object-cover" />
+                                        </div>
+                                        <div class="p-2 flex items-center justify-between gap-2 min-w-0">
+                                            <p class="text-xs text-slate-600 truncate min-w-0">{{ m.attachment_name or 'Image' }}</p>
+                                            <a href="{{ att_url }}" target="_blank" rel="noopener" class="px-2 py-1 rounded-lg minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-1 shrink-0">View</a>
                                         </div>
                                     </div>
                                 {% else %}
-                                    <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3">
-                                        <p class="text-xs text-slate-600 truncate flex items-center gap-2"><span class="iconify" data-icon="solar:paperclip-2-linear"></span> {{ m.attachment_name or 'Attachment' }}</p>
-                                        <div class="flex items-center gap-2 shrink-0">
+                                    <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3 flex flex-col gap-2 min-w-0">
+                                        <p class="text-xs text-slate-600 flex items-center gap-2 min-w-0">
+                                            <span class="iconify shrink-0" data-icon="solar:paperclip-2-linear"></span>
+                                            <span class="truncate min-w-0">{{ m.attachment_name or 'Attachment' }}</span>
+                                        </p>
+                                        <div class="flex items-center justify-center gap-2">
                                             <a href="{{ att_url }}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:eye-bold"></span> Open</a>
                                             <a href="{{ att_url }}" download class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-indigo-600" data-icon="solar:download-outline"></span> Download</a>
                                         </div>
@@ -107,7 +112,7 @@
         </div>
     </div>
 
-    <div class="sticky z-[70] w-full" style="bottom: var(--gc-bottom-offset);" data-gc-composer>
+    <div class="shrink-0 z-[70] w-full" data-gc-composer>
         <div class="mx-auto w-full max-w-[720px] rounded-3xl border border-slate-200/60 bg-white/70 backdrop-blur-md shadow-[0_10px_28px_rgba(15,23,42,0.08)] p-3">
             <form method="post" action="{{ chat_send_url }}" enctype="multipart/form-data" class="space-y-2" data-gc-form>
                 <div class="grid grid-cols-[1fr_auto_auto] gap-2 items-center mb-0">
@@ -152,6 +157,9 @@
 <script type="application/json" id="groupChatInit">{{ {
     'my_actor': chat_actor,
     'poll_url': chat_poll_url,
+    'older_url': chat_older_url,
+    'oldest_id': chat_oldest_id,
+    'has_more': chat_has_more,
     'profile_url_template': chat_profile_url_template,
     'delete_url_template': chat_delete_url_template,
     'edit_url_template': chat_edit_url_template,
@@ -185,16 +193,96 @@
         if (!init) return;
 
         const pollUrl = init.poll_url;
+        const olderUrl = init.older_url;
         const profileUrlTemplate = init.profile_url_template;
         const deleteUrlTemplate = init.delete_url_template;
         const editUrlTemplate = init.edit_url_template;
         const myActor = init.my_actor;
         const canModerate = !!init.can_moderate;
 
+        let oldestId = init.oldest_id;
+        let hasMore = !!init.has_more;
+        let loadingOlder = false;
+
+        function isNearBottom() {
+            const threshold = 120;
+            return (scrollEl.scrollTop + scrollEl.clientHeight) >= (scrollEl.scrollHeight - threshold);
+        }
+
         function scrollToBottom() {
             scrollEl.scrollTop = scrollEl.scrollHeight;
         }
-        setTimeout(scrollToBottom, 0);
+
+        // On first paint, keep the view at the newest messages.
+        requestAnimationFrame(() => {
+            scrollToBottom();
+            requestAnimationFrame(scrollToBottom);
+            setTimeout(scrollToBottom, 50);
+            setTimeout(scrollToBottom, 250);
+        });
+
+        // Some layouts settle after DOMContentLoaded (fonts/styles); ensure we end at the bottom.
+        document.addEventListener('DOMContentLoaded', () => {
+            scrollToBottom();
+            setTimeout(scrollToBottom, 0);
+        });
+
+        // Ensure bottom scroll even after late-loading assets (images/fonts).
+        window.addEventListener('load', () => {
+            scrollToBottom();
+            setTimeout(scrollToBottom, 0);
+        });
+
+        // If images load later, they can change scrollHeight; keep pinned to bottom on initial load.
+        scrollEl.querySelectorAll('img').forEach((img) => {
+            img.addEventListener('load', () => {
+                scrollToBottom();
+            }, { once: true });
+        });
+
+        async function loadOlder() {
+            if (!olderUrl || loadingOlder || !hasMore || !oldestId) return;
+            loadingOlder = true;
+
+            const prevHeight = scrollEl.scrollHeight;
+            try {
+                const url = `${olderUrl}?before_id=${encodeURIComponent(String(oldestId))}&limit=40`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                if (!data || !data.ok) {
+                    hasMore = false;
+                } else {
+                    hasMore = !!data.has_more;
+                    if (data.oldest_id) oldestId = data.oldest_id;
+
+                    const items = data.items || [];
+                    // prepend older items in correct order
+                    for (let i = items.length - 1; i >= 0; i--) {
+                        const it = items[i];
+                        if (!it) continue;
+                        if (it.kind === 'date') {
+                            listEl.prepend(renderDateSeparator(it.label || it.date_key || ''));
+                            continue;
+                        }
+                        const m = it.msg;
+                        if (!m) continue;
+                        listEl.prepend(renderMessage(m));
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            const newHeight = scrollEl.scrollHeight;
+            scrollEl.scrollTop = newHeight - prevHeight;
+            loadingOlder = false;
+        }
+
+        scrollEl.addEventListener('scroll', () => {
+            if (scrollEl.scrollTop <= 40) {
+                loadOlder();
+            }
+        });
 
         if (attachBtn && attachInput) {
             attachBtn.addEventListener('click', () => attachInput.click());
@@ -417,19 +505,24 @@
             if (m.attachment_is_image) {
                 return `
                     <div class="mt-3 rounded-xl border border-slate-200 bg-white overflow-hidden">
-                        <img src="${escapeHtml(m.attachment_url)}" alt="${escapeHtml(m.attachment_name || 'Image')}" class="w-full max-h-72 object-contain bg-slate-50" />
-                        <div class="p-2 flex items-center justify-between gap-2">
-                            <p class="text-xs text-slate-600 truncate">${escapeHtml(m.attachment_name || 'Image')}</p>
-                            <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener" class="px-2 py-1 rounded-lg minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-1">View</a>
+                        <div class="w-full h-56 sm:h-64 bg-slate-50">
+                            <img src="${escapeHtml(m.attachment_url)}" alt="${escapeHtml(m.attachment_name || 'Image')}" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="p-2 flex items-center justify-between gap-2 min-w-0">
+                            <p class="text-xs text-slate-600 truncate min-w-0">${escapeHtml(m.attachment_name || 'Image')}</p>
+                            <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener" class="px-2 py-1 rounded-lg minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-1 shrink-0">View</a>
                         </div>
                     </div>
                 `;
             }
 
             return `
-                <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3">
-                    <p class="text-xs text-slate-600 truncate flex items-center gap-2"><span class="iconify" data-icon="solar:paperclip-2-linear"></span> ${escapeHtml(m.attachment_name || 'Attachment')}</p>
-                    <div class="flex items-center gap-2 shrink-0">
+                <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3 flex flex-col gap-2 min-w-0">
+                    <p class="text-xs text-slate-600 flex items-center gap-2 min-w-0">
+                        <span class="iconify shrink-0" data-icon="solar:paperclip-2-linear"></span>
+                        <span class="truncate min-w-0">${escapeHtml(m.attachment_name || 'Attachment')}</span>
+                    </p>
+                    <div class="flex items-center justify-end gap-2">
                         <a href="${escapeHtml(m.attachment_url)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:eye-bold"></span> Open</a>
                         <a href="${escapeHtml(m.attachment_url)}" download class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-indigo-600" data-icon="solar:download-outline"></span> Download</a>
                     </div>
@@ -453,7 +546,7 @@
                 : '';
 
             wrapper.innerHTML = `
-                <div class="max-w-[92%] sm:max-w-[75%] flex flex-col">
+                <div class="max-w-[88%] sm:max-w-[75%] flex flex-col min-w-0">
                     <div class="rounded-2xl border ${mine ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'} p-3 sm:p-4 shadow-sm">
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                             <button type="button" class="text-left min-w-0" data-gc-profile-btn data-actor-type="${escapeHtml(m.actor_type)}" data-actor-id="${escapeHtml(String(m.actor_id))}">
@@ -519,6 +612,7 @@
 
         async function poll() {
             try {
+                const shouldStickToBottom = isNearBottom();
                 const afterId = getLastMessageId();
                 const url = `${pollUrl}?after_id=${encodeURIComponent(String(afterId))}&limit=50`;
                 const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -539,7 +633,7 @@
                     listEl.appendChild(renderMessage(m));
                 });
 
-                scrollToBottom();
+                if (shouldStickToBottom) scrollToBottom();
             } catch (e) {
                 // ignore
             }
