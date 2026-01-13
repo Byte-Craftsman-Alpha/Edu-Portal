@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, g, render_template, request, redirect, url_for, render_template_string, session, abort, send_file, jsonify
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -20,7 +23,11 @@ app = Flask(__name__)
 
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(
+    app,
+    async_mode="eventlet",
+    cors_allowed_origins="*",
+)
 CHAT_ROOM = "group_chat"
 
 DB_PATH = Path(__file__).with_name("eduportal.db")
