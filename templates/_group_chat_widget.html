@@ -27,6 +27,43 @@
     [data-gc-composer] :where(textarea.minimal-input)::-webkit-scrollbar {
         display: none;
     }
+
+    [data-gc-composer] [data-gc-editor] {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        padding: 10px 16px;
+        font-size: 14px;
+        line-height: 20px;
+        min-height: 48px;
+        max-height: 200px;
+        overflow-y: auto;
+        outline: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    [data-gc-composer] [data-gc-editor]:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    [data-gc-composer] [data-gc-editor][data-disabled="1"] {
+        background: rgb(241 245 249);
+        color: rgb(100 116 139);
+        cursor: not-allowed;
+    }
+    [data-gc-composer] [data-gc-toolbar] button {
+        height: 32px;
+        min-width: 32px;
+        padding: 0 10px;
+        border-radius: 12px;
+        background: rgb(241 245 249);
+        color: rgb(51 65 85);
+        font-size: 12px;
+        font-weight: 600;
+    }
+    [data-gc-composer] [data-gc-toolbar] button:hover {
+        background: rgb(226 232 240);
+    }
     [data-gc-composer] :where(.minimal-btn) {
         border-radius: 12px;
         font-weight: 500;
@@ -69,6 +106,25 @@
         background: rgb(241 245 249);
         color: rgb(15 23 42);
     }
+
+    [data-gc-message][data-gc-pending="1"] {
+        opacity: 0.65;
+    }
+
+    [data-gc-message-text] {
+        line-height: 1.35;
+    }
+
+    [data-gc-message-text] ul {
+        margin: 0.25rem 0;
+        padding-left: 1.1rem;
+        list-style: disc !important;
+        list-style-position: outside;
+    }
+    [data-gc-message-text] li {
+        margin: 0;
+        padding: 0;
+    }
 </style>
 
 <div class="flex flex-col h-full min-h-0">
@@ -82,7 +138,7 @@
                 {% else %}
                     {% set m = row.msg %}
                     {% set mine = (chat_actor and m.actor_type == chat_actor.type and (m.actor_id or 0)|int == (chat_actor.id or 0)|int) %}
-                    <div class="w-full flex {% if mine %}justify-end{% else %}justify-start{% endif %}" data-gc-message data-id="{{ m.id }}" data-date="{{ m.date_key }}">
+                    <div class="w-full flex {% if mine %}justify-end{% else %}justify-start{% endif %}" data-gc-message data-id="{{ m.id }}" data-date="{{ m.date_key }}" data-gc-md="{{ (m.message or '')|e }}">
                         <div class="max-w-[88%] sm:max-w-[75%] flex flex-col min-w-0">
                             <div class="rounded-2xl border {% if mine %}border-emerald-200 bg-emerald-50{% else %}border-slate-200 bg-white{% endif %} p-3 sm:p-4 shadow-sm">
                                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
@@ -99,7 +155,7 @@
 
                             {% if m.message %}
                                 <div class="mt-2" data-gc-body>
-                                    <div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>{{ m.message }}</div>
+                                    <div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>{{ m.message|e }}</div>
                                 </div>
                             {% endif %}
 
@@ -171,7 +227,10 @@
             {% endif %}
             <form method="post" action="{{ chat_send_url }}" enctype="multipart/form-data" class="space-y-2" data-gc-form>
                 <div class="grid grid-cols-[1fr_auto_auto] gap-2 items-center mb-0">
-                    <textarea name="message" class="minimal-input w-full h-12 leading-5 py-3 resize-none" placeholder="Type a message..." rows="1" data-gc-message {% if not (chat_can_send or false) %}disabled{% endif %}></textarea>
+                    <input type="hidden" name="message" data-gc-message>
+                    <div class="w-full" data-gc-editor-wrap>
+                        <div data-gc-editor contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" placeholder="Type a message..." {% if not (chat_can_send or false) %}data-disabled="1"{% endif %}></div>
+                    </div>
 
                     <div>
                         <input type="file" name="attachment" class="hidden" data-gc-attachment>
@@ -230,10 +289,14 @@
         const listEl = document.querySelector('[data-gc-list]');
         const formEl = document.querySelector('[data-gc-form]');
         const msgInput = formEl ? formEl.querySelector('[data-gc-message]') : null;
+        const editorEl = formEl ? formEl.querySelector('[data-gc-editor]') : null;
+        const toolbarEl = formEl ? formEl.querySelector('[data-gc-toolbar]') : null;
         const attachBtn = document.querySelector('[data-gc-attach-btn]');
         const attachInput = document.querySelector('[data-gc-attachment]');
         const attachLabel = document.querySelector('[data-gc-attachment-label]');
         const initEl = document.getElementById('groupChatInit');
+
+        const actionUrl = formEl ? (formEl.getAttribute('action') || '') : '';
 
         const requestBtn = document.querySelector('[data-gc-request-access]');
         const requestStatus = document.querySelector('[data-gc-request-status]');
@@ -331,6 +394,18 @@
             if (!id) return;
             const node = listEl.querySelector(`[data-gc-message][data-id="${CSS.escape(String(id))}"]`);
             if (node) node.remove();
+        }
+
+        function pad2(n) {
+            const x = Number(n || 0);
+            return x < 10 ? `0${x}` : String(x);
+        }
+
+        function nowLabels() {
+            const d = new Date();
+            const dateKey = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+            const timeLabel = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+            return { dateKey, timeLabel };
         }
         if (!init) return;
 
@@ -457,6 +532,33 @@
             });
         }
 
+        if (editorEl && msgInput) {
+            const disabled = init && init.chat_can_send === false;
+            disableComposer(!!disabled);
+
+            editorEl.addEventListener('input', () => {
+                syncComposerToHidden();
+            });
+            syncComposerToHidden();
+        }
+
+        if (toolbarEl && editorEl) {
+            toolbarEl.addEventListener('click', (e) => {
+                const btn = e.target && e.target.closest ? e.target.closest('button[data-gc-fmt]') : null;
+                if (!btn) return;
+                e.preventDefault();
+                const kind = btn.getAttribute('data-gc-fmt');
+                if (!kind) return;
+                applyFormat(kind);
+            });
+        }
+
+        // Render markdown for server-rendered messages
+        listEl.querySelectorAll('[data-gc-message-text]').forEach((el) => {
+            const raw = (el.textContent || '').trimEnd();
+            el.innerHTML = renderMarkdown(raw);
+        });
+
         function escapeHtml(s) {
             return (s || '')
                 .replaceAll('&', '&amp;')
@@ -464,6 +566,153 @@
                 .replaceAll('>', '&gt;')
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#39;');
+        }
+
+        function renderMarkdown(md) {
+            const raw = String(md || '').replace(/\r\n/g, '\n');
+
+            // Escape first (safe), then we will insert minimal HTML.
+            let src = escapeHtml(raw);
+
+            // fenced code blocks
+            src = src.replace(/```([\s\S]*?)```/g, (m, code) => {
+                return `\n<pre class="mt-2 rounded-xl bg-slate-900 text-slate-100 p-3 overflow-x-auto text-xs"><code>${code.replace(/^\n+|\n+$/g, '')}</code></pre>\n`;
+            });
+
+            function renderInline(s) {
+                let out = String(s || '');
+                out = out.replace(/`([^`\n]+)`/g, (m, code) => `<code class="px-1 py-0.5 rounded bg-slate-100 text-slate-900 text-[12px]">${code}</code>`);
+                out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+                out = out.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+                out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="underline text-indigo-700">$1</a>');
+                return out;
+            }
+
+            const lines = src.split('\n');
+            let html = '';
+            let inList = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const m = line.match(/^\s*-\s+(.*)$/);
+                if (m) {
+                    if (!inList) {
+                        html += '<ul>';
+                        inList = true;
+                    }
+                    html += `<li>${renderInline(m[1])}</li>`;
+                    continue;
+                }
+
+                if (inList) {
+                    html += '</ul>';
+                    inList = false;
+                }
+
+                if (!String(line || '').trim()) {
+                    html += '<br>';
+                    continue;
+                }
+                html += `${renderInline(line)}<br>`;
+            }
+            if (inList) html += '</ul>';
+
+            // Trim trailing <br>
+            html = html.replace(/(<br>)+$/g, '');
+            return html;
+        }
+
+        function normalizeEditorHtml(html) {
+            return String(html || '')
+                .replace(/<div><br><\/div>/gi, '<br>')
+                .replace(/<div>/gi, '')
+                .replace(/<\/div>/gi, '<br>')
+                .replace(/<p>/gi, '')
+                .replace(/<\/p>/gi, '<br>');
+        }
+
+        function htmlToMarkdown(html) {
+            let s = normalizeEditorHtml(html);
+
+            // convert formatting tags to markdown
+            s = s.replace(/<br\s*\/?>(\s*)/gi, '\n');
+            s = s.replace(/<(strong|b)>([\s\S]*?)<\/(strong|b)>/gi, '**$2**');
+            s = s.replace(/<(em|i)>([\s\S]*?)<\/(em|i)>/gi, '*$2*');
+            s = s.replace(/<code>([\s\S]*?)<\/code>/gi, '`$1`');
+            s = s.replace(/<ul>([\s\S]*?)<\/ul>/gi, (m, inner) => {
+                const items = inner.match(/<li>[\s\S]*?<\/li>/gi) || [];
+                return items.map((li) => {
+                    const t = li.replace(/^<li>|<\/li>$/gi, '');
+                    return `- ${t}`;
+                }).join('\n');
+            });
+            s = s.replace(/<li>([\s\S]*?)<\/li>/gi, '- $1');
+
+            // strip any other tags
+            s = s.replace(/<[^>]+>/g, '');
+
+            // decode minimal entities we introduced via contenteditable
+            s = s.replace(/&nbsp;/g, ' ');
+            s = s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
+            // Normalize newlines (handle CRLF from some browsers)
+            s = s.replace(/\r\n/g, '\n');
+
+            // Avoid creating extra blank lines between consecutive list items.
+            // Example: "- a\n\n- b" -> "- a\n- b"
+            s = s.replace(/(^|\n)(-\s[^\n]+)\n{2,}(?=-\s)/g, '$1$2\n');
+
+            // Also handle whitespace-only blank lines between list items.
+            s = s.replace(/(^|\n)(-\s[^\n]+)\n(?:[ \t]*\n)+(?=-\s)/g, '$1$2\n');
+
+            // General normalization: collapse 3+ newlines to 2.
+            s = s.replace(/\n{3,}/g, '\n\n');
+
+            return s.replace(/^\n+|\n+$/g, '').trim();
+        }
+
+        function syncComposerToHidden() {
+            if (!editorEl || !msgInput) return;
+            const md = htmlToMarkdown(editorEl.innerHTML);
+            msgInput.value = md;
+        }
+
+        function disableComposer(disabled) {
+            if (!editorEl) return;
+            if (disabled) {
+                editorEl.setAttribute('contenteditable', 'false');
+                editorEl.setAttribute('data-disabled', '1');
+            } else {
+                editorEl.setAttribute('contenteditable', 'true');
+                editorEl.removeAttribute('data-disabled');
+            }
+        }
+
+        function applyFormat(kind) {
+            if (!editorEl) return;
+            editorEl.focus();
+            try {
+                if (kind === 'bold') document.execCommand('bold');
+                if (kind === 'italic') document.execCommand('italic');
+                if (kind === 'ul') document.execCommand('insertUnorderedList');
+                if (kind === 'code') {
+                    const sel = window.getSelection();
+                    if (!sel || sel.rangeCount === 0) return;
+                    const range = sel.getRangeAt(0);
+                    const text = sel.toString();
+                    const node = document.createElement('code');
+                    node.textContent = text || '';
+                    range.deleteContents();
+                    range.insertNode(node);
+                    range.setStartAfter(node);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            } catch (_) {
+                // ignore
+            }
+            syncComposerToHidden();
         }
 
         function openProfileModal() {
@@ -594,7 +843,7 @@
                 if (body.querySelector('[data-gc-edit-area]')) return;
 
                 const textNode = body.querySelector('[data-gc-message-text]');
-                const currentText = (textNode ? (textNode.textContent || '') : '').trim();
+                const currentText = String(messageRoot.getAttribute('data-gc-md') || (textNode ? (textNode.textContent || '') : '')).trim();
 
                 const editor = document.createElement('div');
                 editor.setAttribute('data-gc-edit-area', '');
@@ -634,7 +883,9 @@
                         if (!res) return;
 
                         if (textNode) {
-                            textNode.textContent = res.message || newText;
+                            const finalMd = (res.message || newText);
+                            messageRoot.setAttribute('data-gc-md', finalMd);
+                            textNode.innerHTML = renderMarkdown(finalMd);
                             textNode.classList.remove('hidden');
                         }
                         editor.remove();
@@ -696,6 +947,7 @@
             wrapper.setAttribute('data-gc-message', '');
             wrapper.setAttribute('data-id', String(m.id));
             wrapper.setAttribute('data-date', String(m.date_key || ''));
+            wrapper.setAttribute('data-gc-md', String(m.message || ''));
 
             const editBtn = (mine || canModerate)
                 ? `<button type="button" data-gc-action-btn data-gc-edit-btn data-id="${escapeHtml(String(m.id))}" title="Edit"><span class="iconify text-base" data-icon="solar:pen-2-outline"></span></button>`
@@ -716,7 +968,7 @@
                                 </div>
                             </button>
                         </div>
-                        ${m.message ? `<div class="mt-2" data-gc-body><div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>${escapeHtml(m.message)}</div></div>` : ''}
+                        ${m.message ? `<div class="mt-2" data-gc-body><div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>${renderMarkdown(m.message)}</div></div>` : ''}
                         ${renderAttachment(m)}
                     </div>
                     <div class="mt-1 flex items-center gap-2 ${mine ? 'justify-end' : 'justify-start'}" data-gc-actions>
@@ -860,34 +1112,76 @@
 
         let sending = false;
         async function ajaxSend() {
-            if (!formEl || sending) return;
-            const actionUrl = formEl.getAttribute('action');
-            if (!actionUrl) {
-                formEl.submit();
-                return;
-            }
+            if (sending) return;
+            if (!formEl) return;
+            syncComposerToHidden();
+            if (!msgInput) return;
+            const message = (msgInput.value || '').trim();
+            const hasAttachment = !!(attachInput && attachInput.files && attachInput.files[0]);
+            if (!message && !hasAttachment) return;
 
-            const text = (msgInput ? (msgInput.value || '').trim() : '');
-            const file = attachInput && attachInput.files ? attachInput.files[0] : null;
-            if (!text && !file) return;
+            const tempId = `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            let optimisticNode = null;
+            try {
+                const labels = nowLabels();
+                const optimisticMsg = {
+                    id: tempId,
+                    actor_type: myActor ? myActor.type : 'student',
+                    actor_id: myActor ? myActor.id : 0,
+                    actor_name: myActor ? myActor.name : 'Me',
+                    message: message || null,
+                    attachment_url: null,
+                    attachment_name: hasAttachment && attachInput && attachInput.files && attachInput.files[0] ? attachInput.files[0].name : null,
+                    attachment_is_image: false,
+                    time_label: labels.timeLabel,
+                    date_key: labels.dateKey,
+                    date_label: null,
+                    edited_at: null,
+                    edited_label: null,
+                };
+
+                optimisticNode = renderMessage(optimisticMsg);
+                optimisticNode.setAttribute('data-gc-pending', '1');
+                maybeInsertDateSeparator(optimisticMsg.date_key, optimisticMsg.date_key);
+                listEl.appendChild(optimisticNode);
+                scrollToBottom();
+            } catch (_) {
+                optimisticNode = null;
+            }
 
             sending = true;
             try {
                 const fd = new FormData(formEl);
-                const res = await fetch(actionUrl, {
+                const res = await fetch(actionUrl || '/chat/send', {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' },
                     body: fd
                 });
                 const data = await res.json().catch(() => null);
                 if (!res.ok || !data || !data.ok) {
-                    window.alert((data && data.error) ? data.error : 'Failed to send message');
+                    if (!data) {
+                        const txt = await res.text().catch(() => '');
+                        window.alert(txt ? `Failed to send message: ${txt}` : 'Failed to send message');
+                    } else {
+                        window.alert((data && data.error) ? data.error : 'Failed to send message');
+                    }
+                    if (optimisticNode) {
+                        optimisticNode.setAttribute('data-gc-pending', '0');
+                        optimisticNode.style.opacity = '1';
+                    }
                     return;
                 }
 
                 if (typeof data.revision !== 'undefined') setStoredRevision(data.revision);
 
+                // Reconcile optimistic message with the authoritative server message.
+                if (optimisticNode) optimisticNode.remove();
+                if (data && data.msg) {
+                    upsertMessage(data.msg);
+                }
+
                 if (msgInput) msgInput.value = '';
+                if (editorEl) editorEl.innerHTML = '';
                 if (attachInput) attachInput.value = '';
                 if (attachLabel) {
                     attachLabel.classList.add('hidden');
@@ -895,13 +1189,17 @@
                 }
             } catch (e) {
                 window.alert('Failed to send message');
+                if (optimisticNode) {
+                    optimisticNode.setAttribute('data-gc-pending', '0');
+                    optimisticNode.style.opacity = '1';
+                }
             } finally {
                 sending = false;
             }
         }
 
-        if (formEl && msgInput) {
-            msgInput.addEventListener('keydown', (e) => {
+        if (formEl && editorEl) {
+            editorEl.addEventListener('keydown', (e) => {
                 if (e.key !== 'Enter') return;
                 if (isMobile) return;
                 if (e.shiftKey) return;

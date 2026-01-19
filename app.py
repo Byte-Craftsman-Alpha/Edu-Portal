@@ -147,6 +147,12 @@ def bump_chat_revision(db: sqlite3.Connection) -> int:
     )
     db.commit()
 
+    row = db.execute("SELECT revision FROM chat_meta WHERE id = 1").fetchone()
+    try:
+        return int(row[0]) if row else 0
+    except Exception:
+        return 0
+
 
 def ensure_chat_access_requests_schema(db: sqlite3.Connection) -> None:
     db.execute(
@@ -613,9 +619,9 @@ def ensure_students_permissions_schema(db: sqlite3.Connection) -> None:
     if "can_share_resource" not in cols:
         db.execute("ALTER TABLE students ADD COLUMN can_share_resource INTEGER NOT NULL DEFAULT 1")
     if "can_upload_resource" not in cols:
-        db.execute("ALTER TABLE students ADD COLUMN can_upload_resource INTEGER NOT NULL DEFAULT 1")
+        db.execute("ALTER TABLE students ADD COLUMN can_upload_resource INTEGER NOT NULL DEFAULT 0")
     if "can_chat" not in cols:
-        db.execute("ALTER TABLE students ADD COLUMN can_chat INTEGER NOT NULL DEFAULT 1")
+        db.execute("ALTER TABLE students ADD COLUMN can_chat INTEGER NOT NULL DEFAULT 0")
 
 
 def ensure_faculty_vault_schema(db: sqlite3.Connection) -> None:
@@ -1308,7 +1314,8 @@ def chat_send():
     ).fetchone()
     if row:
         msg = _chat_row_to_msg(row)
-        socketio.emit("chat:new", {"msg": msg, "revision": int(revision)}, room=CHAT_ROOM)
+        safe_rev = int(revision or 0)
+        socketio.emit("chat:new", {"msg": msg, "revision": safe_rev}, room=CHAT_ROOM)
 
         notif_body = msg.get("message") or "Attachment"
         payload = {
@@ -1322,7 +1329,7 @@ def chat_send():
 
     wants_json = "application/json" in (request.headers.get("Accept") or "")
     if wants_json:
-        return jsonify({"ok": True, "revision": int(revision), "msg": msg if row else None})
+        return jsonify({"ok": True, "revision": int(revision or 0), "msg": msg if row else None})
     return redirect(request.referrer or url_for("chat_panel"))
 
 
@@ -7059,6 +7066,7 @@ def register_post():
     db = get_db()
     ensure_students_password_column(db)
     ensure_students_schedule_id_column(db)
+    ensure_students_permissions_schema(db)
 
     exists = db.execute(
         "SELECT id FROM students WHERE roll_no = ?",
@@ -7072,8 +7080,9 @@ def register_post():
         """
         INSERT INTO students (
             name, roll_no, email, phone, guardian, residential_status,
-            program, year, sem, attendance_percent, next_class, password_hash, schedule_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            program, year, sem, attendance_percent, next_class, password_hash, schedule_id,
+            can_upload_resource, can_chat
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             form["name"],
@@ -7089,6 +7098,8 @@ def register_post():
             "",
             password_hash,
             int(schedule_id),
+            0,
+            0,
         ),
     )
     student_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
