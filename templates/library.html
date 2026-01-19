@@ -17,7 +17,11 @@
             </div>
             <div class="w-full sm:w-auto flex items-center justify-between gap-2 sm:justify-end">
                 <span class="minimal-badge bg-slate-100 text-slate-700 shrink-0">PDF</span>
-                <button type="button" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap" data-upload-open><span class="iconify text-base" data-icon="solar:add-square-bold"></span> Upload Resource</button>
+                {% if student and ('can_upload_resource' in student.keys()) and (student.can_upload_resource|int == 1) %}
+                    <button type="button" class="px-4 py-2 rounded-xl minimal-btn minimal-btn-primary text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap" data-upload-open><span class="iconify text-base" data-icon="solar:add-square-bold"></span> Upload Resource</button>
+                {% else %}
+                    <button type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-400 text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap" disabled><span class="iconify text-base" data-icon="solar:lock-keyhole-bold"></span> Upload Resource</button>
+                {% endif %}
             </div>
         </div>
 
@@ -96,7 +100,35 @@
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             <a href="{{ href }}" target="_blank" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-base" data-icon="solar:eye-bold"></span> Open PDF</a>
-                            <a href="{{ href }}" target="_blank" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-base text-indigo-600" data-icon="solar:download-outline"></span> Download</a>
+                            <div class="relative inline-flex shrink-0">
+                                <button type="button" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center" aria-label="Resource actions" data-library-action-trigger data-resource-id="{{ r.id }}" data-resource-href="{{ href|e }}" data-resource-heading="{{ r.heading|e }}" data-resource-description="{{ r.description|e }}" data-resource-tags="{{ (r.tags or '')|e }}" data-resource-uploader="{{ r.uploader|e }}" data-is-owner="{% if student and ('author_student_id' in r.keys()) and r.author_student_id and (r.author_student_id|int == student.id|int) %}1{% else %}0{% endif %}">
+                                    <span class="iconify text-lg" data-icon="solar:menu-dots-bold"></span>
+                                </button>
+                                <div class="hidden" data-library-action-menu>
+                                    <div class="rounded-2xl border border-slate-200 bg-white p-2 w-64 shadow-lg">
+                                        <div class="flex flex-col">
+                                            <a href="{{ href }}" target="_blank" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-slate-700 inline-flex items-center gap-2">
+                                                <span class="iconify text-base" data-icon="solar:download-outline"></span>
+                                                Download
+                                            </a>
+                                            <button type="button" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-slate-700 inline-flex items-center gap-2" data-library-share>
+                                                <span class="iconify text-base" data-icon="solar:share-bold"></span>
+                                                Share
+                                            </button>
+                                            <button type="button" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-slate-700 inline-flex items-center gap-2" data-library-edit>
+                                                <span class="iconify text-base" data-icon="solar:pen-2-outline"></span>
+                                                Change resource details
+                                            </button>
+                                            <form method="post" action="{{ url_for('library_resource_delete', resource_id=r.id) }}" onsubmit="return confirm('Delete this resource?');" data-library-delete-form>
+                                                <button type="submit" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-rose-700 inline-flex items-center gap-2">
+                                                    <span class="iconify text-base text-rose-700" data-icon="solar:trash-bin-trash-outline"></span>
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -128,7 +160,11 @@
                         </div>
                         <div class="md:col-span-3">
                             <label class="block text-xs font-medium text-slate-500 mb-1">Uploader</label>
-                            <input name="uploader" class="w-full minimal-input" placeholder="e.g. Prof. Sharma" required>
+                            {% if admin_user %}
+                                <input name="uploader" class="w-full minimal-input" placeholder="e.g. Prof. Sharma" required>
+                            {% else %}
+                                <input name="uploader" class="w-full minimal-input" value="{{ (student.name if student else '')|e }}" readonly required>
+                            {% endif %}
                         </div>
                         <div class="md:col-span-6">
                             <label class="block text-xs font-medium text-slate-500 mb-1">Description</label>
@@ -271,6 +307,163 @@
 
             input.addEventListener('input', apply);
             apply();
+        })();
+
+        (function () {
+            const triggers = Array.from(document.querySelectorAll('[data-library-action-trigger]'));
+            if (!triggers.length) return;
+
+            let active = null;
+
+            function close() {
+                if (!active) return;
+                const { host, menu, placeholder, popover } = active;
+                menu.classList.add('hidden');
+                placeholder.replaceWith(menu);
+                popover.remove();
+                host.setAttribute('aria-expanded', 'false');
+                active = null;
+            }
+
+            function open(trigger) {
+                close();
+                const host = trigger.parentElement;
+                const menu = host ? host.querySelector('[data-library-action-menu]') : null;
+                if (!menu) return;
+
+                const popover = document.createElement('div');
+                popover.style.position = 'fixed';
+                popover.style.left = '0px';
+                popover.style.top = '0px';
+                popover.style.zIndex = '9999';
+                document.body.appendChild(popover);
+
+                const placeholder = document.createElement('span');
+                menu.replaceWith(placeholder);
+                menu.classList.remove('hidden');
+                popover.appendChild(menu);
+
+                const r = trigger.getBoundingClientRect();
+                const m = menu.getBoundingClientRect();
+
+                const margin = 8;
+                let left = r.right - m.width;
+                left = Math.max(margin, Math.min(left, window.innerWidth - m.width - margin));
+
+                let top = r.bottom + 6;
+                if (top + m.height + margin > window.innerHeight) {
+                    top = r.top - m.height - 6;
+                }
+                top = Math.max(margin, Math.min(top, window.innerHeight - m.height - margin));
+
+                popover.style.left = `${left}px`;
+                popover.style.top = `${top}px`;
+
+                const isOwner = (trigger.getAttribute('data-is-owner') || '') === '1';
+                const editBtn = menu.querySelector('[data-library-edit]');
+                const delForm = menu.querySelector('[data-library-delete-form]');
+                const shareBtn = menu.querySelector('[data-library-share]');
+                if (editBtn) editBtn.style.display = isOwner ? '' : 'none';
+                if (delForm) delForm.style.display = isOwner ? '' : 'none';
+                if (shareBtn) shareBtn.style.display = '';
+
+                trigger.setAttribute('aria-expanded', 'true');
+                active = { host: trigger, menu, placeholder, popover };
+            }
+
+            triggers.forEach((t) => {
+                t.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (active && active.host === t) {
+                        close();
+                        return;
+                    }
+                    open(t);
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!active) return;
+                const target = e.target;
+                if (active.host.contains(target)) return;
+                if (active.menu.contains(target)) return;
+                close();
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') close();
+            });
+            window.addEventListener('resize', close);
+            window.addEventListener('scroll', close, true);
+
+            function activeTrigger() {
+                return active ? active.host : null;
+            }
+
+            document.addEventListener('click', async (e) => {
+                const target = e.target;
+                const shareBtn = target.closest ? target.closest('[data-library-share]') : null;
+                if (shareBtn) {
+                    e.preventDefault();
+                    const t = activeTrigger();
+                    if (!t) return;
+                    const url = t.getAttribute('data-resource-href') || '';
+                    const title = t.getAttribute('data-resource-heading') || 'Resource';
+                    try {
+                        if (navigator.share) {
+                            await navigator.share({ title, url });
+                        } else if (navigator.clipboard && url) {
+                            await navigator.clipboard.writeText(url);
+                            alert('Link copied');
+                        }
+                    } catch (_) {
+                    }
+                    close();
+                    return;
+                }
+
+                const editBtn = target.closest ? target.closest('[data-library-edit]') : null;
+                if (editBtn) {
+                    e.preventDefault();
+                    const t = activeTrigger();
+                    if (!t) return;
+                    const resourceId = t.getAttribute('data-resource-id');
+                    const heading = t.getAttribute('data-resource-heading') || '';
+                    const description = t.getAttribute('data-resource-description') || '';
+                    const tags = t.getAttribute('data-resource-tags') || '';
+                    const uploader = t.getAttribute('data-resource-uploader') || '';
+
+                    const nextHeading = (prompt('Heading', heading) || '').trim();
+                    if (!nextHeading) return;
+                    const nextUploader = (prompt('Uploader', uploader) || '').trim();
+                    if (!nextUploader) return;
+                    const nextDescription = (prompt('Description', description) || '').trim();
+                    if (!nextDescription) return;
+                    const nextTags = (prompt('Tags (comma separated)', tags) || '').trim();
+
+                    if (!resourceId) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = `/library/resources/${encodeURIComponent(resourceId)}/update`;
+
+                    function hidden(name, value) {
+                        const i = document.createElement('input');
+                        i.type = 'hidden';
+                        i.name = name;
+                        i.value = value;
+                        return i;
+                    }
+
+                    form.appendChild(hidden('heading', nextHeading));
+                    form.appendChild(hidden('uploader', nextUploader));
+                    form.appendChild(hidden('description', nextDescription));
+                    form.appendChild(hidden('tags', nextTags));
+                    form.appendChild(hidden('next', window.location.pathname + window.location.search));
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
         })();
     </script>
 </section>

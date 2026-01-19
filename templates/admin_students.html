@@ -386,6 +386,26 @@
                         </div>
                     </div>
 
+                    <div class="admin-card p-4 bg-slate-50 border border-slate-200">
+                        <p class="text-sm font-semibold text-slate-900">Permissions</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                            <label class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Chat Access</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Allow this student to access group chat.</p>
+                                </div>
+                                <input name="can_chat" type="checkbox" value="1" class="h-5 w-5 rounded border-slate-300" data-f-can_chat />
+                            </label>
+                            <label class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Upload Resources</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Allow this student to upload new resources in the library.</p>
+                                </div>
+                                <input name="can_upload_resource" type="checkbox" value="1" class="h-5 w-5 rounded border-slate-300" data-f-can_upload_resource />
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="flex items-center justify-end gap-2">
                         <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2"><span class="iconify text-base" data-icon="solar:check-circle-bold"></span> Save Changes</button>
                     </div>
@@ -496,6 +516,8 @@
                                         data-emergency_contact_relation="{{ (p.emergency_contact_relation if p else '')|e }}"
                                         data-emergency_contact_phone="{{ (p.emergency_contact_phone if p else '')|e }}"
                                         data-pending_amount="{{ (du.pending_amount if du else 0) }}"
+                                        data-can_chat="{{ (s.can_chat if 'can_chat' in s.keys() else 1) }}"
+                                        data-can_upload_resource="{{ (s.can_upload_resource if 'can_upload_resource' in s.keys() else 1) }}"
                                     >
                                         <span class="iconify text-base" data-icon="solar:pen-2-outline"></span>
                                         Edit
@@ -974,6 +996,15 @@
             el.value = (val === undefined || val === null) ? '' : String(val);
         }
 
+        function setChecked(selector, raw) {
+            const el = form.querySelector(selector);
+            if (!el) {
+                return;
+            }
+            const v = String(raw === undefined || raw === null ? '' : raw).trim().toLowerCase();
+            el.checked = (v === '1' || v === 'true' || v === 'yes' || v === 'on');
+        }
+
         let scrollLockY = 0;
         function lockScroll() {
             scrollLockY = window.scrollY || 0;
@@ -1050,6 +1081,9 @@
                 setVal('[data-f-emergency_contact_name]', btn.dataset.emergency_contact_name);
                 setVal('[data-f-emergency_contact_relation]', btn.dataset.emergency_contact_relation);
                 setVal('[data-f-emergency_contact_phone]', btn.dataset.emergency_contact_phone);
+
+                setChecked('[data-f-can_chat]', btn.dataset.can_chat);
+                setChecked('[data-f-can_upload_resource]', btn.dataset.can_upload_resource);
 
                 open();
             });

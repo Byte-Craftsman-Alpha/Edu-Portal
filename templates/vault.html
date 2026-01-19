@@ -41,10 +41,28 @@
                                             <span class="truncate">{{ f.name }}</span>
                                         </span>
                                     </a>
-                                    <form method="post" action="{{ url_for('vault_folder_delete', folder_id=f.id) }}" onsubmit="return confirm('Delete this folder and all files inside it?');">
-                                        <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
-                                        <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
-                                    </form>
+                                    <div class="relative inline-flex shrink-0">
+                                        <button type="button" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center" aria-label="Folder actions" data-vault-action-trigger data-vault-action-kind="folder" data-folder-id="{{ f.id }}" data-folder-name="{{ f.name|e }}">
+                                            <span class="iconify text-lg" data-icon="solar:menu-dots-bold"></span>
+                                        </button>
+                                        <div class="hidden" data-vault-action-menu>
+                                            <div class="rounded-2xl border border-slate-200 bg-white p-2 w-56 shadow-lg">
+                                                <div class="flex flex-col">
+                                                    <button type="button" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-slate-700 inline-flex items-center gap-2" data-vault-rename>
+                                                        <span class="iconify text-base" data-icon="solar:pen-2-outline"></span>
+                                                        Rename
+                                                    </button>
+                                                    <form method="post" action="{{ url_for('vault_folder_delete', folder_id=f.id) }}" onsubmit="return confirm('Delete this folder and all files inside it?');">
+                                                        <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-rose-700 inline-flex items-center gap-2">
+                                                            <span class="iconify text-base text-rose-700" data-icon="solar:trash-bin-trash-outline"></span>
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             {% endfor %}
                         {% else %}
@@ -146,10 +164,28 @@
                                     <div class="flex items-center gap-2 shrink-0">
                                         <button type="button" class="vaultShareBtn px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:share-bold"></span> Share</button>
                                         <a href="{{ url_for('vault_file_download', file_id=vf.id) }}" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm" data-icon="solar:download-bold"></span> Download</a>
-                                        <form method="post" action="{{ url_for('vault_file_delete', file_id=vf.id) }}" onsubmit="return confirm('Delete this file?');">
-                                            <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
-                                            <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-all inline-flex items-center justify-center gap-2"><span class="iconify text-sm text-rose-700" data-icon="solar:trash-bin-trash-outline"></span> Delete</button>
-                                        </form>
+                                        <div class="relative inline-flex shrink-0">
+                                            <button type="button" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center justify-center" aria-label="File actions" data-vault-action-trigger data-vault-action-kind="file" data-file-id="{{ vf.id }}" data-file-name="{{ vf.original_name|e }}">
+                                                <span class="iconify text-lg" data-icon="solar:menu-dots-bold"></span>
+                                            </button>
+                                            <div class="hidden" data-vault-action-menu>
+                                                <div class="rounded-2xl border border-slate-200 bg-white p-2 w-56 shadow-lg">
+                                                    <div class="flex flex-col">
+                                                        <button type="button" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-slate-700 inline-flex items-center gap-2" data-vault-rename>
+                                                            <span class="iconify text-base" data-icon="solar:pen-2-outline"></span>
+                                                            Rename
+                                                        </button>
+                                                        <form method="post" action="{{ url_for('vault_file_delete', file_id=vf.id) }}" onsubmit="return confirm('Delete this file?');">
+                                                            <input type="hidden" name="next" value="{{ url_for('vault', folder_id=(selected_folder.id if selected_folder else None)) }}">
+                                                            <button type="submit" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-sm text-rose-700 inline-flex items-center gap-2">
+                                                                <span class="iconify text-base text-rose-700" data-icon="solar:trash-bin-trash-outline"></span>
+                                                                Delete
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -233,4 +269,135 @@
          </div>
      </div>
  </div>
+ 
+ <script>
+     (function () {
+         const triggers = Array.from(document.querySelectorAll('[data-vault-action-trigger]'));
+         if (!triggers.length) return;
+ 
+         let active = null;
+ 
+         function close() {
+             if (!active) return;
+             const { host, menu, placeholder, popover } = active;
+             menu.classList.add('hidden');
+             placeholder.replaceWith(menu);
+             popover.remove();
+             host.setAttribute('aria-expanded', 'false');
+             active = null;
+         }
+ 
+         function open(trigger) {
+             close();
+             const host = trigger.parentElement;
+             const menu = host ? host.querySelector('[data-vault-action-menu]') : null;
+             if (!menu) return;
+ 
+             const popover = document.createElement('div');
+             popover.style.position = 'fixed';
+             popover.style.left = '0px';
+             popover.style.top = '0px';
+             popover.style.zIndex = '9999';
+             document.body.appendChild(popover);
+ 
+             const placeholder = document.createElement('span');
+             menu.replaceWith(placeholder);
+             menu.classList.remove('hidden');
+             popover.appendChild(menu);
+ 
+             const r = trigger.getBoundingClientRect();
+             const m = menu.getBoundingClientRect();
+ 
+             const margin = 8;
+             let left = r.right - m.width;
+             left = Math.max(margin, Math.min(left, window.innerWidth - m.width - margin));
+ 
+             let top = r.bottom + 6;
+             if (top + m.height + margin > window.innerHeight) {
+                 top = r.top - m.height - 6;
+             }
+             top = Math.max(margin, Math.min(top, window.innerHeight - m.height - margin));
+ 
+             popover.style.left = `${left}px`;
+             popover.style.top = `${top}px`;
+ 
+             trigger.setAttribute('aria-expanded', 'true');
+             active = { host: trigger, menu, placeholder, popover };
+         }
+ 
+         triggers.forEach((t) => {
+             t.addEventListener('click', (e) => {
+                 e.preventDefault();
+                 if (active && active.host === t) {
+                     close();
+                     return;
+                 }
+                 open(t);
+             });
+         });
+ 
+         document.addEventListener('click', (e) => {
+             if (!active) return;
+             const target = e.target;
+             if (active.host.contains(target)) return;
+             if (active.menu.contains(target)) return;
+             close();
+         });
+ 
+         window.addEventListener('keydown', (e) => {
+             if (e.key === 'Escape') close();
+         });
+ 
+         window.addEventListener('resize', close);
+         window.addEventListener('scroll', close, true);
+ 
+         window.__vaultActiveMenuTrigger = () => (active ? active.host : null);
+     })();
+ 
+     (function () {
+         const renameBtns = Array.from(document.querySelectorAll('[data-vault-action-menu] [data-vault-rename]'));
+         if (!renameBtns.length) return;
+ 
+         renameBtns.forEach((btn) => {
+             btn.addEventListener('click', (e) => {
+                 e.preventDefault();
+                 const trigger = (typeof window.__vaultActiveMenuTrigger === 'function') ? window.__vaultActiveMenuTrigger() : null;
+                 if (!trigger) return;
+ 
+                 const kind = trigger.getAttribute('data-vault-action-kind');
+                 const folderId = trigger.getAttribute('data-folder-id');
+                 const fileId = trigger.getAttribute('data-file-id');
+                 const currentName = trigger.getAttribute('data-folder-name') || trigger.getAttribute('data-file-name') || '';
+ 
+                 const nextName = (prompt('Rename', currentName) || '').trim();
+                 if (!nextName || nextName === currentName) return;
+ 
+                 const form = document.createElement('form');
+                 form.method = 'post';
+                 if (kind === 'folder' && folderId) {
+                     form.action = `/vault/folders/${encodeURIComponent(folderId)}/rename`;
+                 } else if (kind === 'file' && fileId) {
+                     form.action = `/vault/files/${encodeURIComponent(fileId)}/rename`;
+                 } else {
+                     return;
+                 }
+ 
+                 const nameInput = document.createElement('input');
+                 nameInput.type = 'hidden';
+                 nameInput.name = 'name';
+                 nameInput.value = nextName;
+                 form.appendChild(nameInput);
+ 
+                 const nextInput = document.createElement('input');
+                 nextInput.type = 'hidden';
+                 nextInput.name = 'next';
+                 nextInput.value = window.location.pathname + window.location.search;
+                 form.appendChild(nextInput);
+ 
+                 document.body.appendChild(form);
+                 form.submit();
+             });
+         });
+     })();
+ </script>
 {% endblock %}

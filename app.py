@@ -146,7 +146,21 @@ def bump_chat_revision(db: sqlite3.Connection) -> int:
         (now,),
     )
     db.commit()
-    return get_chat_revision(db)
+
+
+def ensure_chat_access_requests_schema(db: sqlite3.Connection) -> None:
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS chat_access_requests (
+            id INTEGER PRIMARY KEY,
+            student_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending'
+        )
+        """
+    )
+    db.commit()
+
 
 
 def ensure_push_schema(db: sqlite3.Connection) -> None:
@@ -420,6 +434,7 @@ def push_toggle():
 def socket_connect():
     db = get_db()
     ensure_group_chat_schema(db)
+    ensure_chat_access_requests_schema(db)
     actor = _get_actor_from_session(db)
     if not actor:
         disconnect()
@@ -585,6 +600,22 @@ def ensure_library_resources_faculty_author_schema(db: sqlite3.Connection) -> No
     cols = {row[1] for row in db.execute("PRAGMA table_info(library_resources)").fetchall()}
     if "author_faculty_id" not in cols:
         db.execute("ALTER TABLE library_resources ADD COLUMN author_faculty_id INTEGER")
+
+
+def ensure_library_resources_student_author_schema(db: sqlite3.Connection) -> None:
+    cols = {row[1] for row in db.execute("PRAGMA table_info(library_resources)").fetchall()}
+    if "author_student_id" not in cols:
+        db.execute("ALTER TABLE library_resources ADD COLUMN author_student_id INTEGER")
+
+
+def ensure_students_permissions_schema(db: sqlite3.Connection) -> None:
+    cols = {row[1] for row in db.execute("PRAGMA table_info(students)").fetchall()}
+    if "can_share_resource" not in cols:
+        db.execute("ALTER TABLE students ADD COLUMN can_share_resource INTEGER NOT NULL DEFAULT 1")
+    if "can_upload_resource" not in cols:
+        db.execute("ALTER TABLE students ADD COLUMN can_upload_resource INTEGER NOT NULL DEFAULT 1")
+    if "can_chat" not in cols:
+        db.execute("ALTER TABLE students ADD COLUMN can_chat INTEGER NOT NULL DEFAULT 1")
 
 
 def ensure_faculty_vault_schema(db: sqlite3.Connection) -> None:
@@ -950,9 +981,15 @@ def _chat_can_moderate(db: sqlite3.Connection) -> bool:
 def _chat_base_context(db: sqlite3.Connection) -> dict:
     actor = get_chat_actor(db)
     revision = get_chat_revision(db)
+    can_send = True
+    try:
+        can_send = _student_can_chat_send(db, actor) if actor else False
+    except Exception:
+        can_send = False
     return {
         "chat_actor": actor,
         "chat_items": [],
+        "chat_can_send": bool(can_send),
         "chat_send_url": url_for("chat_send"),
         "chat_poll_url": url_for("chat_poll"),
         "chat_older_url": url_for("chat_older"),
@@ -1004,6 +1041,20 @@ def _require_chat_actor(db: sqlite3.Connection) -> dict | None:
     if not actor:
         return None
     return actor
+
+
+def _student_can_chat_send(db: sqlite3.Connection, actor: dict) -> bool:
+    if actor.get("type") != "student":
+        return True
+    ensure_students_permissions_schema(db)
+    sid = int(actor.get("id") or 0)
+    row = db.execute("SELECT can_chat FROM students WHERE id = ?", (sid,)).fetchone()
+    if not row:
+        return False
+    try:
+        return int(row["can_chat"] or 0) == 1
+    except Exception:
+        return False
 
 
 @app.get("/chat")
@@ -1211,6 +1262,12 @@ def chat_send():
     if not actor:
         return redirect(url_for("login"))
 
+    if not _student_can_chat_send(db, actor):
+        wants_json = "application/json" in (request.headers.get("Accept") or "")
+        if wants_json:
+            return jsonify({"ok": False, "error": "Chat disabled"}), 403
+        return redirect(request.referrer or url_for("chat_panel"))
+
     message = (request.form.get("message") or "").strip()
     att = save_chat_attachment(request.files.get("attachment"))
     attachment_path = att[0] if att else None
@@ -1267,6 +1324,46 @@ def chat_send():
     if wants_json:
         return jsonify({"ok": True, "revision": int(revision), "msg": msg if row else None})
     return redirect(request.referrer or url_for("chat_panel"))
+
+
+@app.post("/chat/request-access")
+@login_required
+def chat_request_access():
+    db = get_db()
+    ensure_students_permissions_schema(db)
+    ensure_chat_access_requests_schema(db)
+
+    actor = _require_chat_actor(db)
+    if not actor or actor.get("type") != "student":
+        return jsonify({"ok": False, "error": "Only students can request access"}), 403
+
+    sid = int(actor.get("id") or 0)
+    row = db.execute("SELECT can_chat FROM students WHERE id = ?", (sid,)).fetchone()
+    try:
+        if row and int(row["can_chat"] or 0) == 1:
+            return jsonify({"ok": True, "message": "You already have chat access."})
+    except Exception:
+        pass
+
+    existing = db.execute(
+        """
+        SELECT id FROM chat_access_requests
+        WHERE student_id = ? AND status = 'pending'
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (sid,),
+    ).fetchone()
+    if existing:
+        return jsonify({"ok": True, "message": "Your request is already pending. Please wait for admin approval."})
+
+    now = datetime.now().isoformat(timespec="seconds")
+    db.execute(
+        "INSERT INTO chat_access_requests (student_id, created_at, status) VALUES (?, ?, 'pending')",
+        (sid, now),
+    )
+    db.commit()
+    return jsonify({"ok": True, "message": "Request sent. We’ll notify you once an admin enables chat access."})
 
 
 @app.get("/chat/poll")
@@ -2141,7 +2238,10 @@ def init_db() -> None:
         ensure_faculty_users_schema(db)
         ensure_faculty_weekly_timetable_schema(db)
         ensure_library_resources_faculty_author_schema(db)
+        ensure_library_resources_student_author_schema(db)
         ensure_faculty_vault_schema(db)
+
+        ensure_students_permissions_schema(db)
 
         student_cols = {row[1] for row in db.execute("PRAGMA table_info(students)").fetchall()}
         if "password_hash" not in student_cols:
@@ -2168,7 +2268,10 @@ def init_db() -> None:
         ensure_news_posts_faculty_author_schema(db)
         ensure_faculty_weekly_timetable_schema(db)
         ensure_library_resources_faculty_author_schema(db)
+        ensure_library_resources_student_author_schema(db)
         ensure_faculty_vault_schema(db)
+
+        ensure_students_permissions_schema(db)
 
         default_password = "student123"
         dummy_students = [
@@ -5755,6 +5858,7 @@ def admin_teacher_update(teacher_id: int):
 @admin_login_required
 def admin_students():
     db = get_db()
+    ensure_students_permissions_schema(db)
 
     filters = {
         "q": (request.args.get("q") or "").strip(),
@@ -5857,6 +5961,7 @@ def admin_students():
 def admin_student_update(student_id: int):
     form = {k: (request.form.get(k) or "").strip() for k in request.form.keys()}
     db = get_db()
+    ensure_students_permissions_schema(db)
     student = db.execute("SELECT * FROM students WHERE id = ?", (int(student_id),)).fetchone()
     if not student:
         return redirect(url_for("admin_students"))
@@ -5897,6 +6002,12 @@ def admin_student_update(student_id: int):
     ]
     if "schedule_id" in student_cols:
         update_cols.append("schedule_id")
+    if "can_share_resource" in student_cols:
+        update_cols.append("can_share_resource")
+    if "can_upload_resource" in student_cols:
+        update_cols.append("can_upload_resource")
+    if "can_chat" in student_cols:
+        update_cols.append("can_chat")
 
     values = {
         "name": form.get("name") or student["name"],
@@ -5913,6 +6024,12 @@ def admin_student_update(student_id: int):
     }
     if "schedule_id" in student_cols:
         values["schedule_id"] = schedule_id
+    if "can_share_resource" in student_cols:
+        values["can_share_resource"] = 1 if (request.form.get("can_share_resource") in {"1", "on", "true", "yes"}) else 0
+    if "can_upload_resource" in student_cols:
+        values["can_upload_resource"] = 1 if (request.form.get("can_upload_resource") in {"1", "on", "true", "yes"}) else 0
+    if "can_chat" in student_cols:
+        values["can_chat"] = 1 if (request.form.get("can_chat") in {"1", "on", "true", "yes"}) else 0
 
     set_sql = ", ".join([f"{c} = ?" for c in update_cols])
     db.execute(
@@ -7250,6 +7367,30 @@ def vault_folder_delete(folder_id: int):
     return redirect(get_safe_next_url("dashboard"))
 
 
+@app.post("/vault/folders/<int:folder_id>/rename")
+@login_required
+def vault_folder_rename(folder_id: int):
+    sid = get_current_student_id()
+    name = (request.form.get("name") or "").strip()
+    if not name:
+        return redirect(get_safe_next_url("vault"))
+
+    db = get_db()
+    folder = db.execute(
+        "SELECT * FROM vault_folders WHERE id = ? AND student_id = ?",
+        (int(folder_id), int(sid)),
+    ).fetchone()
+    if not folder:
+        return redirect(get_safe_next_url("vault"))
+
+    db.execute(
+        "UPDATE vault_folders SET name = ? WHERE id = ? AND student_id = ?",
+        (name, int(folder_id), int(sid)),
+    )
+    db.commit()
+    return redirect(get_safe_next_url("vault"))
+
+
 @app.post("/vault/files")
 @login_required
 def vault_file_upload():
@@ -7331,6 +7472,30 @@ def vault_file_delete(file_id: int):
     db.execute("DELETE FROM vault_files WHERE id = ? AND student_id = ?", (int(file_id), sid))
     db.commit()
     return redirect(get_safe_next_url("dashboard"))
+
+
+@app.post("/vault/files/<int:file_id>/rename")
+@login_required
+def vault_file_rename(file_id: int):
+    sid = get_current_student_id()
+    name = (request.form.get("name") or "").strip()
+    if not name:
+        return redirect(get_safe_next_url("vault"))
+
+    db = get_db()
+    vf = db.execute(
+        "SELECT * FROM vault_files WHERE id = ? AND student_id = ?",
+        (int(file_id), int(sid)),
+    ).fetchone()
+    if not vf:
+        return redirect(get_safe_next_url("vault"))
+
+    db.execute(
+        "UPDATE vault_files SET original_name = ? WHERE id = ? AND student_id = ?",
+        (name, int(file_id), int(sid)),
+    )
+    db.commit()
+    return redirect(get_safe_next_url("vault"))
 
 
 @app.post("/vault/files/bulk-delete")
@@ -7741,6 +7906,9 @@ def schedules():
 @login_required
 def library():
     db = get_db()
+    ensure_library_resources_faculty_author_schema(db)
+    ensure_library_resources_student_author_schema(db)
+    ensure_students_permissions_schema(db)
     filters = {
         "q": (request.args.get("q") or "").strip(),
         "tag": (request.args.get("tag") or "").strip(),
@@ -7786,12 +7954,28 @@ def library():
 @app.post("/library/resources/upload")
 @login_required
 def library_resource_upload():
+    sid = get_current_student_id()
     heading = (request.form.get("heading") or "").strip()
     description = (request.form.get("description") or "").strip()
     tags = (request.form.get("tags") or "").strip()
     uploader = (request.form.get("uploader") or "").strip()
     pdf_url = (request.form.get("pdf_url") or "").strip()
     pdf_file = request.files.get("pdf_file")
+
+    db = get_db()
+    # For students, the uploader name is fixed to their account name.
+    # Only admins are allowed to override the uploader field.
+    if get_current_admin_id() is None:
+        student_row = None
+        try:
+            student_row = db.execute(
+                "SELECT name FROM students WHERE id = ?",
+                (int(sid or 0),),
+            ).fetchone()
+        except Exception:
+            student_row = None
+        if student_row:
+            uploader = (student_row["name"] or "").strip()
 
     if not heading or not description or not uploader:
         return redirect(url_for("library"))
@@ -7812,17 +7996,94 @@ def library_resource_upload():
             return redirect(url_for("library"))
         final_pdf_url = pdf_url
 
-    db = get_db()
+    ensure_students_permissions_schema(db)
+    try:
+        row = db.execute("SELECT can_upload_resource FROM students WHERE id = ?", (int(sid or 0),)).fetchone()
+        if row and int(row["can_upload_resource"] or 0) != 1:
+            return redirect(get_safe_next_url("library"))
+    except Exception:
+        return redirect(get_safe_next_url("library"))
+    ensure_library_resources_faculty_author_schema(db)
+    ensure_library_resources_student_author_schema(db)
     now = datetime.utcnow().isoformat(timespec="seconds")
     db.execute(
         """
-        INSERT INTO library_resources (heading, description, pdf_url, uploader, uploaded_at, tags)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO library_resources (heading, description, pdf_url, uploader, uploaded_at, tags, author_student_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (heading, description, final_pdf_url, uploader, now, tags),
+        (heading, description, final_pdf_url, uploader, now, tags, int(sid or 0) or None),
     )
     db.commit()
     return redirect(url_for("library"))
+
+
+@app.post("/library/resources/<int:resource_id>/update")
+@login_required
+def library_resource_update(resource_id: int):
+    sid = get_current_student_id()
+    heading = (request.form.get("heading") or "").strip()
+    description = (request.form.get("description") or "").strip()
+    tags = (request.form.get("tags") or "").strip()
+    uploader = (request.form.get("uploader") or "").strip()
+    if not heading or not description:
+        return redirect(get_safe_next_url("library"))
+
+    db = get_db()
+    ensure_library_resources_student_author_schema(db)
+    row = db.execute(
+        "SELECT * FROM library_resources WHERE id = ? AND author_student_id = ?",
+        (int(resource_id), int(sid or 0)),
+    ).fetchone()
+    if not row:
+        return redirect(get_safe_next_url("library"))
+
+    # Students cannot change uploader; keep the stored value.
+    # (Admins don't use this endpoint because it is ownership-gated.)
+    uploader = (row["uploader"] or "").strip()
+    if not uploader:
+        return redirect(get_safe_next_url("library"))
+
+    db.execute(
+        """
+        UPDATE library_resources
+        SET heading = ?, description = ?, tags = ?, uploader = ?
+        WHERE id = ? AND author_student_id = ?
+        """,
+        (heading, description, tags, uploader, int(resource_id), int(sid or 0)),
+    )
+    db.commit()
+    return redirect(get_safe_next_url("library"))
+
+
+@app.post("/library/resources/<int:resource_id>/delete")
+@login_required
+def library_resource_delete(resource_id: int):
+    sid = get_current_student_id()
+    db = get_db()
+    ensure_library_resources_student_author_schema(db)
+    row = db.execute(
+        "SELECT * FROM library_resources WHERE id = ? AND author_student_id = ?",
+        (int(resource_id), int(sid or 0)),
+    ).fetchone()
+    if not row:
+        return redirect(get_safe_next_url("library"))
+
+    pdf_url = (row["pdf_url"] or "").strip()
+    if pdf_url and not (pdf_url.startswith("http://") or pdf_url.startswith("https://")):
+        if pdf_url.startswith("uploads/"):
+            abs_path = Path(app.root_path) / "static" / pdf_url
+            try:
+                if abs_path.exists() and abs_path.is_file():
+                    abs_path.unlink()
+            except Exception:
+                pass
+
+    db.execute(
+        "DELETE FROM library_resources WHERE id = ? AND author_student_id = ?",
+        (int(resource_id), int(sid or 0)),
+    )
+    db.commit()
+    return redirect(get_safe_next_url("library"))
 
 
 @app.get("/exams")

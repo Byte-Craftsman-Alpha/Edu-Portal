@@ -151,18 +151,36 @@
 
     <div class="shrink-0 z-[70] w-full" data-gc-composer>
         <div class="mx-auto w-full max-w-[720px] rounded-3xl border border-slate-200/60 bg-white/70 backdrop-blur-md shadow-[0_10px_28px_rgba(15,23,42,0.08)] p-3">
+            {% if not (chat_can_send or false) %}
+                <div class="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <div class="flex items-start gap-3">
+                        <span class="iconify text-xl text-amber-700 mt-0.5" data-icon="solar:shield-warning-bold"></span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-amber-900">You can read messages, but you can’t send new ones.</p>
+                            <p class="text-xs text-amber-800 mt-1">Your chat sending permission is currently disabled by the admin. You can request access below.</p>
+                            <div class="mt-2 flex items-center gap-2">
+                                <button type="button" class="px-3 py-2 rounded-xl minimal-btn minimal-btn-primary text-xs font-medium inline-flex items-center justify-center gap-2" data-gc-request-access>
+                                    <span class="iconify text-base" data-icon="solar:mailbox-bold"></span>
+                                    Request access
+                                </button>
+                                <span class="text-xs text-slate-500" data-gc-request-status></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
             <form method="post" action="{{ chat_send_url }}" enctype="multipart/form-data" class="space-y-2" data-gc-form>
                 <div class="grid grid-cols-[1fr_auto_auto] gap-2 items-center mb-0">
-                    <textarea name="message" class="minimal-input w-full h-12 leading-5 py-3 resize-none" placeholder="Type a message..." rows="1" data-gc-message></textarea>
+                    <textarea name="message" class="minimal-input w-full h-12 leading-5 py-3 resize-none" placeholder="Type a message..." rows="1" data-gc-message {% if not (chat_can_send or false) %}disabled{% endif %}></textarea>
 
                     <div>
                         <input type="file" name="attachment" class="hidden" data-gc-attachment>
-                        <button type="button" class="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all inline-flex items-center justify-center" data-gc-attach-btn title="Attach file">
+                        <button type="button" class="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all inline-flex items-center justify-center" data-gc-attach-btn title="Attach file" {% if not (chat_can_send or false) %}disabled{% endif %}>
                             <span class="iconify text-xl" data-icon="solar:paperclip-outline"></span>
                         </button>
                     </div>
 
-                    <button type="submit" class="w-10 h-10 rounded-2xl minimal-btn minimal-btn-primary inline-flex items-center justify-center" title="Send">
+                    <button type="submit" class="w-10 h-10 rounded-2xl minimal-btn minimal-btn-primary inline-flex items-center justify-center" title="Send" {% if not (chat_can_send or false) %}disabled{% endif %}>
                         <span class="iconify text-xl" data-icon="solar:arrow-right-bold"></span>
                     </button>
                 </div>
@@ -202,7 +220,8 @@
     'profile_url_template': chat_profile_url_template,
     'delete_url_template': chat_delete_url_template,
     'edit_url_template': chat_edit_url_template,
-    'can_moderate': can_moderate
+    'can_moderate': can_moderate,
+    'chat_can_send': (chat_can_send or false)
 } | tojson }}</script>
 
 <script>
@@ -215,6 +234,9 @@
         const attachInput = document.querySelector('[data-gc-attachment]');
         const attachLabel = document.querySelector('[data-gc-attachment-label]');
         const initEl = document.getElementById('groupChatInit');
+
+        const requestBtn = document.querySelector('[data-gc-request-access]');
+        const requestStatus = document.querySelector('[data-gc-request-status]');
 
         const modal = document.querySelector('[data-gc-profile-modal]');
         const modalBackdrop = document.querySelector('[data-gc-profile-backdrop]');
@@ -229,6 +251,39 @@
             init = JSON.parse(initEl.textContent || '{}');
         } catch (e) {
             init = null;
+        }
+
+        if (formEl && init && init.chat_can_send === false) {
+            formEl.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (requestStatus) {
+                    requestStatus.textContent = "You don't have permission to send messages.";
+                } else {
+                    alert("You don't have permission to send messages.");
+                }
+            });
+        }
+
+        if (requestBtn) {
+            requestBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                requestBtn.disabled = true;
+                if (requestStatus) requestStatus.textContent = 'Sending request…';
+                try {
+                    const res = await fetch('/chat/request-access', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (requestStatus) {
+                        requestStatus.textContent = data && data.message ? String(data.message) : 'Request sent.';
+                    }
+                } catch (_) {
+                    if (requestStatus) requestStatus.textContent = 'Could not send request. Please try again.';
+                } finally {
+                    requestBtn.disabled = false;
+                }
+            });
         }
 
         function applySnapshot(payload) {
