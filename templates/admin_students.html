@@ -403,6 +403,13 @@
                                 </div>
                                 <input name="can_upload_resource" type="checkbox" value="1" class="h-5 w-5 rounded border-slate-300" data-f-can_upload_resource />
                             </label>
+                            <label class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Vault Access</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Allow this student to access the vault (private files).</p>
+                                </div>
+                                <input name="can_use_vault" type="checkbox" value="1" class="h-5 w-5 rounded border-slate-300" data-f-can_use_vault />
+                            </label>
                         </div>
                     </div>
 
@@ -518,6 +525,7 @@
                                         data-pending_amount="{{ (du.pending_amount if du else 0) }}"
                                         data-can_chat="{{ (s.can_chat if 'can_chat' in s.keys() else 1) }}"
                                         data-can_upload_resource="{{ (s.can_upload_resource if 'can_upload_resource' in s.keys() else 1) }}"
+                                        data-can_use_vault="{{ (s.can_use_vault if 'can_use_vault' in s.keys() else 0) }}"
                                     >
                                         <span class="iconify text-base" data-icon="solar:pen-2-outline"></span>
                                         Edit
@@ -1084,6 +1092,7 @@
 
                 setChecked('[data-f-can_chat]', btn.dataset.can_chat);
                 setChecked('[data-f-can_upload_resource]', btn.dataset.can_upload_resource);
+                setChecked('[data-f-can_use_vault]', btn.dataset.can_use_vault);
 
                 open();
             });

@@ -254,10 +254,12 @@
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'library' %}solar:book-2-bold{% else %}solar:book-2-outline{% endif %}"></span> Library</span>
                 <span class="text-xs text-slate-400">Resources</span>
             </a>
-            <a href="{{ url_for('vault') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'vault' %} active{% endif %}">
-                <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span> Vault</span>
-                <span class="text-xs text-slate-400">Files</span>
-            </a>
+            {% if vault_enabled %}
+                <a href="{{ url_for('vault') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'vault' %} active{% endif %}">
+                    <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span> Vault</span>
+                    <span class="text-xs text-slate-400">Files</span>
+                </a>
+            {% endif %}
             <a href="{{ url_for('teachers') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'teachers' %} active{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'teachers' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Teachers</span>
                 <span class="text-xs text-slate-400">Directory</span>
@@ -307,10 +309,12 @@
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'library' %}solar:book-2-bold{% else %}solar:book-2-outline{% endif %}"></span> Library</span>
                 <span class="text-xs text-slate-400">Resources</span>
             </a>
-            <a href="{{ url_for('vault') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'vault' %} active{% endif %}">
-                <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span> Vault</span>
-                <span class="text-xs text-slate-400">Files</span>
-            </a>
+            {% if vault_enabled %}
+                <a href="{{ url_for('vault') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'vault' %} active{% endif %}">
+                    <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span> Vault</span>
+                    <span class="text-xs text-slate-400">Files</span>
+                </a>
+            {% endif %}
             <a href="{{ url_for('teachers') }}" class="minimal-nav-item w-full items-center justify-between{% if active_page == 'teachers' %} active{% endif %}">
                 <span class="flex items-center gap-3 text-sm"><span class="iconify text-lg" data-icon="{% if active_page == 'teachers' %}solar:users-group-rounded-bold{% else %}solar:users-group-rounded-outline{% endif %}"></span> Teachers</span>
                 <span class="text-xs text-slate-400">Directory</span>
@@ -356,7 +360,11 @@
                         {% elif active_page == 'library' %}
                             <a href="{{ url_for('library') }}" class="text-slate-900 font-medium hover:text-slate-900">Library</a>
                         {% elif active_page == 'vault' %}
-                            <a href="{{ url_for('vault') }}" class="text-slate-900 font-medium hover:text-slate-900">Vault</a>
+                            {% if vault_enabled %}
+                                <a href="{{ url_for('vault') }}" class="text-slate-900 font-medium hover:text-slate-900">Vault</a>
+                            {% else %}
+                                <span class="text-slate-900 font-medium">Vault</span>
+                            {% endif %}
                         {% elif active_page == 'exams' %}
                             <a href="{{ url_for('exams') }}" class="text-slate-900 font-medium hover:text-slate-900">Exams</a>
                         {% elif active_page == 'profile' %}
@@ -390,29 +398,35 @@
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center{% if active_page == 'dashboard' %} bg-indigo-50 text-indigo-600{% else %} bg-slate-50 text-slate-600{% endif %}">
                     <span class="iconify text-xl" data-icon="{% if active_page == 'dashboard' %}solar:home-2-bold{% else %}solar:home-2-outline{% endif %}"></span>
                 </div>
-                <span class="text-xs font-medium{% if active_page == 'dashboard' %} text-indigo-600{% else %} text-slate-500{% endif %}">Home</span>
+                <span class="text-[11px] font-medium{% if active_page == 'dashboard' %} text-indigo-700{% else %} text-slate-500 group-hover:text-slate-700{% endif %}">Home</span>
             </a>
+
             <a href="{{ url_for('chat_panel') }}" class="flex flex-col items-center gap-1 group">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center{% if active_page == 'chat' %} bg-indigo-50 text-indigo-600{% else %} bg-slate-50 text-slate-600{% endif %}">
                     <span class="iconify text-xl" data-icon="{% if active_page == 'chat' %}solar:chat-round-dots-bold{% else %}solar:chat-round-dots-outline{% endif %}"></span>
                 </div>
                 <span class="text-[11px] font-medium{% if active_page == 'chat' %} text-indigo-700{% else %} text-slate-500 group-hover:text-slate-700{% endif %}">Chat</span>
             </a>
+
             <a href="{{ url_for('schedules') }}" class="flex flex-col items-center gap-1 group">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center{% if active_page == 'schedules' %} bg-indigo-50 text-indigo-600{% else %} bg-slate-50 text-slate-600{% endif %}">
                     <span class="iconify text-xl" data-icon="{% if active_page == 'schedules' %}solar:calendar-bold{% else %}solar:calendar-outline{% endif %}"></span>
                 </div>
                 <span class="text-[11px] font-medium{% if active_page == 'schedules' %} text-indigo-700{% else %} text-slate-500 group-hover:text-slate-700{% endif %}">Schedule</span>
             </a>
-            <a href="{{ url_for('vault') }}" class="flex flex-col items-center gap-1 group">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center{% if active_page == 'vault' %} bg-indigo-50 text-indigo-600{% else %} bg-slate-50 text-slate-600{% endif %}">
-                    <span class="iconify text-xl" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span>
-                </div>
-                <span class="text-[11px] font-medium{% if active_page == 'vault' %} text-indigo-700{% else %} text-slate-500 group-hover:text-slate-700{% endif %}">Vault</span>
-            </a>
+
+            {% if vault_enabled %}
+                <a href="{{ url_for('vault') }}" class="flex flex-col items-center gap-1 group">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center{% if active_page == 'vault' %} bg-indigo-50 text-indigo-600{% else %} bg-slate-50 text-slate-600{% endif %}">
+                        <span class="iconify text-xl" data-icon="{% if active_page == 'vault' %}solar:folder-with-files-bold{% else %}solar:folder-with-files-outline{% endif %}"></span>
+                    </div>
+                    <span class="text-[11px] font-medium{% if active_page == 'vault' %} text-indigo-700{% else %} text-slate-500 group-hover:text-slate-700{% endif %}">Vault</span>
+                </a>
+            {% endif %}
+
             <a href="{{ url_for('profile') }}" class="flex flex-col items-center gap-1 group">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center{% if active_page == 'profile' %} bg-indigo-50 text-indigo-600{% else %} bg-slate-50 text-slate-600{% endif %}">
-                    <span class="iconify text-xl" data-icon="{% if active_page == 'profile' %}solar:user-bold{% else %}solar:user-outline{% endif %}"></span>
+                    <span class="iconify text-xl" data-icon="{% if active_page == 'profile' %}solar:user-circle-bold{% else %}solar:user-circle-outline{% endif %}"></span>
                 </div>
                 <span class="text-[11px] font-medium{% if active_page == 'profile' %} text-indigo-700{% else %} text-slate-500 group-hover:text-slate-700{% endif %}">Profile</span>
             </a>

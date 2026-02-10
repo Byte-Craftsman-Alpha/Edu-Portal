@@ -643,6 +643,51 @@ def ensure_students_permissions_schema(db: sqlite3.Connection) -> None:
         db.execute("ALTER TABLE students ADD COLUMN can_upload_resource INTEGER NOT NULL DEFAULT 0")
     if "can_chat" not in cols:
         db.execute("ALTER TABLE students ADD COLUMN can_chat INTEGER NOT NULL DEFAULT 0")
+    if "can_use_vault" not in cols:
+        db.execute("ALTER TABLE students ADD COLUMN can_use_vault INTEGER NOT NULL DEFAULT 0")
+
+
+def _student_can_use_vault(db: sqlite3.Connection, student_id: int | None) -> bool:
+    ensure_students_permissions_schema(db)
+    try:
+        sid = int(student_id or 0)
+    except Exception:
+        return False
+    if sid <= 0:
+        return False
+    row = db.execute("SELECT can_use_vault FROM students WHERE id = ?", (sid,)).fetchone()
+    if not row:
+        return False
+    try:
+        return int(row["can_use_vault"] or 0) == 1
+    except Exception:
+        return False
+
+
+def student_vault_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        sid = get_current_student_id()
+        if sid is None:
+            return redirect(url_for("login"))
+        db = get_db()
+        if not _student_can_use_vault(db, sid):
+            return redirect(url_for("dashboard", error=quote("Vault access is disabled. Please contact admin.")))
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+@app.context_processor
+def _inject_student_permissions():
+    try:
+        sid = get_current_student_id()
+        if sid is None:
+            return {"vault_enabled": False}
+        db = get_db()
+        return {"vault_enabled": bool(_student_can_use_vault(db, sid))}
+    except Exception:
+        return {"vault_enabled": False}
 
 
 def ensure_faculty_vault_schema(db: sqlite3.Connection) -> None:
@@ -6419,6 +6464,8 @@ def admin_student_update(student_id: int):
         update_cols.append("can_upload_resource")
     if "can_chat" in student_cols:
         update_cols.append("can_chat")
+    if "can_use_vault" in student_cols:
+        update_cols.append("can_use_vault")
 
     values = {
         "name": form.get("name") or student["name"],
@@ -6441,6 +6488,8 @@ def admin_student_update(student_id: int):
         values["can_upload_resource"] = 1 if (request.form.get("can_upload_resource") in {"1", "on", "true", "yes"}) else 0
     if "can_chat" in student_cols:
         values["can_chat"] = 1 if (request.form.get("can_chat") in {"1", "on", "true", "yes"}) else 0
+    if "can_use_vault" in student_cols:
+        values["can_use_vault"] = 1 if (request.form.get("can_use_vault") in {"1", "on", "true", "yes"}) else 0
 
     set_sql = ", ".join([f"{c} = ?" for c in update_cols])
     db.execute(
@@ -7485,8 +7534,8 @@ def register_post():
         INSERT INTO students (
             name, roll_no, email, phone, guardian, residential_status,
             program, year, sem, attendance_percent, next_class, password_hash, schedule_id,
-            can_upload_resource, can_chat
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            can_upload_resource, can_chat, can_use_vault
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             form["name"],
@@ -7501,7 +7550,8 @@ def register_post():
             attendance_percent_int,
             "",
             password_hash,
-            int(schedule_id),
+            schedule_id,
+            0,
             0,
             0,
         ),
@@ -7580,24 +7630,29 @@ def dashboard():
 
     ensure_schedule_schema(db)
     ensure_group_chat_schema(db)
+    ensure_students_permissions_schema(db)
 
     student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
 
-    folders = db.execute(
-        "SELECT * FROM vault_folders WHERE student_id = ? ORDER BY datetime(created_at) DESC",
-        (sid,),
-    ).fetchall()
-    files = db.execute(
-        """
-        SELECT vf.*, vfo.name AS folder_name
-        FROM vault_files vf
-        JOIN vault_folders vfo ON vfo.id = vf.folder_id
-        WHERE vf.student_id = ?
-        ORDER BY datetime(vf.uploaded_at) DESC
-        LIMIT 12
-        """,
-        (sid,),
-    ).fetchall()
+    vault_enabled = _student_can_use_vault(db, sid)
+    folders = []
+    files = []
+    if vault_enabled:
+        folders = db.execute(
+            "SELECT * FROM vault_folders WHERE student_id = ? ORDER BY datetime(created_at) DESC",
+            (sid,),
+        ).fetchall()
+        files = db.execute(
+            """
+            SELECT vf.*, vfo.name AS folder_name
+            FROM vault_files vf
+            JOIN vault_folders vfo ON vfo.id = vf.folder_id
+            WHERE vf.student_id = ?
+            ORDER BY datetime(vf.uploaded_at) DESC
+            LIMIT 12
+            """,
+            (sid,),
+        ).fetchall()
 
     schedule_id = int(student["schedule_id"] or 1) if student and ("schedule_id" in student.keys()) else 1
     today = datetime.now()
@@ -7633,12 +7688,14 @@ def dashboard():
         page_subtitle=f"Welcome back, {student['name'].split(' ')[0]}" if student else "Welcome back",
         active_page="dashboard",
         student=student,
+        vault_enabled=bool(vault_enabled),
         vault_folders=folders,
         vault_files=files,
         today_dow=today_dow,
         today_schedule=today_schedule,
         chat_recent=chat_recent,
         resources_recent=resources_recent,
+        error=(request.args.get("error") or "").strip() or None,
     )
 
 
@@ -7742,7 +7799,7 @@ def teachers():
 
 
 @app.post("/vault/folders")
-@login_required
+@student_vault_required
 def vault_folder_create():
     sid = get_current_student_id()
     name = (request.form.get("name") or "").strip()
@@ -7763,7 +7820,7 @@ def vault_folder_create():
 
 
 @app.post("/vault/folders/<int:folder_id>/delete")
-@login_required
+@student_vault_required
 def vault_folder_delete(folder_id: int):
     sid = get_current_student_id()
     db = get_db()
@@ -7784,7 +7841,7 @@ def vault_folder_delete(folder_id: int):
 
 
 @app.post("/vault/folders/<int:folder_id>/rename")
-@login_required
+@student_vault_required
 def vault_folder_rename(folder_id: int):
     sid = get_current_student_id()
     name = (request.form.get("name") or "").strip()
@@ -7808,7 +7865,7 @@ def vault_folder_rename(folder_id: int):
 
 
 @app.post("/vault/files")
-@login_required
+@student_vault_required
 def vault_file_upload():
     sid = get_current_student_id()
     try:
@@ -7845,7 +7902,7 @@ def vault_file_upload():
 
 
 @app.get("/vault/files/<int:file_id>/download")
-@login_required
+@student_vault_required
 def vault_file_download(file_id: int):
     sid = get_current_student_id()
     db = get_db()
@@ -7872,7 +7929,7 @@ def vault_file_download(file_id: int):
 
 
 @app.post("/vault/files/<int:file_id>/delete")
-@login_required
+@student_vault_required
 def vault_file_delete(file_id: int):
     sid = get_current_student_id()
     db = get_db()
@@ -7891,7 +7948,7 @@ def vault_file_delete(file_id: int):
 
 
 @app.post("/vault/files/<int:file_id>/rename")
-@login_required
+@student_vault_required
 def vault_file_rename(file_id: int):
     sid = get_current_student_id()
     name = (request.form.get("name") or "").strip()
@@ -7915,7 +7972,7 @@ def vault_file_rename(file_id: int):
 
 
 @app.post("/vault/files/bulk-delete")
-@login_required
+@student_vault_required
 def vault_files_bulk_delete():
     sid = get_current_student_id()
     raw_ids = request.form.getlist("file_ids")
@@ -7946,7 +8003,7 @@ def vault_files_bulk_delete():
 
 
 @app.post("/vault/files/bulk-move")
-@login_required
+@student_vault_required
 def vault_files_bulk_move():
     sid = get_current_student_id()
     raw_ids = request.form.getlist("file_ids")
@@ -7982,7 +8039,7 @@ def vault_files_bulk_move():
 
 
 @app.post("/vault/files/bulk-copy")
-@login_required
+@student_vault_required
 def vault_files_bulk_copy():
     sid = get_current_student_id()
     raw_ids = request.form.getlist("file_ids")
@@ -8055,7 +8112,7 @@ def vault_files_bulk_copy():
 
 
 @app.get("/vault")
-@login_required
+@student_vault_required
 def vault():
     db = get_db()
     sid = get_current_student_id()
