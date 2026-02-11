@@ -29,27 +29,93 @@
         Importing schedules may overwrite existing data if you enable replacement. Make sure you have exported a backup before importing.
     </div>
 
-    <form method="post" action="{{ url_for('admin_schedules_import') }}" enctype="multipart/form-data" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2" onsubmit="return confirm('Warning: Importing schedules may overwrite/erase existing schedules (depending on options).\n\nDo you want to continue?');">
-        <input name="schedule_json" type="file" accept="application/json,.json" class="admin-input sm:col-span-2" />
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" name="replace_weekly" value="1" class="rounded border-slate-300" />
-            Replace weekly timetable rows for imported groups
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" name="delete_missing_groups" value="1" class="rounded border-slate-300" />
-            Delete schedule groups not present in the JSON (only when replacing weekly)
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" name="import_monthly" value="1" class="rounded border-slate-300" />
-            Import monthly schedules (events/holidays)
-        </label>
-        <div class="sm:col-span-2 flex justify-end pt-1">
-            <button type="submit" class="admin-btn admin-btn-primary inline-flex items-center gap-2">
-                <span class="iconify text-base" data-icon="solar:upload-minimalistic-outline"></span>
-                Import JSON
-            </button>
+    <form id="scheduleImportForm" method="post" action="{{ url_for('admin_schedules_import') }}" enctype="multipart/form-data" class="mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input id="scheduleImportFile" name="schedule_json" type="file" accept="application/json,.json" class="admin-input sm:col-span-2" />
+
+            <div class="sm:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
+                <button id="scheduleImportPreviewBtn" type="button" class="admin-btn admin-btn-soft inline-flex items-center justify-center gap-2" disabled>
+                    <span class="iconify text-base" data-icon="solar:eye-outline"></span>
+                    Preview import
+                </button>
+            </div>
         </div>
+
+        <input type="hidden" name="replace_weekly" value="0" />
+        <input type="hidden" name="delete_missing_groups" value="0" />
+        <input type="hidden" name="import_monthly" value="0" />
+        <input type="hidden" name="replace_monthly" value="0" />
     </form>
+</div>
+
+<div id="scheduleImportModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div id="scheduleImportModalBackdrop" class="fixed inset-0 bg-slate-900/50 z-40"></div>
+    <div class="min-h-full w-full flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden relative z-50">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Import preview</div>
+                    <div class="text-sm font-semibold text-slate-900 mt-1">Review what will be imported</div>
+                    <div class="text-sm text-slate-600 mt-1">Choose options and confirm to start importing.</div>
+                </div>
+                <button id="scheduleImportModalClose" type="button" class="admin-btn admin-btn-soft text-xs">Close</button>
+            </div>
+
+            <div class="p-5 max-h-[78vh] overflow-auto">
+                <div id="scheduleImportPreviewError" class="hidden mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Weekly groups</div>
+                        <div id="previewWeeklyGroups" class="mt-1 text-2xl font-semibold text-slate-900">-</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Weekly rows</div>
+                        <div id="previewWeeklyRows" class="mt-1 text-2xl font-semibold text-slate-900">-</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Monthly items</div>
+                        <div id="previewMonthly" class="mt-1 text-2xl font-semibold text-slate-900">-</div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 p-4 mb-4">
+                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Weekly groups breakdown</div>
+                    <div id="previewWeeklyGroupsList" class="mt-2 max-h-56 overflow-auto text-sm text-slate-700"></div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Import options</div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input id="optReplaceWeekly" type="checkbox" class="mt-0.5 rounded border-slate-300" />
+                            <span>Replace weekly timetable rows for imported groups</span>
+                        </label>
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input id="optDeleteMissingGroups" type="checkbox" class="mt-0.5 rounded border-slate-300" />
+                            <span>Delete groups not present in JSON (only when replacing weekly)</span>
+                        </label>
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input id="optImportMonthly" type="checkbox" class="mt-0.5 rounded border-slate-300" checked />
+                            <span>Import monthly schedules (events/holidays)</span>
+                        </label>
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input id="optReplaceMonthly" type="checkbox" class="mt-0.5 rounded border-slate-300" />
+                            <span>Replace all monthly schedules (deletes existing monthly items)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+                <button id="scheduleImportConfirm" type="button" class="admin-btn admin-btn-primary inline-flex items-center justify-center gap-2">
+                    <span class="iconify text-base" data-icon="solar:upload-minimalistic-outline"></span>
+                    Confirm import
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -79,6 +145,21 @@
             <input id="monthlySearch" type="text" placeholder="Search monthly items..." class="admin-input w-full" />
         </div>
 
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input id="monthlySelectAll" type="checkbox" class="rounded border-slate-300" />
+                    Select all
+                    <span id="monthlySelectedCount" class="text-xs text-slate-500">(0 selected)</span>
+                </label>
+                <button id="monthlyBulkDelete" type="button" class="admin-btn admin-btn-danger text-xs inline-flex items-center gap-2" disabled>
+                    <span class="iconify text-sm" data-icon="solar:trash-bin-trash-outline"></span>
+                    Delete selected
+                </button>
+            </div>
+            <form id="monthlyBulkDeleteForm" method="post" action="{{ url_for('admin_calendar_items_bulk_delete') }}"></form>
+        </div>
+
         {% if calendar_items %}
             <div id="monthlyItems" class="grid grid-cols-1 gap-4">
                 {% for it in calendar_items %}
@@ -88,6 +169,7 @@
                                 <div class="min-w-0">
                                     <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">{{ it.item_date }}</div>
                                     <div class="mt-1 flex items-center gap-2">
+                                        <input type="checkbox" class="monthlyItemCheckbox rounded border-slate-300" value="{{ it.id }}" />
                                         <span class="admin-pill bg-slate-100 text-slate-700 text-xs">{{ it.item_type }}</span>
                                         <span class="text-sm font-semibold text-slate-900 truncate">{{ it.title }}</span>
                                     </div>
@@ -360,6 +442,175 @@
 
 <script>
     (function () {
+        var scheduleImportForm = document.getElementById('scheduleImportForm');
+        var scheduleImportFile = document.getElementById('scheduleImportFile');
+        var scheduleImportPreviewBtn = document.getElementById('scheduleImportPreviewBtn');
+        var scheduleImportModal = document.getElementById('scheduleImportModal');
+        var scheduleImportModalClose = document.getElementById('scheduleImportModalClose');
+        var scheduleImportConfirm = document.getElementById('scheduleImportConfirm');
+        var scheduleImportPreviewError = document.getElementById('scheduleImportPreviewError');
+        var previewWeeklyGroups = document.getElementById('previewWeeklyGroups');
+        var previewWeeklyRows = document.getElementById('previewWeeklyRows');
+        var previewMonthly = document.getElementById('previewMonthly');
+        var previewWeeklyGroupsList = document.getElementById('previewWeeklyGroupsList');
+
+        var optReplaceWeekly = document.getElementById('optReplaceWeekly');
+        var optDeleteMissingGroups = document.getElementById('optDeleteMissingGroups');
+        var optImportMonthly = document.getElementById('optImportMonthly');
+        var optReplaceMonthly = document.getElementById('optReplaceMonthly');
+
+        function setScheduleImportModalOpen(isOpen) {
+            if (!scheduleImportModal) return;
+            scheduleImportModal.classList.toggle('hidden', !isOpen);
+        }
+
+        function setPreviewError(msg) {
+            if (!scheduleImportPreviewError) return;
+            if (!msg) {
+                scheduleImportPreviewError.classList.add('hidden');
+                scheduleImportPreviewError.textContent = '';
+                return;
+            }
+            scheduleImportPreviewError.classList.remove('hidden');
+            scheduleImportPreviewError.textContent = msg;
+        }
+
+        function setText(el, text) {
+            if (!el) return;
+            el.textContent = text;
+        }
+
+        function syncImportOptionDeps() {
+            if (optDeleteMissingGroups && optReplaceWeekly) {
+                optDeleteMissingGroups.disabled = !optReplaceWeekly.checked;
+                if (!optReplaceWeekly.checked) optDeleteMissingGroups.checked = false;
+            }
+            if (optReplaceMonthly && optImportMonthly) {
+                optReplaceMonthly.disabled = !optImportMonthly.checked;
+                if (!optImportMonthly.checked) optReplaceMonthly.checked = false;
+            }
+        }
+
+        if (optReplaceWeekly) optReplaceWeekly.addEventListener('change', syncImportOptionDeps);
+        if (optImportMonthly) optImportMonthly.addEventListener('change', syncImportOptionDeps);
+        syncImportOptionDeps();
+
+        if (scheduleImportFile && scheduleImportPreviewBtn) {
+            scheduleImportFile.addEventListener('change', function () {
+                scheduleImportPreviewBtn.disabled = !(scheduleImportFile.files && scheduleImportFile.files.length);
+            });
+        }
+
+        if (scheduleImportModalClose) {
+            scheduleImportModalClose.addEventListener('click', function () {
+                setScheduleImportModalOpen(false);
+            });
+        }
+        var scheduleImportModalBackdrop = document.getElementById('scheduleImportModalBackdrop');
+        if (scheduleImportModalBackdrop) {
+            scheduleImportModalBackdrop.addEventListener('click', function () {
+                setScheduleImportModalOpen(false);
+            });
+        }
+
+        async function previewImport() {
+            setPreviewError('');
+            setText(previewWeeklyGroups, '-');
+            setText(previewWeeklyRows, '-');
+            setText(previewMonthly, '-');
+            if (previewWeeklyGroupsList) previewWeeklyGroupsList.textContent = '';
+
+            if (!scheduleImportFile || !(scheduleImportFile.files && scheduleImportFile.files.length)) {
+                setPreviewError('Please choose a JSON file first.');
+                return;
+            }
+
+            var fd = new FormData();
+            fd.append('schedule_json', scheduleImportFile.files[0]);
+
+            var resp;
+            try {
+                resp = await fetch('{{ url_for("admin_schedules_import_preview") }}', {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+            } catch (e) {
+                setPreviewError('Failed to contact server for preview.');
+                return;
+            }
+
+            var data = null;
+            try {
+                data = await resp.json();
+            } catch (e2) {
+                setPreviewError('Preview response was not valid JSON.');
+                return;
+            }
+
+            if (!resp.ok || !data || data.ok !== true) {
+                setPreviewError((data && data.error) ? data.error : 'Unable to preview import.');
+                return;
+            }
+
+            setText(previewWeeklyGroups, String(data.weekly_groups_count || 0));
+            setText(previewWeeklyRows, String(data.weekly_total_rows || 0));
+            setText(previewMonthly, String(data.monthly_count || 0));
+
+            if (previewWeeklyGroupsList) {
+                var groups = Array.isArray(data.weekly_groups) ? data.weekly_groups : [];
+                if (!groups.length) {
+                    previewWeeklyGroupsList.textContent = 'No weekly schedule groups found in this JSON.';
+                } else {
+                    var frag = document.createDocumentFragment();
+                    groups.forEach(function (g) {
+                        var row = document.createElement('div');
+                        row.className = 'flex items-center justify-between gap-3 py-1 border-b border-slate-100 last:border-b-0';
+                        var left = document.createElement('div');
+                        left.className = 'min-w-0 truncate';
+                        left.textContent = g.name || '(Unnamed group)';
+                        var right = document.createElement('div');
+                        right.className = 'text-xs text-slate-500';
+                        right.textContent = String(g.rows || 0) + ' rows';
+                        row.appendChild(left);
+                        row.appendChild(right);
+                        frag.appendChild(row);
+                    });
+                    previewWeeklyGroupsList.appendChild(frag);
+                }
+            }
+
+            syncImportOptionDeps();
+            setScheduleImportModalOpen(true);
+        }
+
+        if (scheduleImportPreviewBtn) {
+            scheduleImportPreviewBtn.addEventListener('click', function () {
+                previewImport();
+            });
+        }
+
+        function setHiddenValue(form, name, value) {
+            if (!form) return;
+            var input = form.querySelector('input[name="' + name + '"]');
+            if (input) input.value = value;
+        }
+
+        if (scheduleImportConfirm && scheduleImportForm) {
+            scheduleImportConfirm.addEventListener('click', function () {
+                syncImportOptionDeps();
+                setHiddenValue(scheduleImportForm, 'replace_weekly', (optReplaceWeekly && optReplaceWeekly.checked) ? '1' : '0');
+                setHiddenValue(scheduleImportForm, 'delete_missing_groups', (optDeleteMissingGroups && optDeleteMissingGroups.checked) ? '1' : '0');
+                setHiddenValue(scheduleImportForm, 'import_monthly', (optImportMonthly && optImportMonthly.checked) ? '1' : '0');
+                setHiddenValue(scheduleImportForm, 'replace_monthly', (optReplaceMonthly && optReplaceMonthly.checked) ? '1' : '0');
+
+                if (!confirm('Warning: Importing schedules may overwrite/erase existing schedules (depending on options).\n\nDo you want to continue?')) {
+                    return;
+                }
+                scheduleImportForm.submit();
+            });
+        }
+
         function wireSearch(inputId, containerId) {
             var input = document.getElementById(inputId);
             var container = document.getElementById(containerId);
@@ -381,6 +632,11 @@
         wireSearch('monthlySearch', 'monthlyItems');
         wireSearch('weeklySearch', 'weeklyItems');
 
+        var monthlySelectAll = document.getElementById('monthlySelectAll');
+        var monthlySelectedCount = document.getElementById('monthlySelectedCount');
+        var monthlyBulkDeleteBtn = document.getElementById('monthlyBulkDelete');
+        var monthlyBulkDeleteForm = document.getElementById('monthlyBulkDeleteForm');
+
         var selectAll = document.getElementById('weeklySelectAll');
         var selectedCount = document.getElementById('weeklySelectedCount');
         var bulkDeleteBtn = document.getElementById('weeklyBulkDelete');
@@ -391,6 +647,64 @@
         var bulkDeleteForm = document.getElementById('weeklyBulkDeleteForm');
         var scheduleGroupEditToggle = document.getElementById('scheduleGroupEditToggle');
         var scheduleGroupRenameForm = document.getElementById('scheduleGroupRenameForm');
+
+        function getMonthlyCheckboxes() {
+            var container = document.getElementById('monthlyItems');
+            if (!container) return [];
+            return Array.prototype.slice.call(container.querySelectorAll('.monthlyItemCheckbox'));
+        }
+
+        function getSelectedMonthlyIds() {
+            return getMonthlyCheckboxes().filter(function (cb) { return cb.checked; }).map(function (cb) { return cb.value; });
+        }
+
+        function setHiddenMonthlyIds(form, ids) {
+            if (!form) return;
+            form.querySelectorAll('input[data-monthly-selected="1"]').forEach(function (n) { n.remove(); });
+            ids.forEach(function (id) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'item_ids';
+                inp.value = id;
+                inp.setAttribute('data-monthly-selected', '1');
+                form.appendChild(inp);
+            });
+        }
+
+        function syncMonthlySelectedUi() {
+            var ids = getSelectedMonthlyIds();
+            if (monthlySelectedCount) {
+                monthlySelectedCount.textContent = '(' + ids.length + ' selected)';
+            }
+            var has = ids.length > 0;
+            if (monthlyBulkDeleteBtn) monthlyBulkDeleteBtn.disabled = !has;
+            if (monthlySelectAll) {
+                var all = getMonthlyCheckboxes();
+                var allChecked = all.length > 0 && all.every(function (cb) { return cb.checked; });
+                monthlySelectAll.checked = allChecked;
+            }
+        }
+
+        if (monthlySelectAll) {
+            monthlySelectAll.addEventListener('change', function () {
+                var all = getMonthlyCheckboxes();
+                all.forEach(function (cb) { cb.checked = monthlySelectAll.checked; });
+                syncMonthlySelectedUi();
+            });
+        }
+
+        getMonthlyCheckboxes().forEach(function (cb) {
+            cb.addEventListener('change', syncMonthlySelectedUi);
+        });
+
+        if (monthlyBulkDeleteBtn && monthlyBulkDeleteForm) {
+            monthlyBulkDeleteBtn.addEventListener('click', function () {
+                if (!confirm('Delete selected monthly items?')) return;
+                var ids = getSelectedMonthlyIds();
+                setHiddenMonthlyIds(monthlyBulkDeleteForm, ids);
+                monthlyBulkDeleteForm.submit();
+            });
+        }
 
         function getRowCheckboxes() {
             var container = document.getElementById('weeklyItems');
@@ -484,6 +798,7 @@
         }
 
         syncSelectedUi();
+        syncMonthlySelectedUi();
     })();
 </script>
 {% endblock %}

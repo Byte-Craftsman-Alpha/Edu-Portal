@@ -5251,6 +5251,7 @@ def admin_schedules_import():
     replace_weekly = (request.form.get("replace_weekly") or "").strip() == "1"
     delete_missing_groups = (request.form.get("delete_missing_groups") or "").strip() == "1"
     import_monthly = (request.form.get("import_monthly") or "").strip() == "1"
+    replace_monthly = (request.form.get("replace_monthly") or "").strip() == "1"
 
     try:
         raw = upload.read()
@@ -5364,6 +5365,8 @@ def admin_schedules_import():
             db.execute("DELETE FROM schedule_groups WHERE id = ?", (gid,))
 
     if import_monthly and isinstance(monthly, list):
+        if replace_monthly:
+            db.execute("DELETE FROM calendar_items")
         for it in monthly:
             if not isinstance(it, dict):
                 continue
@@ -5388,6 +5391,48 @@ def admin_schedules_import():
     if import_monthly:
         msg += f"; imported {imported_monthly} monthly items"
     return redirect(url_for("admin_schedules", success=msg))
+
+
+@app.post("/admin/schedules/import/preview")
+@admin_login_required
+def admin_schedules_import_preview():
+    upload = request.files.get("schedule_json")
+    if upload is None or not (upload.filename or "").strip():
+        return jsonify({"ok": False, "error": "Please choose a JSON file to preview."}), 400
+
+    try:
+        raw = upload.read()
+        text = raw.decode("utf-8") if isinstance(raw, (bytes, bytearray)) else str(raw)
+        payload = json.loads(text)
+    except Exception:
+        return jsonify({"ok": False, "error": "Invalid JSON file."}), 400
+
+    weekly = payload.get("weekly_schedules")
+    monthly = payload.get("monthly_schedules")
+
+    weekly_groups: list[dict] = []
+    total_weekly_rows = 0
+    if isinstance(weekly, list):
+        for g in weekly:
+            if not isinstance(g, dict):
+                continue
+            name = (g.get("group_name") or g.get("name") or "").strip() or "(Unnamed group)"
+            rows = g.get("timetable")
+            row_count = len(rows) if isinstance(rows, list) else 0
+            total_weekly_rows += row_count
+            weekly_groups.append({"name": name, "rows": row_count})
+
+    monthly_count = len(monthly) if isinstance(monthly, list) else 0
+
+    return jsonify(
+        {
+            "ok": True,
+            "weekly_groups_count": len(weekly_groups),
+            "weekly_total_rows": total_weekly_rows,
+            "weekly_groups": weekly_groups,
+            "monthly_count": monthly_count,
+        }
+    )
 
 
 @app.post("/admin/calendar-items/new")
@@ -5433,6 +5478,26 @@ def admin_calendar_item_delete(item_id: int):
     db.execute("DELETE FROM calendar_items WHERE id = ?", (int(item_id),))
     db.commit()
     return redirect(url_for("admin_schedules"))
+
+
+@app.post("/admin/calendar-items/bulk-delete")
+@admin_login_required
+def admin_calendar_items_bulk_delete():
+    raw_ids = request.form.getlist("item_ids")
+    ids: list[int] = []
+    for x in raw_ids:
+        try:
+            ids.append(int(x))
+        except Exception:
+            continue
+    if not ids:
+        return redirect(url_for("admin_schedules"))
+
+    q_marks = ",".join(["?"] * len(ids))
+    db = get_db()
+    db.execute(f"DELETE FROM calendar_items WHERE id IN ({q_marks})", tuple(ids))
+    db.commit()
+    return redirect(url_for("admin_schedules", success=f"Deleted {len(ids)} monthly items."))
 
 
 @app.post("/admin/schedules/groups/new")
