@@ -9,13 +9,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 flex items-center justify-center p-6">
+<body
+    class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 flex items-center justify-center p-6">
     <div class="w-full max-w-3xl">
-        <div class="bg-white border border-slate-200 rounded-2xl shadow-[0_30px_80px_rgba(15,23,42,0.15),0_2px_10px_rgba(15,23,42,0.06)] p-8">
+        <div
+            class="bg-white border border-slate-200 rounded-2xl shadow-[0_30px_80px_rgba(15,23,42,0.15),0_2px_10px_rgba(15,23,42,0.06)] p-8">
             <div class="flex items-center justify-between gap-4 mb-6">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
-                        <img src="{{ url_for('static', filename='app_icon/logo.png') }}" alt="EduPortal" class="w-10 h-10 object-contain" />
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                        <img src="{{ url_for('static', filename='app_icon/logo.png') }}" alt="EduPortal"
+                            class="w-10 h-10 object-contain" />
                     </div>
                     <div class="leading-tight">
                         <div class="text-xs uppercase tracking-[0.2em] text-slate-500 font-semibold">EduPortal</div>
@@ -23,7 +27,9 @@
                         <div class="text-xs text-slate-400">Create your account to access your personalized portal</div>
                     </div>
                 </div>
-                <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Back to Login</a>
+                <a href="{{ url_for('login') }}"
+                    class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all">Back
+                    to Login</a>
             </div>
 
             {% if error %}
@@ -56,28 +62,43 @@
                     <h3 class="text-sm font-semibold text-slate-900">Account & Basic Info</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Full Name *</label>
-                            <input name="name" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Full
+                                Name *</label>
+                            <input name="name" type="text"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Roll Number *</label>
-                            <input name="roll_no" type="text" autocomplete="username" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Roll
+                                Number *</label>
+                            <input name="roll_no" type="text" autocomplete="username"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email *</label>
-                            <input name="email" type="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email
+                                *</label>
+                            <input name="email" type="email"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone *</label>
-                            <input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number" pattern="^[6-9][0-9]{9}$" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone
+                                *</label>
+                            <input name="phone" type="tel" inputmode="numeric" autocomplete="tel"
+                                placeholder="10-digit mobile number" pattern="^[6-9][0-9]{9}$"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Password *</label>
-                            <input name="password" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Password
+                                *</label>
+                            <input name="password" type="password" autocomplete="new-password"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Confirm Password *</label>
-                            <input name="confirm_password" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Confirm
+                                Password *</label>
+                            <input name="confirm_password" type="password" autocomplete="new-password"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                     </div>
                 </section>
@@ -86,45 +107,79 @@
                     <h3 class="text-sm font-semibold text-slate-900">Academic & Personal Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Program *</label>
-                            <input name="program" type="text" placeholder="e.g. B.Tech in Computer Science" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Program
+                                *</label>
+                            <input name="program" type="text" placeholder="e.g. B.Tech in Computer Science"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Year *</label>
-                            <input name="year" type="number" min="1" max="8" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Year
+                                *</label>
+                            <input name="year" type="number" min="1" max="8"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester *</label>
-                            <input name="sem" type="number" min="1" max="12" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Semester
+                                *</label>
+                            <input name="sem" type="number" min="1" max="12"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Department *</label>
-                            <input name="department" type="text" placeholder="e.g. Computer Science" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+                                Department *
+                            </label>
+
+                            <select name="department"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+
+                                <option value="">Select Department</option>
+                                <option value="CSE">Computer Science Engineering (CSE)</option>
+                                <option value="AIML">Artificial Intelligence & ML (AIML)</option>
+                                <option value="IT">Information Technology (IT)</option>
+                                <option value="ECE">Electronics & Communication (ECE)</option>
+                                <option value="ME">Mechanical Engineering (ME)</option>
+
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Weekly Schedule *</label>
-                            <select name="schedule_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Weekly
+                                Schedule *</label>
+                            <select name="schedule_id"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
                                 <option value="" selected>Select schedule</option>
                                 {% for g in schedule_groups or [] %}
-                                    <option value="{{ g.id }}">{{ g.name }}</option>
+                                <option value="{{ g.id }}">{{ g.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Batch *</label>
-                            <input name="batch" type="text" placeholder="e.g. 2023-2027" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Batch
+                                *</label>
+                            <input name="batch" type="text" placeholder="e.g. 2023-2027"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Section *</label>
-                            <input name="section" type="text" placeholder="e.g. A" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Section
+                                *</label>
+                            <input name="section" type="text" placeholder="e.g. A"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Guardian *</label>
-                            <input name="guardian" type="text" placeholder="e.g. Name (Father/Mother)" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Guardian
+                                *</label>
+                            <input name="guardian" type="text" placeholder="e.g. Name (Father/Mother)"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Residential Status *</label>
-                            <select name="residential_status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Residential
+                                Status *</label>
+                            <select name="residential_status"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
                                 <option value="" selected>Select status</option>
                                 <option value="Day Scholar">Day Scholar</option>
                                 <option value="Hosteler">Hosteler</option>
@@ -134,12 +189,17 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Father's Name *</label>
-                            <input name="father_name" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Father's
+                                Name *</label>
+                            <input name="father_name" type="text"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Gender *</label>
-                            <select name="gender" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Gender
+                                *</label>
+                            <select name="gender"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
                                 <option value="" selected>Select gender</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
@@ -147,8 +207,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Category *</label>
-                            <select name="category" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Category
+                                *</label>
+                            <select name="category"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
                                 <option value="" selected>Select category</option>
                                 <option value="GENERAL">GENERAL</option>
                                 <option value="OBC">OBC</option>
@@ -158,14 +221,18 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Exam Roll Number (optional)</label>
-                            <input name="exam_roll_number" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Exam
+                                Roll Number (optional)</label>
+                            <input name="exam_roll_number" type="text"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Address *</label>
-                        <textarea name="address" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"></textarea>
+                        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Address
+                            *</label>
+                        <textarea name="address" rows="3"
+                            class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"></textarea>
                     </div>
                 </section>
 
@@ -173,20 +240,33 @@
                     <h3 class="text-sm font-semibold text-slate-900">Emergency Contact & Extras</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Name *</label>
-                            <input name="emergency_contact_name" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency
+                                Contact Name *</label>
+                            <input name="emergency_contact_name" type="text"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Relation *</label>
-                            <input name="emergency_contact_relation" type="text" placeholder="Father / Mother / Guardian" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency
+                                Contact Relation *</label>
+                            <input name="emergency_contact_relation" type="text"
+                                placeholder="Father / Mother / Guardian"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency Contact Phone *</label>
-                            <input name="emergency_contact_phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit contact number" pattern="^\d{10}$" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
+                            <label
+                                class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Emergency
+                                Contact Phone *</label>
+                            <input name="emergency_contact_phone" type="tel" inputmode="numeric" autocomplete="tel"
+                                placeholder="10-digit contact number" pattern="^\d{10}$"
+                                class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status (optional)</label>
-                            <select name="status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                            <label class="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Status
+                                (optional)</label>
+                            <select name="status"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
                                 <option value="Active" selected>Active</option>
                                 <option value="Inactive">Inactive</option>
                                 <option value="On Leave">On Leave</option>
@@ -202,10 +282,15 @@
                 </section>
 
                 <div class="flex items-center justify-between pt-2">
-                    <button type="button" id="prevBtn" class="px-4 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" disabled>Back</button>
+                    <button type="button" id="prevBtn"
+                        class="px-4 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all"
+                        disabled>Back</button>
                     <div class="flex items-center gap-2">
-                        <button type="button" id="nextBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-medium transition-all">Next</button>
-                        <button type="submit" id="submitBtn" class="hidden px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-sm font-medium transition-all">Create Account</button>
+                        <button type="button" id="nextBtn"
+                            class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-medium transition-all">Next</button>
+                        <button type="submit" id="submitBtn"
+                            class="hidden px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-sm font-medium transition-all">Create
+                            Account</button>
                     </div>
                 </div>
             </form>
@@ -213,7 +298,7 @@
     </div>
 
     <script>
-        (function() {
+        (function () {
             const steps = Array.from(document.querySelectorAll('[data-step]'));
             let current = 0;
 
