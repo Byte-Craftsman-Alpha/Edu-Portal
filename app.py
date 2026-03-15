@@ -13,6 +13,7 @@ from urllib.parse import quote
 import uuid
 import json
 import io
+import base64
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -20,6 +21,31 @@ import re
 
 from flask_socketio import SocketIO, join_room, disconnect, emit
 from pywebpush import webpush, WebPushException
+from cryptography.hazmat.primitives import serialization
+
+
+def _load_dotenv_file(path: Path) -> None:
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except Exception:
+        return
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in {"'", '"'}:
+            val = val[1:-1]
+        os.environ[key] = val
+
+
+_load_dotenv_file(Path(__file__).with_name(".env"))
 
 app = Flask(__name__)
 
@@ -116,7 +142,74 @@ def ensure_group_chat_schema(db: sqlite3.Connection) -> None:
             is_deleted INTEGER NOT NULL DEFAULT 0,
             edited_at TEXT,
             edited_by_type TEXT,
-            edited_by_id INTEGER
+            edited_by_id INTEGER,
+            kind TEXT NOT NULL DEFAULT 'text',
+            poll_id INTEGER
+        )
+        """
+    )
+
+    cols = {row[1] for row in db.execute("PRAGMA table_info(group_chat_messages)").fetchall()}
+    if "kind" not in cols:
+        db.execute("ALTER TABLE group_chat_messages ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'")
+    if "poll_id" not in cols:
+        db.execute("ALTER TABLE group_chat_messages ADD COLUMN poll_id INTEGER")
+
+    ensure_chat_poll_schema(db)
+    ensure_chat_pin_schema(db)
+
+
+def ensure_chat_poll_schema(db: sqlite3.Connection) -> None:
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS chat_polls (
+            id INTEGER PRIMARY KEY,
+            question TEXT NOT NULL,
+            poll_type TEXT NOT NULL,
+            actor_type TEXT NOT NULL,
+            actor_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            is_closed INTEGER NOT NULL DEFAULT 0
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS chat_poll_options (
+            id INTEGER PRIMARY KEY,
+            poll_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            position INTEGER NOT NULL,
+            FOREIGN KEY(poll_id) REFERENCES chat_polls(id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS chat_poll_votes (
+            id INTEGER PRIMARY KEY,
+            poll_id INTEGER NOT NULL,
+            option_id INTEGER NOT NULL,
+            actor_type TEXT NOT NULL,
+            actor_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(poll_id, option_id, actor_type, actor_id),
+            FOREIGN KEY(poll_id) REFERENCES chat_polls(id) ON DELETE CASCADE,
+            FOREIGN KEY(option_id) REFERENCES chat_poll_options(id) ON DELETE CASCADE
+        )
+        """
+    )
+
+
+def ensure_chat_pin_schema(db: sqlite3.Connection) -> None:
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS chat_pinned_message (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            message_id INTEGER NOT NULL,
+            pinned_by_type TEXT NOT NULL,
+            pinned_by_id INTEGER NOT NULL,
+            pinned_at TEXT NOT NULL
         )
         """
     )
@@ -231,12 +324,96 @@ def _get_actor_from_session(db: sqlite3.Connection) -> dict | None:
     return None
 
 
-def _chat_row_to_msg(row: sqlite3.Row) -> dict:
+def _actor_name_from_type_id(db: sqlite3.Connection, actor_type: str, actor_id: int) -> str:
+    t = (actor_type or "").strip().lower()
+    if t == "admin":
+        row = db.execute("SELECT full_name FROM admin_users WHERE id = ?", (int(actor_id),)).fetchone()
+        return str(row["full_name"] or "Admin") if row else "Admin"
+    if t == "faculty":
+        ensure_faculty_users_schema(db)
+        row = db.execute("SELECT full_name FROM faculty_users WHERE id = ?", (int(actor_id),)).fetchone()
+        return str(row["full_name"] or "Faculty") if row else "Faculty"
+    row = db.execute("SELECT name FROM students WHERE id = ?", (int(actor_id),)).fetchone()
+    return str(row["name"] or "Student") if row else "Student"
+
+
+def _poll_payload(db: sqlite3.Connection, poll_id: int, actor: dict | None = None) -> dict | None:
+    if not poll_id:
+        return None
+    poll = db.execute("SELECT * FROM chat_polls WHERE id = ?", (int(poll_id),)).fetchone()
+    if not poll:
+        return None
+
+    options = db.execute(
+        """
+        SELECT id, label, position
+        FROM chat_poll_options
+        WHERE poll_id = ?
+        ORDER BY position ASC, id ASC
+        """,
+        (int(poll_id),),
+    ).fetchall()
+    counts_rows = db.execute(
+        """
+        SELECT option_id, COUNT(*) as c
+        FROM chat_poll_votes
+        WHERE poll_id = ?
+        GROUP BY option_id
+        """,
+        (int(poll_id),),
+    ).fetchall()
+    counts = {int(r["option_id"]): int(r["c"]) for r in counts_rows}
+
+    total_voters_row = db.execute(
+        """
+        SELECT COUNT(DISTINCT actor_type || ':' || actor_id) AS c
+        FROM chat_poll_votes
+        WHERE poll_id = ?
+        """,
+        (int(poll_id),),
+    ).fetchone()
+    total_voters = int(total_voters_row["c"] or 0) if total_voters_row else 0
+
+    user_votes: list[int] = []
+    if actor:
+        rows = db.execute(
+            """
+            SELECT option_id
+            FROM chat_poll_votes
+            WHERE poll_id = ? AND actor_type = ? AND actor_id = ?
+            """,
+            (int(poll_id), str(actor.get("type")), int(actor.get("id") or 0)),
+        ).fetchall()
+        user_votes = [int(r["option_id"]) for r in rows]
+
+    return {
+        "id": int(poll["id"]),
+        "question": str(poll["question"] or ""),
+        "poll_type": str(poll["poll_type"] or "single"),
+        "is_closed": bool(int(poll["is_closed"] or 0) == 1),
+        "created_at": str(poll["created_at"] or ""),
+        "options": [
+            {
+                "id": int(o["id"]),
+                "label": str(o["label"] or ""),
+                "position": int(o["position"] or 0),
+                "count": int(counts.get(int(o["id"]), 0)),
+            }
+            for o in options
+        ],
+        "total_voters": int(total_voters),
+        "user_votes": user_votes,
+    }
+
+
+def _chat_row_to_msg(db: sqlite3.Connection, row: sqlite3.Row, actor: dict | None = None) -> dict:
     created_at = str(row["created_at"] or "")
     dk = _chat_date_key(created_at)
     mime = (row["attachment_mime"] or "") if ("attachment_mime" in row.keys()) else ""
     is_img = bool(mime and str(mime).startswith("image/"))
     ap = row["attachment_path"]
+    kind = str(row["kind"] or "text") if ("kind" in row.keys()) else "text"
+    poll_id = int(row["poll_id"] or 0) if ("poll_id" in row.keys()) and row["poll_id"] is not None else None
     return {
         "id": int(row["id"]),
         "created_at": created_at,
@@ -254,6 +431,9 @@ def _chat_row_to_msg(row: sqlite3.Row) -> dict:
         "attachment_mime": row["attachment_mime"],
         "attachment_is_image": is_img,
         "attachment_url": url_for("static", filename=ap) if ap else None,
+        "kind": kind,
+        "poll_id": poll_id,
+        "poll": _poll_payload(db, int(poll_id), actor) if kind == "poll" and poll_id else None,
     }
 
 
@@ -264,12 +444,9 @@ def _push_send_to_actor(db: sqlite3.Connection, actor_type: str, actor_id: int, 
     if not pub or not priv:
         return
 
-    if "\\n" in priv:
-        priv = priv.replace("\\n", "\n")
-    if "-----BEGIN" not in priv and re.fullmatch(r"[A-Za-z0-9+/=_\-]+", priv or ""):
-        b64 = priv.replace("-", "+").replace("_", "/")
-        b64 += "=" * ((4 - (len(b64) % 4)) % 4)
-        priv = "-----BEGIN EC PRIVATE KEY-----\n" + "\n".join([b64[i : i + 64] for i in range(0, len(b64), 64)]) + "\n-----END EC PRIVATE KEY-----\n"
+    priv = _normalize_vapid_private_key(priv)
+    if not priv:
+        return
 
     rows = db.execute(
         """
@@ -300,10 +477,15 @@ def _push_send_to_actor(db: sqlite3.Connection, actor_type: str, actor_id: int, 
                 "UPDATE push_subscriptions SET updated_at = ? WHERE id = ?",
                 (now, int(r["id"])),
             )
-        except WebPushException:
-            db.execute("DELETE FROM push_subscriptions WHERE id = ?", (int(r["id"]),))
-        except Exception:
-            return
+        except WebPushException as exc:
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if status in {404, 410}:
+                db.execute("DELETE FROM push_subscriptions WHERE id = ?", (int(r["id"]),))
+            else:
+                app.logger.warning("Push send failed: %s", exc)
+        except Exception as exc:
+            app.logger.warning("Push send error: %s", exc)
+            continue
     db.commit()
 
 
@@ -320,8 +502,6 @@ def _push_broadcast_chat(db: sqlite3.Connection, actor: dict, payload: dict) -> 
     for r in rows:
         t = str(r["actor_type"] or "")
         i = int(r["actor_id"] or 0)
-        if t == str(actor.get("type")) and i == int(actor.get("id") or 0):
-            continue
         p = dict(payload or {})
         if not p.get("url"):
             p["url"] = _chat_url_for_actor(t)
@@ -335,6 +515,42 @@ def _chat_url_for_actor(actor_type: str) -> str:
     if t == "faculty":
         return "/faculty/chat"
     return "/chat"
+
+
+def _normalize_vapid_private_key(priv: str) -> str:
+    if not priv:
+        return ""
+    if "\\n" in priv:
+        priv = priv.replace("\\n", "\n")
+    if "-----BEGIN" in priv:
+        return priv
+    if not re.fullmatch(r"[A-Za-z0-9+/=_\-]+", priv or ""):
+        return priv
+
+    # If it's a raw 32-byte base64url key, keep as-is for pywebpush.
+    try:
+        padded = priv.replace("-", "+").replace("_", "/")
+        padded += "=" * ((4 - (len(padded) % 4)) % 4)
+        raw = base64.b64decode(padded)
+        if len(raw) == 32:
+            return priv
+    except Exception:
+        pass
+
+    # Otherwise assume DER base64 and convert to PEM.
+    b64 = priv.replace("-", "+").replace("_", "/")
+    b64 += "=" * ((4 - (len(b64) % 4)) % 4)
+    try:
+        der = base64.b64decode(b64)
+        key = serialization.load_der_private_key(der, password=None)
+        pem = key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        return pem.decode("utf-8")
+    except Exception:
+        return "-----BEGIN EC PRIVATE KEY-----\n" + "\n".join([b64[i : i + 64] for i in range(0, len(b64), 64)]) + "\n-----END EC PRIVATE KEY-----\n"
 
 
 @app.get("/sw.js")
@@ -490,7 +706,7 @@ def socket_chat_sync(payload=None):
         return
 
     rows, oldest_id, has_more = _chat_fetch_recent(db, 15)
-    items = build_group_chat_items(rows)
+    items = build_group_chat_items(rows, db=db, actor=actor)
     items = _chat_items_to_json(items)
     emit(
         "chat:snapshot",
@@ -538,7 +754,12 @@ def _chat_date_label(date_key: str) -> str:
     return d.strftime("%d %b %Y")
 
 
-def build_group_chat_items(rows: list[sqlite3.Row], last_date: str | None = None) -> list[dict]:
+def build_group_chat_items(
+    rows: list[sqlite3.Row],
+    last_date: str | None = None,
+    db: sqlite3.Connection | None = None,
+    actor: dict | None = None,
+) -> list[dict]:
     items: list[dict] = []
     for r in rows:
         created_at = str(r["created_at"] or "")
@@ -546,28 +767,11 @@ def build_group_chat_items(rows: list[sqlite3.Row], last_date: str | None = None
         if dk and dk != last_date:
             items.append({"kind": "date", "date_key": dk, "label": _chat_date_label(dk)})
             last_date = dk
-        mime = (r["attachment_mime"] or "") if ("attachment_mime" in r.keys()) else ""
-        is_img = bool(mime and str(mime).startswith("image/"))
+        msg = _chat_row_to_msg(db, r, actor) if db else _chat_row_to_msg(get_db(), r, actor)
         items.append(
             {
                 "kind": "msg",
-                "msg": {
-                    "id": int(r["id"]),
-                    "created_at": created_at,
-                    "edited_at": str(r["edited_at"] or "") if ("edited_at" in r.keys()) else "",
-                    "date_key": dk,
-                    "date_label": _chat_date_label(dk),
-                    "time_label": fmt_chat_time(created_at),
-                    "edited_label": fmt_chat_time(str(r["edited_at"] or "")) if ("edited_at" in r.keys() and r["edited_at"]) else "",
-                    "actor_type": str(r["actor_type"] or ""),
-                    "actor_id": int(r["actor_id"] or 0),
-                    "actor_name": str(r["actor_name"] or ""),
-                    "message": str(r["message"] or ""),
-                    "attachment_path": r["attachment_path"],
-                    "attachment_name": r["attachment_name"],
-                    "attachment_mime": r["attachment_mime"],
-                    "attachment_is_image": is_img,
-                },
+                "msg": msg,
             }
         )
     return items
@@ -1050,6 +1254,29 @@ def _chat_can_moderate(db: sqlite3.Connection) -> bool:
     return role in {"admin", "superadmin", "moderator", "staff"} or bool(role)
 
 
+def _get_pinned_message(db: sqlite3.Connection, actor: dict | None = None) -> dict | None:
+    ensure_chat_pin_schema(db)
+    row = db.execute("SELECT * FROM chat_pinned_message WHERE id = 1").fetchone()
+    if not row:
+        return None
+    msg_row = db.execute(
+        "SELECT * FROM group_chat_messages WHERE id = ? AND is_deleted = 0",
+        (int(row["message_id"]),),
+    ).fetchone()
+    if not msg_row:
+        db.execute("DELETE FROM chat_pinned_message WHERE id = 1")
+        db.commit()
+        return None
+    msg = _chat_row_to_msg(db, msg_row, actor)
+    return {
+        "msg": msg,
+        "pinned_by": _actor_name_from_type_id(db, str(row["pinned_by_type"]), int(row["pinned_by_id"])),
+        "pinned_by_type": str(row["pinned_by_type"] or ""),
+        "pinned_by_id": int(row["pinned_by_id"] or 0),
+        "pinned_at": str(row["pinned_at"] or ""),
+    }
+
+
 def _chat_base_context(db: sqlite3.Connection) -> dict:
     actor = get_chat_actor(db)
     revision = get_chat_revision(db)
@@ -1072,6 +1299,11 @@ def _chat_base_context(db: sqlite3.Connection) -> dict:
         "chat_profile_url_template": "/chat/profile/__TYPE__/__ID__",
         "chat_delete_url_template": "/chat/messages/__ID__/delete",
         "chat_edit_url_template": "/chat/messages/__ID__/edit",
+        "chat_pin_url_template": "/chat/messages/__ID__/pin",
+        "chat_unpin_url": "/chat/pin/clear",
+        "chat_poll_create_url": "/chat/polls/create",
+        "chat_poll_vote_url": "/chat/polls/vote",
+        "chat_pinned": _get_pinned_message(db, actor),
         "chat_can_moderate": _chat_can_moderate(db),
     }
 
@@ -1141,7 +1373,7 @@ def chat_panel():
 
     limit = 60
     rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
-    items = build_group_chat_items(rows)
+    items = build_group_chat_items(rows, db=db, actor=actor)
 
     ctx = _chat_base_context(db)
     ctx.update(
@@ -1176,7 +1408,7 @@ def faculty_chat_panel():
 
     limit = 60
     rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
-    items = build_group_chat_items(rows)
+    items = build_group_chat_items(rows, db=db, actor=actor)
 
     ctx = _chat_base_context(db)
     ctx.update(
@@ -1210,7 +1442,7 @@ def admin_chat_panel():
 
     limit = 80
     rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
-    items = build_group_chat_items(rows)
+    items = build_group_chat_items(rows, db=db, actor=actor)
 
     ctx = _chat_base_context(db)
     ctx.update(
@@ -1282,7 +1514,7 @@ def chat_older():
     rows = list(reversed(rows))
     oldest_id = int(rows[0]["id"]) if rows else None
 
-    items = build_group_chat_items(list(rows), last_date=last_date)
+    items = build_group_chat_items(list(rows), last_date=last_date, db=db, actor=actor)
     for it in items:
         if it.get("kind") != "msg":
             continue
@@ -1312,7 +1544,7 @@ def chat_snapshot():
 
     rev = get_chat_revision(db)
     rows, oldest_id, has_more = _chat_fetch_recent(db, limit)
-    items = build_group_chat_items(rows)
+    items = build_group_chat_items(rows, db=db, actor=actor)
     items = _chat_items_to_json(items)
     return jsonify(
         {
@@ -1379,7 +1611,7 @@ def chat_send():
         (msg_id,),
     ).fetchone()
     if row:
-        msg = _chat_row_to_msg(row)
+        msg = _chat_row_to_msg(db, row, actor)
         safe_rev = int(revision or 0)
         socketio.emit("chat:new", {"msg": msg, "revision": safe_rev}, room=CHAT_ROOM)
 
@@ -1397,6 +1629,217 @@ def chat_send():
     if wants_json:
         return jsonify({"ok": True, "revision": int(revision or 0), "msg": msg if row else None})
     return redirect(request.referrer or url_for("chat_panel"))
+
+
+@app.post("/chat/polls/create")
+def chat_create_poll():
+    db = get_db()
+    ensure_group_chat_schema(db)
+    actor = _require_chat_actor(db)
+    if not actor:
+        return jsonify({"ok": False, "error": "Not logged in"}), 401
+    if not _student_can_chat_send(db, actor):
+        return jsonify({"ok": False, "error": "Chat disabled"}), 403
+
+    body = request.get_json(silent=True) or {}
+    question = str(body.get("question") or "").strip()
+    options_raw = body.get("options") or []
+    poll_type = str(body.get("poll_type") or "single").strip().lower()
+    if poll_type not in {"single", "multi"}:
+        poll_type = "single"
+
+    options: list[str] = []
+    for o in options_raw:
+        t = str(o or "").strip()
+        if t:
+            options.append(t)
+    options = options[:6]
+
+    if not question or len(options) < 2:
+        return jsonify({"ok": False, "error": "Add a question and at least 2 options"}), 400
+
+    now = datetime.now().isoformat(timespec="seconds")
+    db.execute(
+        """
+        INSERT INTO chat_polls (question, poll_type, actor_type, actor_id, created_at, is_closed)
+        VALUES (?, ?, ?, ?, ?, 0)
+        """,
+        (question, poll_type, str(actor["type"]), int(actor["id"]), now),
+    )
+    poll_id = int(db.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+
+    db.executemany(
+        """
+        INSERT INTO chat_poll_options (poll_id, label, position)
+        VALUES (?, ?, ?)
+        """,
+        [(poll_id, options[i], i + 1) for i in range(len(options))],
+    )
+
+    db.execute(
+        """
+        INSERT INTO group_chat_messages (
+            created_at, actor_type, actor_id, actor_name, message,
+            attachment_path, attachment_name, attachment_mime, is_deleted, kind, poll_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'poll', ?)
+        """,
+        (
+            now,
+            str(actor["type"]),
+            int(actor["id"]),
+            str(actor["name"]),
+            question,
+            None,
+            None,
+            None,
+            int(poll_id),
+        ),
+    )
+    db.commit()
+
+    revision = bump_chat_revision(db)
+    msg_id = int(db.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+    row = db.execute("SELECT * FROM group_chat_messages WHERE id = ?", (msg_id,)).fetchone()
+    msg = _chat_row_to_msg(db, row, actor) if row else None
+
+    if msg:
+        safe_rev = int(revision or 0)
+        socketio.emit("chat:new", {"msg": msg, "revision": safe_rev}, room=CHAT_ROOM)
+        payload = {
+            "kind": "chat:new",
+            "title": "New poll",
+            "body": f"{msg.get('actor_name')}: {question}",
+            "url": None,
+            "message_id": int(msg.get("id") or 0),
+        }
+        _push_broadcast_chat(db, actor, payload)
+
+    return jsonify({"ok": True, "revision": int(revision or 0), "msg": msg})
+
+
+@app.post("/chat/polls/vote")
+def chat_vote_poll():
+    db = get_db()
+    ensure_group_chat_schema(db)
+    actor = _require_chat_actor(db)
+    if not actor:
+        return jsonify({"ok": False, "error": "Not logged in"}), 401
+
+    body = request.get_json(silent=True) or {}
+    poll_id = int(body.get("poll_id") or 0)
+    selected = body.get("options") or []
+    if not poll_id:
+        return jsonify({"ok": False, "error": "Invalid poll"}), 400
+
+    poll = db.execute("SELECT * FROM chat_polls WHERE id = ?", (int(poll_id),)).fetchone()
+    if not poll:
+        return jsonify({"ok": False, "error": "Poll not found"}), 404
+    if int(poll["is_closed"] or 0) == 1:
+        return jsonify({"ok": False, "error": "Poll is closed"}), 400
+
+    options = [int(o) for o in selected if str(o).isdigit()]
+    options = list(dict.fromkeys(options))
+
+    if str(poll["poll_type"] or "single") == "single":
+        options = options[:1]
+
+    now = datetime.now().isoformat(timespec="seconds")
+    db.execute(
+        """
+        DELETE FROM chat_poll_votes
+        WHERE poll_id = ? AND actor_type = ? AND actor_id = ?
+        """,
+        (int(poll_id), str(actor["type"]), int(actor["id"])),
+    )
+
+    if options:
+        valid = db.execute(
+            """
+            SELECT id FROM chat_poll_options
+            WHERE poll_id = ? AND id IN ({})
+            """.format(",".join(["?"] * len(options))),
+            [int(poll_id)] + [int(o) for o in options],
+        ).fetchall()
+        valid_ids = [int(r["id"]) for r in valid]
+        db.executemany(
+            """
+            INSERT OR IGNORE INTO chat_poll_votes (poll_id, option_id, actor_type, actor_id, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            [(int(poll_id), int(oid), str(actor["type"]), int(actor["id"]), now) for oid in valid_ids],
+        )
+
+    db.commit()
+
+    poll_payload = _poll_payload(db, int(poll_id), actor)
+    poll_payload_public = _poll_payload(db, int(poll_id), None)
+    msg_row = db.execute(
+        "SELECT id FROM group_chat_messages WHERE poll_id = ? AND is_deleted = 0 ORDER BY id DESC LIMIT 1",
+        (int(poll_id),),
+    ).fetchone()
+    msg_id = int(msg_row["id"]) if msg_row else None
+    socketio.emit("poll:updated", {"poll": poll_payload_public, "message_id": msg_id}, room=CHAT_ROOM)
+    return jsonify({"ok": True, "poll": poll_payload, "message_id": msg_id})
+
+
+@app.post("/chat/messages/<int:message_id>/pin")
+def chat_pin_message(message_id: int):
+    db = get_db()
+    ensure_group_chat_schema(db)
+    actor = _require_chat_actor(db)
+    if not actor:
+        return jsonify({"ok": False, "error": "Not logged in"}), 401
+
+    row = db.execute(
+        "SELECT * FROM group_chat_messages WHERE id = ? AND is_deleted = 0",
+        (int(message_id),),
+    ).fetchone()
+    if not row:
+        return jsonify({"ok": False, "error": "Message not found"}), 404
+
+    mine = (
+        str(row["actor_type"] or "") == str(actor["type"]) and int(row["actor_id"] or 0) == int(actor["id"])
+    )
+    if not mine and not _chat_can_moderate(db):
+        return jsonify({"ok": False, "error": "Not allowed"}), 403
+
+    now = datetime.now().isoformat(timespec="seconds")
+    db.execute(
+        """
+        INSERT OR REPLACE INTO chat_pinned_message (id, message_id, pinned_by_type, pinned_by_id, pinned_at)
+        VALUES (1, ?, ?, ?, ?)
+        """,
+        (int(message_id), str(actor["type"]), int(actor["id"]), now),
+    )
+    db.commit()
+
+    pinned = _get_pinned_message(db, actor)
+    socketio.emit("chat:pin", {"pinned": pinned}, room=CHAT_ROOM)
+    return jsonify({"ok": True, "pinned": pinned})
+
+
+@app.post("/chat/pin/clear")
+def chat_unpin_message():
+    db = get_db()
+    ensure_group_chat_schema(db)
+    actor = _require_chat_actor(db)
+    if not actor:
+        return jsonify({"ok": False, "error": "Not logged in"}), 401
+
+    row = db.execute("SELECT * FROM chat_pinned_message WHERE id = 1").fetchone()
+    if not row:
+        return jsonify({"ok": True, "pinned": None})
+
+    mine = (
+        str(row["pinned_by_type"] or "") == str(actor["type"]) and int(row["pinned_by_id"] or 0) == int(actor["id"])
+    )
+    if not mine and not _chat_can_moderate(db):
+        return jsonify({"ok": False, "error": "Not allowed"}), 403
+
+    db.execute("DELETE FROM chat_pinned_message WHERE id = 1")
+    db.commit()
+    socketio.emit("chat:pin", {"pinned": None}, room=CHAT_ROOM)
+    return jsonify({"ok": True, "pinned": None})
 
 
 @app.post("/chat/request-access")
@@ -1486,7 +1929,7 @@ def chat_poll():
         (int(after_id), int(limit)),
     ).fetchall()
 
-    items = build_group_chat_items(list(rows), last_date=last_date)
+    items = build_group_chat_items(list(rows), last_date=last_date, db=db, actor=actor)
     for it in items:
         if it.get("kind") != "msg":
             continue
@@ -1518,6 +1961,8 @@ def chat_edit_message(message_id: int):
     ).fetchone()
     if not row:
         return jsonify({"ok": False, "error": "Message not found"}), 404
+    if ("kind" in row.keys()) and str(row["kind"] or "") == "poll":
+        return jsonify({"ok": False, "error": "Poll messages cannot be edited"}), 400
 
     mine = (
         str(row["actor_type"] or "") == str(actor["type"]) and int(row["actor_id"] or 0) == int(actor["id"]) 
@@ -1542,7 +1987,7 @@ def chat_edit_message(message_id: int):
         "SELECT * FROM group_chat_messages WHERE id = ? AND is_deleted = 0",
         (int(message_id),),
     ).fetchone()
-    msg = _chat_row_to_msg(row2) if row2 else None
+    msg = _chat_row_to_msg(db, row2, actor) if row2 else None
     if msg:
         socketio.emit("chat:edited", {"msg": msg, "revision": int(revision)}, room=CHAT_ROOM)
         payload = {
@@ -1589,6 +2034,12 @@ def chat_delete_message(message_id: int):
 
     db.execute("UPDATE group_chat_messages SET is_deleted = 1 WHERE id = ?", (int(message_id),))
     db.commit()
+
+    pinned = db.execute("SELECT message_id FROM chat_pinned_message WHERE id = 1").fetchone()
+    if pinned and int(pinned["message_id"]) == int(message_id):
+        db.execute("DELETE FROM chat_pinned_message WHERE id = 1")
+        db.commit()
+        socketio.emit("chat:pin", {"pinned": None}, room=CHAT_ROOM)
 
     revision = bump_chat_revision(db)
 
@@ -1669,6 +2120,11 @@ def admin_chat_delete(message_id: int):
 
     db.execute("UPDATE group_chat_messages SET is_deleted = 1 WHERE id = ?", (int(message_id),))
     db.commit()
+    pinned = db.execute("SELECT message_id FROM chat_pinned_message WHERE id = 1").fetchone()
+    if pinned and int(pinned["message_id"]) == int(message_id):
+        db.execute("DELETE FROM chat_pinned_message WHERE id = 1")
+        db.commit()
+        socketio.emit("chat:pin", {"pinned": None}, room=CHAT_ROOM)
     return jsonify({"ok": True})
 
 

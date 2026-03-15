@@ -116,6 +116,11 @@
         opacity: 0.65;
     }
 
+    .gc-pinned-flash {
+        outline: 2px solid rgb(251 191 36);
+        outline-offset: 2px;
+    }
+
     [data-gc-message-text] {
         line-height: 1.35;
     }
@@ -133,6 +138,19 @@
 </style>
 
 <div class="flex flex-col h-full min-h-0">
+    <div class="mb-2 hidden" data-gc-pinned>
+        <div class="mx-auto w-full max-w-[720px] rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-[11px] text-amber-700 uppercase tracking-wide">Pinned message</p>
+                <p class="text-sm text-amber-900 truncate" data-gc-pinned-text></p>
+                <p class="text-[11px] text-amber-700" data-gc-pinned-by></p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" class="px-3 py-2 rounded-xl bg-white/70 text-amber-900 text-xs font-medium hover:bg-white transition-all" data-gc-pinned-jump>View</button>
+                <button type="button" class="px-3 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-medium hover:bg-amber-200 transition-all" data-gc-pinned-clear>Unpin</button>
+            </div>
+        </div>
+    </div>
     <div class="mt-4 mb-4 flex-1 min-h-0 overflow-y-auto rounded-2xl bg-transparent p-3 hide-scrollbar flex flex-col" data-gc-scroll>
         <div class="flex-1 flex flex-col justify-end gap-3" data-gc-list>
             {% for row in chat_items %}
@@ -149,7 +167,7 @@
                                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                                     <button type="button" class="text-left min-w-0" data-gc-profile-btn data-actor-type="{{ m.actor_type }}" data-actor-id="{{ m.actor_id }}">
                                         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                            <span class="text-xs font-semibold text-slate-800 truncate max-w-[14rem] hover:underline">{{ m.actor_name }}</span>
+                                            <span class="text-xs font-semibold text-slate-800 truncate max-w-[14rem] hover:underline" data-gc-name data-actor-type="{{ m.actor_type }}" data-actor-id="{{ m.actor_id }}">{{ m.actor_name }}</span>
                                             <span class="text-[11px] text-slate-400">{{ m.time_label }}</span>
                                             {% if m.edited_at %}
                                                 <span class="text-[11px] text-slate-400">(edited{% if m.edited_label %} {{ m.edited_label }}{% endif %})</span>
@@ -158,7 +176,36 @@
                                     </button>
                                 </div>
 
-                            {% if m.message %}
+                            {% if m.kind == 'poll' and m.poll %}
+                                <div class="mt-2" data-gc-body>
+                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3" data-gc-poll data-poll-id="{{ m.poll.id }}" data-poll-type="{{ m.poll.poll_type }}" data-poll-closed="{{ 1 if m.poll.is_closed else 0 }}">
+                                        <div class="text-sm font-semibold text-slate-900">{{ m.poll.question }}</div>
+                                        <div class="mt-2 space-y-2">
+                                            {% for opt in m.poll.options %}
+                                                {% set count = opt.count %}
+                                                {% set total = m.poll.total_voters %}
+                                                {% set pct = ((count * 100) // total) if total else 0 %}
+                                                {% set checked = (opt.id in (m.poll.user_votes or [])) %}
+                                                <label class="block rounded-xl border border-slate-200 bg-white p-2 hover:border-slate-300 transition-all cursor-pointer">
+                                                    <div class="flex items-center gap-2">
+                                                        <input class="mt-0.5" type="{{ 'checkbox' if m.poll.poll_type == 'multi' else 'radio' }}" name="poll_{{ m.poll.id }}" value="{{ opt.id }}" data-gc-poll-option {% if checked %}checked{% endif %} {% if m.poll.is_closed %}disabled{% endif %}>
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex items-center justify-between gap-2 text-xs text-slate-700">
+                                                                <span class="truncate">{{ opt.label }}</span>
+                                                                <span class="shrink-0">{{ count }} • {{ pct }}%</span>
+                                                            </div>
+                                                            <div class="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                                <div class="h-full bg-emerald-400" style="width: {{ pct }}%"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="mt-2 text-[11px] text-slate-500" data-gc-poll-meta>{{ m.poll.total_voters }} votes</div>
+                                    </div>
+                                </div>
+                            {% elif m.message %}
                                 <div class="mt-2" data-gc-body>
                                     <div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>{{ m.message|e }}</div>
                                 </div>
@@ -193,6 +240,11 @@
 
                             <div class="mt-1 flex items-center gap-2 {% if mine %}justify-end{% else %}justify-start{% endif %}" data-gc-actions>
                                 {% if mine or can_moderate %}
+                                    <button type="button" data-gc-action-btn data-gc-pin-btn data-id="{{ m.id }}" title="Pin">
+                                        <span class="iconify text-base" data-icon="solar:pin-linear"></span>
+                                    </button>
+                                {% endif %}
+                                {% if (mine or can_moderate) and (m.kind != 'poll') %}
                                     <button type="button" data-gc-action-btn data-gc-edit-btn data-id="{{ m.id }}" title="Edit">
                                         <span class="iconify text-base" data-icon="solar:pen-2-outline"></span>
                                     </button>
@@ -231,7 +283,7 @@
                 </div>
             {% endif %}
             <form method="post" action="{{ chat_send_url }}" enctype="multipart/form-data" class="space-y-2" data-gc-form>
-                <div class="grid grid-cols-[1fr_auto_auto] gap-2 items-center mb-0">
+                <div class="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center mb-0">
                     <input type="hidden" name="message" data-gc-message>
                     <div class="w-full" data-gc-editor-wrap>
                         <div data-gc-editor contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-placeholder="Type a message..." {% if not (chat_can_send or false) %}data-disabled="1"{% endif %}></div>
@@ -244,12 +296,17 @@
                         </button>
                     </div>
 
+                    <button type="button" class="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all inline-flex items-center justify-center" data-gc-poll-btn title="Create poll" {% if not (chat_can_send or false) %}disabled{% endif %}>
+                        <span class="iconify text-xl" data-icon="solar:chat-square-like-outline"></span>
+                    </button>
+
                     <button type="submit" class="w-10 h-10 rounded-2xl minimal-btn minimal-btn-primary inline-flex items-center justify-center" title="Send" {% if not (chat_can_send or false) %}disabled{% endif %}>
                         <span class="iconify text-xl" data-icon="solar:arrow-right-bold"></span>
                     </button>
                 </div>
 
                 <div class="text-[11px] text-slate-500 hidden" data-gc-attachment-label></div>
+                <div class="text-[11px] text-amber-700 mt-1" data-gc-socket-status></div>
             </form>
         </div>
     </div>
@@ -273,6 +330,47 @@
     </div>
 </div>
 
+<div class="fixed inset-0 z-[80] hidden" data-gc-poll-modal>
+    <div class="absolute inset-0 bg-slate-900/40" data-gc-poll-backdrop></div>
+    <div class="absolute bottom-0 left-0 right-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
+        <div class="mx-auto max-w-lg rounded-t-3xl sm:rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500">Poll</p>
+                    <p class="text-lg font-semibold text-slate-900">Create a poll</p>
+                </div>
+                <button type="button" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-all" data-gc-poll-close>Close</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600">Question</label>
+                    <input type="text" class="minimal-input w-full mt-1" placeholder="Ask a question" data-gc-poll-question>
+                </div>
+                <div class="space-y-2" data-gc-poll-options></div>
+                <button type="button" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all inline-flex items-center gap-2" data-gc-poll-add>
+                    <span class="iconify text-base" data-icon="solar:add-circle-outline"></span>
+                    Add option
+                </button>
+                <div class="flex items-center gap-3">
+                    <label class="inline-flex items-center gap-2 text-xs text-slate-700">
+                        <input type="radio" name="poll_type" value="single" checked data-gc-poll-type>
+                        Single choice
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-xs text-slate-700">
+                        <input type="radio" name="poll_type" value="multi" data-gc-poll-type>
+                        Multiple choice
+                    </label>
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-all" data-gc-poll-cancel>Cancel</button>
+                    <button type="button" class="px-3 py-2 rounded-xl minimal-btn minimal-btn-primary text-xs font-medium" data-gc-poll-submit>Create</button>
+                </div>
+                <div class="text-xs text-rose-600 hidden" data-gc-poll-error></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="application/json" id="groupChatInit">{{ {
     'my_actor': chat_actor,
     'poll_url': chat_poll_url,
@@ -284,6 +382,11 @@
     'profile_url_template': chat_profile_url_template,
     'delete_url_template': chat_delete_url_template,
     'edit_url_template': chat_edit_url_template,
+    'pin_url_template': chat_pin_url_template,
+    'unpin_url': chat_unpin_url,
+    'poll_create_url': chat_poll_create_url,
+    'poll_vote_url': chat_poll_vote_url,
+    'pinned': chat_pinned,
     'can_moderate': can_moderate,
     'chat_can_send': (chat_can_send or false)
 } | tojson }}</script>
@@ -305,12 +408,33 @@
 
         const requestBtn = document.querySelector('[data-gc-request-access]');
         const requestStatus = document.querySelector('[data-gc-request-status]');
+        const socketStatus = document.querySelector('[data-gc-socket-status]');
 
         const modal = document.querySelector('[data-gc-profile-modal]');
         const modalBackdrop = document.querySelector('[data-gc-profile-backdrop]');
         const modalClose = document.querySelector('[data-gc-profile-close]');
         const modalName = document.querySelector('[data-gc-profile-name]');
         const modalBody = document.querySelector('[data-gc-profile-body]');
+
+        const pinnedBar = document.querySelector('[data-gc-pinned]');
+        const pinnedText = document.querySelector('[data-gc-pinned-text]');
+        const pinnedBy = document.querySelector('[data-gc-pinned-by]');
+        const pinnedJump = document.querySelector('[data-gc-pinned-jump]');
+        const pinnedClear = document.querySelector('[data-gc-pinned-clear]');
+
+        const pollBtn = document.querySelector('[data-gc-poll-btn]');
+        const pollModal = document.querySelector('[data-gc-poll-modal]');
+        const pollBackdrop = document.querySelector('[data-gc-poll-backdrop]');
+        const pollClose = document.querySelector('[data-gc-poll-close]');
+        const pollCancel = document.querySelector('[data-gc-poll-cancel]');
+        const pollSubmit = document.querySelector('[data-gc-poll-submit]');
+        const pollAdd = document.querySelector('[data-gc-poll-add]');
+        const pollQuestion = document.querySelector('[data-gc-poll-question]');
+        const pollOptionsWrap = document.querySelector('[data-gc-poll-options]');
+        const pollTypeInputs = document.querySelectorAll('[data-gc-poll-type]');
+        const pollError = document.querySelector('[data-gc-poll-error]');
+        const pollVoteTimers = new Map();
+        const pollPending = new Set();
 
         if (!scrollEl || !listEl || !initEl) return;
 
@@ -376,6 +500,7 @@
             });
 
             scrollToBottom();
+            updatePinButtons();
         }
 
         function upsertMessage(msg) {
@@ -386,13 +511,30 @@
                 const replacement = renderMessage(msg);
                 existing.replaceWith(replacement);
                 if (shouldStickToBottom) scrollToBottom();
-                return;
+                return true;
             }
 
             const shouldStickToBottom = isNearBottom();
             maybeInsertDateSeparator(msg.date_key, msg.date_label);
             listEl.appendChild(renderMessage(msg));
             if (shouldStickToBottom) scrollToBottom();
+            return true;
+        }
+
+        function hasMessage(id) {
+            if (!id) return false;
+            return !!listEl.querySelector(`[data-gc-message][data-id="${CSS.escape(String(id))}"]`);
+        }
+
+        function updateMessageIfExists(msg) {
+            if (!msg || !msg.id) return false;
+            const existing = listEl.querySelector(`[data-gc-message][data-id="${CSS.escape(String(msg.id))}"]`);
+            if (!existing) return false;
+            const shouldStickToBottom = isNearBottom();
+            const replacement = renderMessage(msg);
+            existing.replaceWith(replacement);
+            if (shouldStickToBottom) scrollToBottom();
+            return true;
         }
 
         function removeMessage(id) {
@@ -420,8 +562,45 @@
         const profileUrlTemplate = init.profile_url_template;
         const deleteUrlTemplate = init.delete_url_template;
         const editUrlTemplate = init.edit_url_template;
+        const pinUrlTemplate = init.pin_url_template;
+        const unpinUrl = init.unpin_url;
+        const pollCreateUrl = init.poll_create_url;
+        const pollVoteUrl = init.poll_vote_url;
         const myActor = init.my_actor;
         const canModerate = !!init.can_moderate;
+
+        const NAME_PALETTE = [
+            '#2563eb', '#16a34a', '#dc2626', '#7c3aed', '#0d9488', '#d97706',
+            '#db2777', '#0f766e', '#9333ea', '#0891b2', '#c2410c', '#059669'
+        ];
+
+        function hashString(input) {
+            let h = 2166136261;
+            const s = String(input || '');
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+            }
+            return Math.abs(h >>> 0);
+        }
+
+        function actorColor(actorType, actorId) {
+            const key = `${String(actorType || '')}:${String(actorId || '')}`;
+            const idx = hashString(key) % NAME_PALETTE.length;
+            return NAME_PALETTE[idx];
+        }
+
+        function applyNameColor(el, actorType, actorId) {
+            if (!el) return;
+            const c = actorColor(actorType, actorId);
+            el.style.color = c;
+        }
+
+        document.querySelectorAll('[data-gc-name]').forEach((el) => {
+            const t = el.getAttribute('data-actor-type');
+            const id = el.getAttribute('data-actor-id');
+            applyNameColor(el, t, id);
+        });
 
         const REV_KEY = 'eduportal:groupchat:rev';
         function getStoredRevision() {
@@ -449,6 +628,23 @@
 
         function scrollToBottom() {
             scrollEl.scrollTop = scrollEl.scrollHeight;
+        }
+
+        let lastSnapshotAt = 0;
+        async function refreshSnapshot(reason = '') {
+            if (!snapshotUrl) return;
+            const now = Date.now();
+            if (now - lastSnapshotAt < 1500) return;
+            lastSnapshotAt = now;
+            try {
+                const res = await fetch(snapshotUrl, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                if (data && data.ok) {
+                    applySnapshot(data);
+                }
+            } catch (_) {
+                // ignore
+            }
         }
 
         // On first paint, keep the view at the newest messages.
@@ -522,6 +718,83 @@
             }
         });
 
+        let currentPinned = init.pinned || null;
+        let currentPinnedId = currentPinned && currentPinned.msg ? Number(currentPinned.msg.id || 0) : null;
+
+        function pinnedSummary(msg) {
+            if (!msg) return '';
+            if (msg.kind === 'poll' && msg.poll) return msg.poll.question || 'Poll';
+            if (msg.message) return msg.message;
+            if (msg.attachment_name) return `Attachment: ${msg.attachment_name}`;
+            return 'Message';
+        }
+
+        function updatePinButtons() {
+            listEl.querySelectorAll('[data-gc-pin-btn]').forEach((btn) => {
+                const id = Number(btn.getAttribute('data-id') || 0);
+                const icon = btn.querySelector('span[data-icon]');
+                if (id && currentPinnedId && id === currentPinnedId) {
+                    if (icon) icon.setAttribute('data-icon', 'solar:pin-bold');
+                    btn.title = 'Unpin';
+                } else {
+                    if (icon) icon.setAttribute('data-icon', 'solar:pin-linear');
+                    btn.title = 'Pin';
+                }
+            });
+        }
+
+        function applyPinned(pinned) {
+            currentPinned = pinned || null;
+            currentPinnedId = currentPinned && currentPinned.msg ? Number(currentPinned.msg.id || 0) : null;
+            if (!pinnedBar || !pinnedText || !pinnedBy) return;
+            if (!currentPinned || !currentPinned.msg) {
+                pinnedBar.classList.add('hidden');
+                updatePinButtons();
+                return;
+            }
+            const msg = currentPinned.msg;
+            const summary = pinnedSummary(msg);
+            pinnedText.textContent = `${msg.actor_name || 'Someone'}: ${summary}`;
+            pinnedBy.textContent = currentPinned.pinned_by ? `Pinned by ${currentPinned.pinned_by}` : '';
+            pinnedBar.classList.remove('hidden');
+
+            const canClear = canModerate || (
+                myActor &&
+                currentPinned.pinned_by_type === myActor.type &&
+                Number(currentPinned.pinned_by_id || 0) === Number(myActor.id || 0)
+            );
+            if (pinnedClear) pinnedClear.classList.toggle('hidden', !canClear);
+            updatePinButtons();
+        }
+
+        function jumpToPinned() {
+            if (!currentPinnedId) return;
+            const node = listEl.querySelector(`[data-gc-message][data-id="${CSS.escape(String(currentPinnedId))}"]`);
+            if (node) {
+                node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                node.classList.add('gc-pinned-flash');
+                setTimeout(() => node.classList.remove('gc-pinned-flash'), 1200);
+            } else {
+                window.alert('Pinned message is not loaded yet. Scroll up to load earlier messages.');
+            }
+        }
+
+        if (pinnedJump) pinnedJump.addEventListener('click', jumpToPinned);
+        if (pinnedClear) pinnedClear.addEventListener('click', async () => {
+            if (!unpinUrl) return;
+            try {
+                const res = await fetch(unpinUrl, { method: 'POST', headers: { 'Accept': 'application/json' } });
+                const data = await res.json().catch(() => null);
+                if (data && data.ok) {
+                    applyPinned(data.pinned || null);
+                }
+            } catch (_) {
+                // ignore
+            }
+        });
+
+        applyPinned(currentPinned);
+
         if (attachBtn && attachInput) {
             attachBtn.addEventListener('click', () => attachInput.click());
             attachInput.addEventListener('change', () => {
@@ -535,6 +808,103 @@
                 attachLabel.classList.remove('hidden');
                 attachLabel.textContent = `Attachment: ${f.name}`;
             });
+        }
+
+        function openPollModal() {
+            if (!pollModal) return;
+            pollModal.classList.remove('hidden');
+        }
+
+        function closePollModal() {
+            if (!pollModal) return;
+            pollModal.classList.add('hidden');
+            if (pollError) {
+                pollError.textContent = '';
+                pollError.classList.add('hidden');
+            }
+        }
+
+        function addPollOption(value = '') {
+            if (!pollOptionsWrap) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center gap-2';
+            wrapper.innerHTML = `
+                <input type="text" class="minimal-input w-full" placeholder="Option" data-gc-poll-option-input>
+                <button type="button" class="px-2 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-gc-poll-remove title="Remove">
+                    <span class="iconify text-base" data-icon="solar:trash-bin-trash-outline"></span>
+                </button>
+            `;
+            const input = wrapper.querySelector('[data-gc-poll-option-input]');
+            if (input) input.value = value;
+            const removeBtn = wrapper.querySelector('[data-gc-poll-remove]');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', () => wrapper.remove());
+            }
+            pollOptionsWrap.appendChild(wrapper);
+        }
+
+        function getPollType() {
+            let v = 'single';
+            pollTypeInputs.forEach((el) => {
+                if (el.checked) v = el.value;
+            });
+            return v === 'multi' ? 'multi' : 'single';
+        }
+
+        async function submitPoll() {
+            if (!pollCreateUrl) return;
+            const question = pollQuestion ? pollQuestion.value.trim() : '';
+            const optionInputs = pollOptionsWrap ? pollOptionsWrap.querySelectorAll('[data-gc-poll-option-input]') : [];
+            const options = Array.from(optionInputs).map((i) => (i.value || '').trim()).filter(Boolean);
+            const pollType = getPollType();
+            if (!question || options.length < 2) {
+                if (pollError) {
+                    pollError.textContent = 'Add a question and at least 2 options.';
+                    pollError.classList.remove('hidden');
+                }
+                return;
+            }
+            if (pollError) {
+                pollError.textContent = '';
+                pollError.classList.add('hidden');
+            }
+            try {
+                const res = await fetch(pollCreateUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ question, options, poll_type: pollType })
+                });
+                const data = await res.json().catch(() => null);
+                if (!res.ok || !data || !data.ok) {
+                    if (pollError) {
+                        pollError.textContent = (data && data.error) ? data.error : 'Failed to create poll.';
+                        pollError.classList.remove('hidden');
+                    }
+                    return;
+                }
+                if (data && data.msg) upsertMessage(data.msg);
+                if (pollQuestion) pollQuestion.value = '';
+                if (pollOptionsWrap) pollOptionsWrap.innerHTML = '';
+                addPollOption('');
+                addPollOption('');
+                closePollModal();
+            } catch (_) {
+                if (pollError) {
+                    pollError.textContent = 'Failed to create poll.';
+                    pollError.classList.remove('hidden');
+                }
+            }
+        }
+
+        if (pollBtn) pollBtn.addEventListener('click', openPollModal);
+        if (pollBackdrop) pollBackdrop.addEventListener('click', closePollModal);
+        if (pollClose) pollClose.addEventListener('click', closePollModal);
+        if (pollCancel) pollCancel.addEventListener('click', closePollModal);
+        if (pollSubmit) pollSubmit.addEventListener('click', submitPoll);
+        if (pollAdd) pollAdd.addEventListener('click', () => addPollOption(''));
+        if (pollOptionsWrap && pollOptionsWrap.children.length === 0) {
+            addPollOption('');
+            addPollOption('');
         }
 
         if (editorEl && msgInput) {
@@ -563,6 +933,7 @@
             const raw = (el.textContent || '').trimEnd();
             el.innerHTML = renderMarkdown(raw);
         });
+        attachPollHandlers(listEl);
 
         function escapeHtml(s) {
             return (s || '')
@@ -798,6 +1169,14 @@
             });
         });
 
+        document.querySelectorAll('[data-gc-pin-btn]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                if (!id) return;
+                togglePin(id);
+            });
+        });
+
         async function editMessage(messageId, newText) {
             try {
                 const url = String(editUrlTemplate).replace('__ID__', encodeURIComponent(String(messageId)));
@@ -945,6 +1324,76 @@
             `;
         }
 
+        async function togglePin(messageId) {
+            if (!pinUrlTemplate) return;
+            try {
+                if (currentPinnedId && Number(messageId) === Number(currentPinnedId)) {
+                    if (!unpinUrl) return;
+                    const res = await fetch(unpinUrl, { method: 'POST', headers: { 'Accept': 'application/json' } });
+                    const data = await res.json().catch(() => null);
+                    if (data && data.ok) {
+                        applyPinned(data.pinned || null);
+                    }
+                    return;
+                }
+
+                const url = String(pinUrlTemplate).replace('__ID__', encodeURIComponent(String(messageId)));
+                const res = await fetch(url, { method: 'POST', headers: { 'Accept': 'application/json' } });
+                const data = await res.json().catch(() => null);
+                if (data && data.ok) {
+                    applyPinned(data.pinned || null);
+                }
+            } catch (_) {
+                // ignore
+            }
+        }
+
+        function renderPollInner(poll) {
+            if (!poll) return '';
+            const total = Number(poll.total_voters || 0);
+            const type = poll.poll_type === 'multi' ? 'multi' : 'single';
+            const closed = !!poll.is_closed;
+            const userVotes = new Set((poll.user_votes || []).map((v) => Number(v)));
+            const options = (poll.options || []).map((opt) => {
+                const count = Number(opt.count || 0);
+                const pct = total ? Math.round((count * 100) / total) : 0;
+                const checked = userVotes.has(Number(opt.id));
+                return `
+                    <label class="block rounded-xl border border-slate-200 bg-white p-2 hover:border-slate-300 transition-all cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <input class="mt-0.5" type="${type === 'multi' ? 'checkbox' : 'radio'}" name="poll_${poll.id}" value="${escapeHtml(String(opt.id))}" data-gc-poll-option ${checked ? 'checked' : ''} ${closed ? 'disabled' : ''}>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2 text-xs text-slate-700">
+                                    <span class="truncate">${escapeHtml(String(opt.label || ''))}</span>
+                                    <span class="shrink-0">${count} • ${pct}%</span>
+                                </div>
+                                <div class="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                    <div class="h-full bg-emerald-400" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            return `
+                <div class="text-sm font-semibold text-slate-900">${escapeHtml(String(poll.question || 'Poll'))}</div>
+                <div class="mt-2 space-y-2">${options}</div>
+                <div class="mt-2 text-[11px] text-slate-500" data-gc-poll-meta>${total} votes</div>
+            `;
+        }
+
+        function renderPollCard(poll) {
+            if (!poll) return '';
+            return `
+                <div class="mt-2" data-gc-body>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3" data-gc-poll data-poll-id="${escapeHtml(String(poll.id))}" data-poll-type="${escapeHtml(String(poll.poll_type || 'single'))}" data-poll-closed="${poll.is_closed ? '1' : '0'}">
+                        ${renderPollInner(poll)}
+                    </div>
+                </div>
+            `;
+        }
+
         function renderMessage(m) {
             const mine = myActor && m.actor_type === myActor.type && Number(m.actor_id || 0) === Number(myActor.id || 0);
             const wrapper = document.createElement('div');
@@ -954,12 +1403,20 @@
             wrapper.setAttribute('data-date', String(m.date_key || ''));
             wrapper.setAttribute('data-gc-md', String(m.message || ''));
 
-            const editBtn = (mine || canModerate)
+            const editBtn = (mine || canModerate) && String(m.kind || '') !== 'poll'
                 ? `<button type="button" data-gc-action-btn data-gc-edit-btn data-id="${escapeHtml(String(m.id))}" title="Edit"><span class="iconify text-base" data-icon="solar:pen-2-outline"></span></button>`
                 : '';
             const deleteBtn = (mine || canModerate)
                 ? `<button type="button" data-gc-action-btn data-gc-delete-btn data-id="${escapeHtml(String(m.id))}" title="Delete"><span class="iconify text-base" data-icon="solar:trash-bin-trash-outline"></span></button>`
                 : '';
+            const pinBtn = (mine || canModerate)
+                ? `<button type="button" data-gc-action-btn data-gc-pin-btn data-id="${escapeHtml(String(m.id))}" title="Pin"><span class="iconify text-base" data-icon="solar:pin-linear"></span></button>`
+                : '';
+
+            const nameColor = actorColor(m.actor_type, m.actor_id);
+            const messageBody = (String(m.kind || '') === 'poll' && m.poll)
+                ? renderPollCard(m.poll)
+                : (m.message ? `<div class="mt-2" data-gc-body><div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>${renderMarkdown(m.message)}</div></div>` : '');
 
             wrapper.innerHTML = `
                 <div class="max-w-[88%] sm:max-w-[75%] flex flex-col min-w-0">
@@ -967,16 +1424,17 @@
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                             <button type="button" class="text-left min-w-0" data-gc-profile-btn data-actor-type="${escapeHtml(m.actor_type)}" data-actor-id="${escapeHtml(String(m.actor_id))}">
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[14rem] hover:underline">${escapeHtml(m.actor_name || '')}</span>
+                                    <span class="text-xs font-semibold text-slate-800 truncate max-w-[14rem] hover:underline" data-gc-name data-actor-type="${escapeHtml(m.actor_type)}" data-actor-id="${escapeHtml(String(m.actor_id))}" style="color: ${nameColor};">${escapeHtml(m.actor_name || '')}</span>
                                     <span class="text-[11px] text-slate-400">${escapeHtml(m.time_label || '')}</span>
                                     ${m.edited_at ? `<span class="text-[11px] text-slate-400" data-gc-edited-badge>(edited${m.edited_label ? ` ${escapeHtml(m.edited_label)}` : ''})</span>` : ''}
                                 </div>
                             </button>
                         </div>
-                        ${m.message ? `<div class="mt-2" data-gc-body><div class="text-sm text-slate-800 whitespace-pre-line break-words" data-gc-message-text>${renderMarkdown(m.message)}</div></div>` : ''}
+                        ${messageBody}
                         ${renderAttachment(m)}
                     </div>
                     <div class="mt-1 flex items-center gap-2 ${mine ? 'justify-end' : 'justify-start'}" data-gc-actions>
+                        ${pinBtn}
                         ${editBtn}
                         ${deleteBtn}
                     </div>
@@ -1002,9 +1460,107 @@
                 });
             }
 
+            const pinBtnEl = wrapper.querySelector('[data-gc-pin-btn]');
+            if (pinBtnEl) {
+                pinBtnEl.addEventListener('click', () => {
+                    const id = pinBtnEl.getAttribute('data-id');
+                    if (!id) return;
+                    togglePin(id);
+                });
+            }
+
             attachInlineEditHandlers(wrapper);
+            attachPollHandlers(wrapper);
+            updatePinButtons();
 
             return wrapper;
+        }
+
+        function attachPollHandlers(root) {
+            const scope = root || listEl;
+            if (!scope) return;
+            scope.querySelectorAll('[data-gc-poll]').forEach((pollEl) => {
+                if (pollEl.getAttribute('data-gc-bound') === '1') return;
+                pollEl.setAttribute('data-gc-bound', '1');
+                const pollId = pollEl.getAttribute('data-poll-id');
+                if (!pollId) return;
+                pollEl.querySelectorAll('[data-gc-poll-option]').forEach((input) => {
+                    input.addEventListener('change', () => {
+                        schedulePollVote(pollId, pollEl);
+                    });
+                });
+            });
+        }
+
+        function schedulePollVote(pollId, pollEl) {
+            if (!pollId || !pollEl) return;
+            if (pollVoteTimers.has(pollId)) {
+                clearTimeout(pollVoteTimers.get(pollId));
+            }
+            pollVoteTimers.set(pollId, setTimeout(() => {
+                const checked = Array.from(pollEl.querySelectorAll('[data-gc-poll-option]'))
+                    .filter((i) => i.checked)
+                    .map((i) => i.value);
+                submitPollVote(pollId, checked, pollEl);
+            }, 150));
+        }
+
+        async function submitPollVote(pollId, options, pollEl) {
+            if (!pollVoteUrl) return;
+            if (pollPending.has(pollId)) return;
+            pollPending.add(pollId);
+            if (pollEl) {
+                pollEl.querySelectorAll('[data-gc-poll-option]').forEach((i) => {
+                    i.disabled = true;
+                });
+            }
+            try {
+                const res = await fetch(pollVoteUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ poll_id: pollId, options })
+                });
+                const data = await res.json().catch(() => null);
+                if (!res.ok || !data || !data.ok) {
+                    refreshSnapshot('poll_vote_error');
+                    return;
+                }
+                if (data && data.poll) {
+                    const ok = applyPollUpdate(data.poll, data.message_id);
+                    if (!ok) refreshSnapshot('poll_vote_missing');
+                }
+            } catch (_) {
+                refreshSnapshot('poll_vote_exception');
+            } finally {
+                pollPending.delete(pollId);
+                if (pollEl) {
+                    pollEl.querySelectorAll('[data-gc-poll-option]').forEach((i) => {
+                        i.disabled = false;
+                    });
+                }
+            }
+        }
+
+        function applyPollUpdate(poll, messageId) {
+            if (!poll) return false;
+            const pollEl = listEl.querySelector(`[data-gc-poll][data-poll-id="${CSS.escape(String(poll.id))}"]`);
+            if (!pollEl) {
+                if (messageId) refreshSnapshot('poll_missing');
+                return false;
+            }
+            const existingChecked = Array.from(pollEl.querySelectorAll('[data-gc-poll-option]'))
+                .filter((i) => i.checked)
+                .map((i) => Number(i.value));
+            if (!Array.isArray(poll.user_votes) || poll.user_votes.length === 0) {
+                poll.user_votes = existingChecked;
+            }
+            pollEl.setAttribute('data-poll-type', String(poll.poll_type || 'single'));
+            pollEl.setAttribute('data-poll-closed', poll.is_closed ? '1' : '0');
+            pollEl.innerHTML = renderPollInner(poll);
+            pollEl.removeAttribute('data-gc-bound');
+            attachPollHandlers(pollEl);
+            if (messageId) updatePinButtons();
+            return true;
         }
 
         function getLastMessageId() {
@@ -1030,14 +1586,24 @@
         }
 
         // Socket.IO realtime updates
-        const hasSocket = typeof window.io === 'function';
-        if (hasSocket) {
+        let socketInitialized = false;
+        function setupSocket() {
+            if (socketInitialized) return true;
+            if (typeof window.io !== 'function') return false;
             try {
                 const socket = window.io({ transports: ['websocket', 'polling'] });
+                socketInitialized = true;
 
                 socket.on('connect', () => {
+                    if (socketStatus) socketStatus.textContent = '';
                     const localRev = getStoredRevision() || currentRevision || 0;
                     socket.emit('chat:sync', { revision: Number(localRev) || 0 });
+                });
+                socket.on('disconnect', () => {
+                    if (socketStatus) socketStatus.textContent = 'Realtime disconnected. Reconnecting…';
+                });
+                socket.on('connect_error', () => {
+                    if (socketStatus) socketStatus.textContent = 'Realtime connection error. Retrying…';
                 });
 
                 socket.on('chat:rev', (payload) => {
@@ -1063,51 +1629,46 @@
                     const msg = payload && payload.msg;
                     if (!msg) return;
                     if (payload && typeof payload.revision !== 'undefined') setStoredRevision(payload.revision);
-                    upsertMessage(msg);
+                    const updated = updateMessageIfExists(msg);
+                    if (!updated) refreshSnapshot('missing_edit');
                 });
 
                 socket.on('chat:deleted', (payload) => {
                     const id = payload && payload.id;
-                    removeMessage(id);
+                    if (hasMessage(id)) {
+                        removeMessage(id);
+                    } else {
+                        refreshSnapshot('missing_delete');
+                    }
                     if (payload && typeof payload.revision !== 'undefined') setStoredRevision(payload.revision);
                 });
-            } catch (e) {
-                // fall back to polling
-            }
-        }
 
-        // Fallback polling if Socket.IO not available
-        async function poll() {
-            if (!pollUrl) return;
-            try {
-                const shouldStickToBottom = isNearBottom();
-                const afterId = getLastMessageId();
-                const url = `${pollUrl}?after_id=${encodeURIComponent(String(afterId))}&limit=50`;
-                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                const data = await res.json();
-                if (!data || !data.ok) return;
-
-                const items = data.items || [];
-                if (!items.length) return;
-
-                items.forEach((it) => {
-                    if (it.kind === 'date') {
-                        listEl.appendChild(renderDateSeparator(it.label || it.date_key || ''));
-                        return;
+                socket.on('poll:updated', (payload) => {
+                    const poll = payload && payload.poll;
+                    const messageId = payload && payload.message_id;
+                    const ok = applyPollUpdate(poll, messageId);
+                    if (!ok && messageId && !hasMessage(messageId)) {
+                        refreshSnapshot('missing_poll');
                     }
-                    const m = it.msg;
-                    if (!m) return;
-                    upsertMessage(m);
                 });
 
-                if (shouldStickToBottom) scrollToBottom();
+                socket.on('chat:pin', (payload) => {
+                    applyPinned(payload ? payload.pinned : null);
+                });
+                return true;
             } catch (e) {
-                // ignore
+                return false;
             }
         }
 
-        if (!hasSocket) {
-            setInterval(poll, 4000);
+        const socketOk = setupSocket();
+        if (!socketOk) {
+            window.addEventListener('load', () => {
+                const ok = setupSocket();
+                if (!ok && socketStatus) {
+                    socketStatus.textContent = 'Realtime unavailable (Socket.IO not loaded).';
+                }
+            });
         }
 
         const isMobile = (
