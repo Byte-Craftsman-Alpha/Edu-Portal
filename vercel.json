@@ -1,10 +1,10 @@
 {
   "functions": {
-    "api/**/*.py": {
-      "runtime": "vercel-python@3.10"
-    },
     "app.py": {
-      "runtime": "vercel-python@3.10"
+      "runtime": "python3.10"
+    },
+    "api/**/*.py": {
+      "runtime": "python3.10"
     }
   }
 }
