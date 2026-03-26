@@ -8,12 +8,12 @@ version = "0.1.0"
 description = "Edu-Portal web application"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
   "Flask==3.0.3",
   "waitress==2.1.2",
   "Flask-SocketIO==5.3.6",
-  "eventlet==0.33.3",
+  "eventlet==0.40.4",
   "pywebpush==1.14.0",
   "cffi==1.17.1",
   "wheel==0.42.0",

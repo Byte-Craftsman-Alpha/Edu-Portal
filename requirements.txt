@@ -1,7 +1,7 @@
 Flask==3.0.3
 waitress==2.1.2
 Flask-SocketIO==5.3.6
-eventlet==0.33.3
+eventlet==0.40.4
 pywebpush==1.14.0
 
 cffi==1.17.1
