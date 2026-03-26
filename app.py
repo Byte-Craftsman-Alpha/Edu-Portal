@@ -24,6 +24,10 @@ from pywebpush import webpush, WebPushException
 from cryptography.hazmat.primitives import serialization
 
 
+def _is_vercel() -> bool:
+    return bool(os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV"))
+
+
 def _load_dotenv_file(path: Path) -> None:
     try:
         raw = path.read_text(encoding="utf-8")
@@ -47,7 +51,29 @@ def _load_dotenv_file(path: Path) -> None:
 
 _load_dotenv_file(Path(__file__).with_name(".env"))
 
-app = Flask(__name__)
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_STATIC_DIR = BASE_DIR / "static"
+
+IS_VERCEL = _is_vercel()
+RUNTIME_DIR = Path(os.getenv("VERCEL_DATA_DIR", "/tmp/eduportal")) if IS_VERCEL else None
+
+if IS_VERCEL:
+    try:
+        RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+    runtime_static = RUNTIME_DIR / "static"
+    try:
+        if DEFAULT_STATIC_DIR.exists():
+            shutil.copytree(DEFAULT_STATIC_DIR, runtime_static, dirs_exist_ok=True)
+    except Exception:
+        pass
+    STATIC_DIR = runtime_static
+else:
+    STATIC_DIR = DEFAULT_STATIC_DIR
+
+app = Flask(__name__, static_folder=str(STATIC_DIR))
 
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
@@ -78,12 +104,24 @@ def _time12_filter(value: str) -> str:
         hh12 = 12
     return f"{hh12}:{mm:02d} {ampm}"
 
-DB_PATH = Path(__file__).with_name("eduportal.db")
+if IS_VERCEL:
+    DB_PATH = RUNTIME_DIR / "eduportal.db"
+    repo_db = BASE_DIR / "eduportal.db"
+    try:
+        if not DB_PATH.exists() and repo_db.exists():
+            shutil.copyfile(repo_db, DB_PATH)
+    except Exception:
+        pass
+else:
+    DB_PATH = BASE_DIR / "eduportal.db"
 
-NEWS_UPLOAD_DIR = Path(__file__).with_name("static") / "uploads" / "news"
-CHAT_UPLOAD_DIR = Path(__file__).with_name("static") / "uploads" / "chat"
-VAULT_UPLOAD_DIR = Path(__file__).with_name("uploads") / "vault"
-FACULTY_VAULT_UPLOAD_DIR = Path(__file__).with_name("uploads") / "faculty_vault"
+STATIC_UPLOAD_ROOT = Path(app.static_folder) / "uploads"
+VAULT_UPLOAD_ROOT = (RUNTIME_DIR / "uploads") if IS_VERCEL else (BASE_DIR / "uploads")
+
+NEWS_UPLOAD_DIR = STATIC_UPLOAD_ROOT / "news"
+CHAT_UPLOAD_DIR = STATIC_UPLOAD_ROOT / "chat"
+VAULT_UPLOAD_DIR = VAULT_UPLOAD_ROOT / "vault"
+FACULTY_VAULT_UPLOAD_DIR = VAULT_UPLOAD_ROOT / "faculty_vault"
 
 
 def save_news_attachment(upload) -> tuple[str, str, str] | None:
@@ -952,7 +990,7 @@ def get_vault_abs_path(stored_path: str) -> Path | None:
     stored = (stored_path or "").strip()
     if not stored.startswith("vault/"):
         return None
-    return Path(__file__).with_name("uploads") / stored
+    return VAULT_UPLOAD_ROOT / stored
 
 
 def delete_vault_physical_file(stored_path: str) -> None:
@@ -993,7 +1031,7 @@ def get_faculty_vault_abs_path(stored_path: str) -> Path | None:
     stored = (stored_path or "").strip()
     if not stored.startswith("faculty_vault/"):
         return None
-    return Path(__file__).with_name("uploads") / stored
+    return VAULT_UPLOAD_ROOT / stored
 
 
 def delete_faculty_vault_physical_file(stored_path: str) -> None:
